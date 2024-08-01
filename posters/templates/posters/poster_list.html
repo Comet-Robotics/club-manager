@@ -1,0 +1,74 @@
+{% extends 'base.html' %} 
+{% block title %}Poster Stats{% endblock %} 
+{% block content %}
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Poster Stats</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+  />
+  <style>
+    #map {
+      height: 800px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>Poster Stats</h1>
+  <div id="map"></div>
+  <h1>Posters</h1>
+  <ul>
+    {% for poster in object_list %}
+    <li>{{ poster.pub_date|date }} - {{ poster.campaign }} - {{ poster.visits.count }}</li>
+    {% empty %}
+    <li>No articles yet.</li>
+    {% endfor %}
+  </ul>
+  <div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+  <script>
+    // Initialize the map
+    var map = L.map("map").setView([32.98725, -96.74837], 17); // Set default view
+
+    // Set up the OpenStreetMap layer
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+    }).addTo(map);
+
+    // Fetch poster data
+    fetch("poster-data/")
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Poster data:", data);
+        var heatData = data.map((poster) => [
+          poster.latitude,
+          poster.longitude,
+          poster.visits,
+        ]);
+        var heat = L.heatLayer(heatData, { radius: 20 }).addTo(map);
+      })
+      .catch((error) => console.error("Error fetching poster data:", error));
+  </script>
+</body>
+{% endblock %}

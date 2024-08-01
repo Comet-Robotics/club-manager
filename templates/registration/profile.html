@@ -1,0 +1,20 @@
+<!-- templates/profile.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile</title>
+</head>
+<body>
+    <h1>Profile Page</h1>
+    <p>Welcome, {{ user.username }}!</p>
+    <p>Email: {{ user.email }}</p>
+    <p>First name: {{ user.first_name }}</p>
+    <p>Last name: {{ user.last_name }}</p>
+    
+    <!-- Add a logout button -->
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Logout</button>
+    </form>
+</body>
+</html>

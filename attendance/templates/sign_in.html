@@ -1,0 +1,28 @@
+{% extends "base.html" %} {% block title %}Sign In{% endblock %} 
+{% block content %}
+
+<body>
+  <form method="post">
+    <label for="eventId">Event:</label>
+    <select name="event" id="event">
+      {% for item in events%}
+      <option value="{{ item.pk }}">{{item}}</option>
+      {%endfor%}
+    </select>
+    {% csrf_token %} {{ form.as_p }}
+    <button class="btn" type="submit">Sign In</button>
+  </form>
+  {% if message %} {% if message == 'repeat' %}
+  <h1>You already signed in at {{ status.timestamp }}</h1>
+  {% else %}
+  <h1>You're all checked in!</h1>
+  {% endif %}
+  <h2>{{ user.first_name }} {{user.last_name}}</h2>
+  <h3>ID: {{ user.username }}</h3>
+  <img
+    src="https://cdn.pixabay.com/photo/2023/03/30/00/21/check-7886573_1280.png"
+    alt="Success"
+  />
+  {% endif %}
+</body>
+{% endblock %}

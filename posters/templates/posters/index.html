@@ -1,0 +1,33 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Posters</title>
+</head>
+<body>
+    <nav>
+        <ul>
+            <!-- Other navigation links -->
+            {% if user.is_authenticated %}
+                <li>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit">Logout</button>
+                    </form>
+                </li>
+            {% else %}
+                <li><a href="{% url 'login' %}">Login</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    
+    <div>
+        <h1>
+            Welcome to Posters!
+        </h1>
+        <h2>
+            If you are scanning a poster, add the 
+        </h2>
+    </div>
+</body>
+</html>

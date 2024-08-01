@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+  <h2>User Profile</h2>
+  {% if user.is_authenticated %}
+    <p>Name: {{ user.first_name }}</p>
+    <p>Student ID: {{ user.useridentification.student_id }}</p>
+  {% else %}
+    <p>No user is currently signed in.</p>
+  {% endif %}
+{% endblock %}
