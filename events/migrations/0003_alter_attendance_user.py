@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('attendance', '0002_rename_userprofile_useridentification'),
+        ('events', '0002_rename_userprofile_useridentification'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

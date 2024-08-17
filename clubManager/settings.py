@@ -36,14 +36,15 @@ ALLOWED_HOSTS = ["127.0.0.1"]
 INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'posters.apps.PostersConfig',
-    'attendance.apps.AttendanceConfig',
+    'events.apps.EventsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_tables2'
+    'django_tables2',
+    'django_rename_app',
 ]
 
 MIDDLEWARE = [
