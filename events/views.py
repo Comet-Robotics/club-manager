@@ -73,7 +73,7 @@ def rsvp(request, event_id):
             first = form.cleaned_data['first_name']
             last = form.cleaned_data['last_name']
             net_id = form.cleaned_data['net_id']
-            user = User.objects.get(username=net_id)
+            user = User.objects.filter(username=net_id).first()
             if not user:
                 user = User.objects.create(username=net_id, first_name=first, last_name=last)
             if not Reservation.objects.filter(user=user, event=event).exists():
