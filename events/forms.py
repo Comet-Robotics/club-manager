@@ -34,6 +34,9 @@ class UserSearchForm(forms.Form):
     search = forms.CharField(label='Search', max_length=100, required=False)
     
 class RSVPForm(forms.Form):
-    first_name = forms.CharField(label='First Name', max_length=100)
-    last_name = forms.CharField(label='Last Name', max_length=100)
-    net_id = forms.CharField(label='Net ID', max_length=20)
+    first_name = forms.CharField(label='First Name', max_length=100, widget=forms.TextInput(
+                              attrs={'class': "input input-bordered"}))
+    last_name = forms.CharField(label='Last Name', max_length=100, widget=forms.TextInput(
+                              attrs={'class': "input input-bordered"}))
+    net_id = forms.CharField(label='Net ID', max_length=20, widget=forms.TextInput(
+                              attrs={'class': "input input-bordered"}))

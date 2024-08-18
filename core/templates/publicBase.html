@@ -1,21 +1,58 @@
 {% load static %}
 <!DOCTYPE html>
-<html data-theme="lofi">
+<html data-theme="halloween">
   <head>
-    <title>{% block title %}Your Site{% endblock %}</title>
+    <title>{% block title %}Portal{% endblock %} | Comet Robotics
+    </title>
     <link
       href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css"
       rel="stylesheet"
       type="text/css"
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@200..900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         daisyui: {
-          themes: ["lofi", "black"],
+          themes: ["lofi", "black", "halloween"],
         },
+        theme: {
+          extend: {
+            fontFamily: {
+              'unbounded': 'Unbounded, sans-serif',
+              'mashine': 'Mashine, sans-serif',
+            },
+            colors: {
+              primary: '#bf1e2e',
+              text: '#d9d9d9',
+              textDark: '#1e1e1e',
+            }
+          }
+        }
       };
     </script>
+    <style>
+      @font-face {
+        font-family: 'Mashine';
+        src:
+          url('https://cometrobotics.org/fonts/MashineBold.woff2') format('woff2'),
+          url('https://cometrobotics.org/fonts/fonts/MashineBold.woff') format('woff');
+        font-weight: bold;
+        font-style: normal;
+        font-display: swap;
+      }
+      
+      .font-unbounded {
+        font-family: 'Unbounded Variable', sans-serif;
+      }
+      
+      .font-mashine {
+        font-family: 'Mashine', sans-serif;
+      }
+
+    </style>
   </head>
   <body>
         {% block content %}{% endblock %}
