@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html data-theme="lofi">
+  <head>
+    <title>{% block title %}Your Site{% endblock %}</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        daisyui: {
+          themes: ["lofi", "black"],
+        },
+      };
+    </script>
+  </head>
+  <body>
+        {% block content %}{% endblock %}
+  </body>
+</html>

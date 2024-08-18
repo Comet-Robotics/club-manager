@@ -1,0 +1,23 @@
+{% extends "publicBase.html" %} {% block title %}RSVP{% endblock %} 
+{% block content %}
+{% load static %}
+
+
+<body>
+  <h1>RSVP for {{event.event_name}}</h1>
+  <p>By filling out this form, you will reserve your RedBull and Comet Robotics Swag!</p>
+  <p>You can find your UTD ID printed on the front of your Comet Card!</p>
+  <img
+    src="{% static 'core/cometCardExample.jpg' %}"
+    alt="CometCard"
+    style="width: 50%;"
+  />
+  <form method="post">
+    {% csrf_token %} {{ form.as_p }}
+    <button class="btn" type="submit">Submit RSVP</button>
+  </form>
+  {% if message %}
+  <h1>{{ message }}</h1>
+  {% endif %}
+</body>
+{% endblock %}

@@ -5,8 +5,7 @@ from django.utils import timezone
 # Create your models here.
 class Event(models.Model):
     event_name = models.CharField(max_length=200)
-    event_date = models.DateTimeField("event date")
-    
+    event_date = models.DateTimeField("event date")    
     def __str__(self):
         return self.event_name
     
@@ -31,3 +30,11 @@ class UserIdentification(models.Model):
     
     def __str__(self):
         return self.user.first_name + '_' + self.user.last_name + '_' + self.student_id
+
+class Reservation(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(default=timezone.now)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    
+    def __str__(self):
+        return str(self.event) + ' - ' + str(self.user)
