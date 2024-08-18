@@ -1,0 +1,63 @@
+{% extends "publicBase.html" %} 
+{% block content %}
+{% load static %}
+
+
+<body>
+  <style>
+    .errorlist:first-child {
+      margin-top: 0;
+    }
+    .errorlist {
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 1000px) {
+      html {
+        font-size: 2rem;
+      }
+    }
+
+  </style>
+  <script>
+
+    document.getElementById("getLocation").addEventListener("click", () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(showPosition, (error) => {
+          console.log(error);
+        });
+      } else {
+        x.innerHTML = "Geolocation is not supported by this browser.";
+      }
+    });
+
+    function showPosition(position) {
+      var latitude = position.coords.latitude;
+      var longitude = position.coords.longitude;
+      var x = document.getElementById("latitude");
+      var y = document.getElementById("longitude");
+      x.value = latitude;
+      y.value = longitude;
+    }
+  </script>
+  <div class="flex min-h-screen bg-textDark w-screen text-white flex-col text-center">
+    <div class="flex flex-col bg-primary w-full p-12 gap-4 items-center justify-center">
+      <a href="https://cometrobotics.org"><img src="https://cometrobotics.org/_astro/wordmark.CC_C52SA_Z2qVE2U.avif" class="mb-6 w-32" alt="Comet Robotics Logo"></a>
+      <h1 class="font-mashine text-white text-lg">Add Poster</h1>
+    </div>
+    <button class="btn w-max btn-outline btn-neutral" id="getLocation" type="button">Get Location</button>
+    <div class="flex flex-col bg-textDark w-full p-12 gap-4 items-center justify-center">
+      <form method="post" class="flex flex-col gap-2 items-center justify-center">
+        {% csrf_token %} {{ form.as_p }}
+        <button class="btn w-max btn-outline btn-neutral" type="submit">Submit Poster</button>
+      </form>
+      {% if message %}
+      <div role="alert" class="alert alert-info">
+        <p>{{ message }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</body>
+{% endblock %}
