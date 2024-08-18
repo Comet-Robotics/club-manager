@@ -73,11 +73,13 @@ def rsvp(request, event_id):
             first = form.cleaned_data['first_name']
             last = form.cleaned_data['last_name']
             net_id = form.cleaned_data['net_id']
-            user, created = User.objects.get_or_create(username=net_id, first_name=first, last_name=last)
-            if not Reservation.objects.filter(user=user).exists():
+            user = User.objects.get(username=net_id)
+            if not user:
+                user = User.objects.create(username=net_id, first_name=first, last_name=last)
+            if not Reservation.objects.filter(user=user, event=event).exists():
                 reserved = Reservation.objects.create(event=event, user=user)
-            
-            return render(request, 'rsvp.html', {'form': form, 'user': user, 'event': event})
+            return redirect(event.url)
+            #return render(request, 'rsvp.html', {'form': form, 'user': user, 'event': event})
     else:
         form = RSVPForm()
     return render(request, 'rsvp.html', {'event': event, 'form': form})
