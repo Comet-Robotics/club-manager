@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import Http404
 from .forms import SignInForm, CreateProfileForm, UserSearchForm, RSVPForm
-from .models import UserIdentification, Attendance, Event
+from .models import UserIdentification, Attendance, Event, Reservation
 from django.contrib.auth.models import User
 from django.contrib.admin.views.decorators import staff_member_required
 from .tables import UserTable
@@ -74,6 +74,8 @@ def rsvp(request, event_id):
             last = form.cleaned_data['last_name']
             net_id = form.cleaned_data['net_id']
             user, created = User.objects.get_or_create(username=net_id, first_name=first, last_name=last)
+            if not Reservation.objects.filter(user=user).exists():
+                reserved = Reservation.objects.create(event=event, user=user)
             
             return render(request, 'rsvp.html', {'form': form, 'user': user, 'event': event})
     else:
