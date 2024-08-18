@@ -37,4 +37,3 @@ class RSVPForm(forms.Form):
     first_name = forms.CharField(label='First Name', max_length=100)
     last_name = forms.CharField(label='Last Name', max_length=100)
     net_id = forms.CharField(label='Net ID', max_length=20)
-    student_id = studentIDField(label='UTD ID', max_length=20, required=False)
