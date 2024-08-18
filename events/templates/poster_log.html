@@ -19,27 +19,7 @@
     }
 
   </style>
-  <script>
-
-    document.getElementById("getLocation").addEventListener("click", () => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition, (error) => {
-          console.log(error);
-        });
-      } else {
-        x.innerHTML = "Geolocation is not supported by this browser.";
-      }
-    });
-
-    function showPosition(position) {
-      var latitude = position.coords.latitude;
-      var longitude = position.coords.longitude;
-      var x = document.getElementById("latitude");
-      var y = document.getElementById("longitude");
-      x.value = latitude;
-      y.value = longitude;
-    }
-  </script>
+  
   <div class="flex min-h-screen bg-textDark w-screen text-white flex-col text-center">
     <div class="flex flex-col bg-primary w-full p-12 gap-4 items-center justify-center">
       <a href="https://cometrobotics.org"><img src="https://cometrobotics.org/_astro/wordmark.CC_C52SA_Z2qVE2U.avif" class="mb-6 w-32" alt="Comet Robotics Logo"></a>
@@ -58,6 +38,27 @@
       {% endif %}
     </div>
   </div>
+  <script>
 
+    const el = document.getElementById("getLocation")
+    el.addEventListener("click", () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(showPosition, (error) => {
+          console.log(error);
+        });
+      } else {
+        x.innerHTML = "Geolocation is not supported by this browser.";
+      }
+    });
+
+    function showPosition(position) {
+      var latitude = position.coords.latitude;
+      var longitude = position.coords.longitude;
+      var x = document.getElementById("id_latitude");
+      var y = document.getElementById("id_longitude");
+      x.value = latitude;
+      y.value = longitude;
+    }
+  </script>
 </body>
 {% endblock %}

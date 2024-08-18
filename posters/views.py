@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -49,13 +50,12 @@ def log_poster(request):
             longitude = form.cleaned_data['longitude']
             latitude = form.cleaned_data['latitude']
             description = form.cleaned_data['description']
-            date = timezone.now
+            date = datetime.now()
             campaign = Campaign.objects.get(pk=1)
             poster = Poster.objects.get_or_create(pk=id, longitude=longitude,
                                                   latitude=latitude, location=description,
                                                   pub_date=date, campaign=campaign)
-            form.poster_id += 1
-            return render(request, 'poster_log.html', {'form': form})
+            return render(request, 'poster_log.html', {'form': PosterLogForm(), 'message': 'Poster added!'})
     else:
         form = PosterLogForm()
     return render(request, 'poster_log.html', {'form': form})
