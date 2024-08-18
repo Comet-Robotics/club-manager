@@ -21,7 +21,7 @@
   </style>
   <div class="flex min-h-screen bg-textDark w-screen text-white flex-col text-center">
     <div class="flex flex-col bg-primary w-full p-12 gap-4 items-center justify-center">
-      <img src="https://cometrobotics.org/_astro/wordmark.CC_C52SA_Z2qVE2U.avif" class="mb-6 w-32" alt="Comet Robotics Logo">
+      <a href="https://cometrobotics.org"><img src="https://cometrobotics.org/_astro/wordmark.CC_C52SA_Z2qVE2U.avif" class="mb-6 w-32" alt="Comet Robotics Logo"></a>
       <h1 class="font-mashine text-white text-lg">RSVP</h1>
       <h2 class="font-unbounded text-white text-3xl">{{event.event_name}}</h2>
       <p>Fill this form to reserve your Red Bull and Comet Robotics Swag!</p>
@@ -29,7 +29,7 @@
     <div class="flex flex-col bg-textDark w-full p-12 gap-4 items-center justify-center">
       <form method="post" class="flex flex-col gap-2 items-center justify-center">
         {% csrf_token %} {{ form.as_p }}
-        <button class="btn w-max" type="submit">Submit RSVP</button>
+        <button class="btn w-max btn-outline btn-neutral" type="submit">Submit RSVP</button>
       </form>
       {% if message %}
       <div role="alert" class="alert alert-info">
