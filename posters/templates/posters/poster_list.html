@@ -22,7 +22,7 @@
   <h1>Posters</h1>
   <ul>
     {% for poster in object_list %}
-    <li>{{ poster.pk }} - {{ poster.campaign }} - {{ poster.visits.count }}</li>
+    <li>{{ poster.pk }} - {{ poster.location }} - {{ poster.visits.count }}</li>
     {% empty %}
     <li>No articles yet.</li>
     {% endfor %}
