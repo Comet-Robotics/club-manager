@@ -1,6 +1,6 @@
 from typing import Any
 from django import forms
-from .utils import format_card_data, is_valid_card_data
+from .utils import format_card_data, is_valid_card_data, is_valid_net_id
 
 class CometCardField(forms.CharField):
     card_data = forms.CharField()
@@ -11,15 +11,18 @@ class CometCardField(forms.CharField):
     def validate(self, value):
         super().validate(value)
         if not is_valid_card_data(value):
-            raise forms.ValidationError("Invalid card data!")
+            raise forms.ValidationError("Invalid Card Data!")
 
-class studentIDField(forms.CharField):
-    student_id = forms.CharField()
+class NetIDField(forms.CharField):
+    net_id = forms.CharField()
+
+    def to_python(self, value):
+        return value.lower()
 
     def validate(self, value):
         super().validate(value)
-        if not is_valid_card_data(value):
-            raise forms.ValidationError("Invalid student ID!")
+        if not is_valid_net_id(value):
+            raise forms.ValidationError("Invalid Net ID!")
 
 
 class SignInForm(forms.Form):
@@ -28,7 +31,7 @@ class SignInForm(forms.Form):
 class CreateProfileForm(forms.Form):
     first_name = forms.CharField(label='First Name', max_length=100)
     last_name = forms.CharField(label='Last Name', max_length=100)
-    net_id = forms.CharField(label='Net ID', max_length=20)
+    net_id = NetIDField(label='Net ID', max_length=20)
 
 class UserSearchForm(forms.Form):
     search = forms.CharField(label='Search', max_length=100, required=False)
@@ -38,5 +41,5 @@ class RSVPForm(forms.Form):
                               attrs={'class': "input input-bordered"}))
     last_name = forms.CharField(label='Last Name', max_length=100, widget=forms.TextInput(
                               attrs={'class': "input input-bordered"}))
-    net_id = forms.CharField(label='Net ID', max_length=20, widget=forms.TextInput(
+    net_id = NetIDField(label='Net ID', max_length=20, widget=forms.TextInput(
                               attrs={'class': "input input-bordered"}))
