@@ -14,8 +14,5 @@ def is_valid_card_data(data):
 def is_valid_net_id(data):
      letters = data[0:3]
      numbers = data[3:]
-     print(letters)
-     print(numbers)
      is_correct_length = len(letters) == 3 and len(numbers) == 6
-     print(is_correct_length)
      return is_correct_length and letters.isalpha() and numbers.isdigit()
