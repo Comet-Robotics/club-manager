@@ -52,7 +52,7 @@ def log_poster(request):
             description = form.cleaned_data['description']
             date = datetime.now()
             campaign = Campaign.objects.get(pk=1)
-            poster = Poster.objects.get_or_create(pk=id, longitude=longitude,
+            poster = Poster.objects.update_or_create(pk=id, longitude=longitude,
                                                   latitude=latitude, location=description,
                                                   pub_date=date, campaign=campaign)
             return render(request, 'poster_log.html', {'form': PosterLogForm(), 'message': 'Poster added!'})
