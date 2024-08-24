@@ -4,17 +4,15 @@ from .forms import SignInForm, CreateProfileForm, UserSearchForm, RSVPForm
 from .models import UserIdentification, Attendance, Event, Reservation
 from django.contrib.auth.models import User
 from django.contrib.admin.views.decorators import staff_member_required
-from .tables import UserTable
+from .tables import UserTable, LinkUserTable
 
 @staff_member_required
-def sign_in(request):
-    events = Event.objects.all()
+def sign_in(request, event_id):
     if request.method == 'POST': 
         form = SignInForm(request.POST)
-        event_field = request.POST['event'] 
-        current_event = Event.objects.get(pk=event_field)
+        current_event = Event.objects.get(pk=event_id)
         if form.is_valid():
-            student_id = form.cleaned_data['card_data']            
+            student_id = form.cleaned_data['card_data']       
             try:
                 user_profile = UserIdentification.objects.get(student_id=student_id)
                 if user_profile:
@@ -25,14 +23,41 @@ def sign_in(request):
                     else:
                         message = ("repeat")
             except UserIdentification.DoesNotExist:
-                return redirect('create-profile', student_id=student_id)
+                return redirect('lookup-user', event_id=event_id, student_id=student_id)
             
             return render(request, 'sign_in.html', {'form': form, 'message': message, 'status': status, 'user': user_profile.user, 'events': events})
 
     else:
         form = SignInForm()
 
-    return render(request, 'sign_in.html', {'form': form, 'events': events})
+    return render(request, 'sign_in.html', {'form': form})
+
+@staff_member_required
+def pass_sign_in(request, event_id, user_id):
+    current_event = Event.objects.get(pk=event_id)
+    user = User.objects.get(pk=user_id)
+    status, created = Attendance.objects.get_or_create(event=current_event, user=user)
+    if created:
+        print("success")
+        message = ("success")
+    else:
+        print("repeat")
+        message = ("repeat")
+    return redirect('sign_in', event_id=event_id)
+
+@staff_member_required
+def pass_link(request, event_id, user_id, student_id):
+    current_event = Event.objects.get(pk=event_id)
+    user_profile = UserIdentification.link_user(user_id, student_id)
+    status, created = Attendance.objects.get_or_create(event=current_event, user=user_id)
+    print(user_profile)
+    if created:
+        print("success")
+        message = ("success")
+    else:
+        print("repeat")
+        message = ("repeat")
+    return redirect('sign_in', event_id=event_id)
 
 @staff_member_required
 def create_profile(request, student_id):
@@ -50,19 +75,25 @@ def create_profile(request, student_id):
     return render(request, 'create_profile.html', {'form': form})
 
 @staff_member_required
-def lookup_user(request):
-    users = []
+def lookup_user(request, event_id, student_id=None):
+    if student_id:
+        print("student id found")
+        users = User.objects.filter(useridentification__isnull=True)
+    else:
+        users = User.objects.all()
+    
     if request.method == 'POST':
         form = UserSearchForm(request.POST)
         if form.is_valid():
             query = form.cleaned_data['search']
-            users = User.objects.filter(first_name__icontains=query) | User.objects.filter(last_name__icontains=query) | User.objects.filter(useridentification__student_id__icontains=query) | User.objects.filter(username__icontains=query)
-
+            users = users.filter(first_name__icontains=query) | users.filter(last_name__icontains=query) | users.filter(useridentification__student_id__icontains=query) | users.filter(username__icontains=query)
     else:
         form = UserSearchForm()
-        users = User.objects.all()
-
-    table = UserTable(users)
+    
+    if student_id:
+        table = LinkUserTable(users, event_id=event_id, student_id=student_id)
+    else:
+        table = UserTable(users, event_id=event_id)
     return render(request, 'lookup_user.html', {'users': users, 'form': form, "table": table})
 
 def rsvp(request, event_id):

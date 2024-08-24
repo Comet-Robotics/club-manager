@@ -3,12 +3,6 @@
 
 <body>
   <form method="post">
-    <label for="eventId">Event:</label>
-    <select name="event" id="event">
-      {% for item in events%}
-      <option value="{{ item.pk }}">{{item}}</option>
-      {%endfor%}
-    </select>
     {% csrf_token %} {{ form.as_p }}
     <button class="btn" type="submit">Sign In</button>
   </form>

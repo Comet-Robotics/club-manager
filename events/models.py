@@ -28,6 +28,10 @@ class UserIdentification(models.Model):
         
     def create_basic_user(net_id, first, last):
         User.objects.create(username=net_id, first_name=first, last_name=last)
+        
+    def link_user(user_id, student_id):
+        UserIdentification.objects.create(user=User.objects.get(pk=user_id), student_id=student_id)
+
     
     def __str__(self):
         return self.user.first_name + '_' + self.user.last_name + '_' + self.student_id
