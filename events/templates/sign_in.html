@@ -6,6 +6,7 @@
     {% csrf_token %} {{ form.as_p }}
     <button class="btn" type="submit">Sign In</button>
   </form>
+  <a href="{% url 'lookup-user' event_id %}"><button class="btn">Lookup User</button></a>
   {% if message %} {% if message == 'repeat' %}
   <h1>You already signed in at {{ status.timestamp }}</h1>
   {% else %}
@@ -16,6 +17,7 @@
   <img
     src="https://cdn.pixabay.com/photo/2023/03/30/00/21/check-7886573_1280.png"
     alt="Success"
+    style="width: 200px"
   />
   {% endif %}
 </body>

@@ -25,12 +25,12 @@ def sign_in(request, event_id):
             except UserIdentification.DoesNotExist:
                 return redirect('lookup-user', event_id=event_id, student_id=student_id)
             
-            return render(request, 'sign_in.html', {'form': form, 'message': message, 'status': status, 'user': user_profile.user, 'events': events})
+            return render(request, 'sign_in.html', {'form': form, 'message': message, 'status': status, 'user': user_profile.user, 'event_id': event_id})
 
     else:
         form = SignInForm()
 
-    return render(request, 'sign_in.html', {'form': form})
+    return render(request, 'sign_in.html', {'form': form, 'event_id': event_id})
 
 @staff_member_required
 def pass_sign_in(request, event_id, user_id):
@@ -49,7 +49,8 @@ def pass_sign_in(request, event_id, user_id):
 def pass_link(request, event_id, user_id, student_id):
     current_event = Event.objects.get(pk=event_id)
     user_profile = UserIdentification.link_user(user_id, student_id)
-    status, created = Attendance.objects.get_or_create(event=current_event, user=user_id)
+    user = User.objects.get(pk=user_id)
+    status, created = Attendance.objects.get_or_create(event=current_event, user=user)
     print(user_profile)
     if created:
         print("success")
