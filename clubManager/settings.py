@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'posters.apps.PostersConfig',
     'events.apps.EventsConfig',
+    'payments.apps.PaymentsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
