@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Attendance List</h1>
+    <h2>{{event.event_name}}</h2>
+    <h2>{{attendances.count}}</h2>
+    <ul>
+        {% for attendance in attendances %}
+            <li>{{ attendance.user}} - {{attendance.user.first_name}} {{attendance.user.last_name}}</li>
+        {% empty %}
+            <li>No attendances found.</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

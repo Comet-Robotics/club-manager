@@ -9,4 +9,5 @@ urlpatterns = [
     path('<int:event_id>/lookup-user/', views.lookup_user, name='lookup-user'),
     path('<int:event_id>/lookup-user/<int:student_id>/', views.lookup_user, name='lookup-user'),
     path('<int:event_id>/rsvp/', views.rsvp, name='rsvp'),
+    path('<int:event_id>/report/', views.report, name='report'),
 ]

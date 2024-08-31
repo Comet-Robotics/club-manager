@@ -115,3 +115,8 @@ def rsvp(request, event_id):
     else:
         form = RSVPForm()
     return render(request, 'rsvp.html', {'event': event, 'form': form})
+
+def report(request, event_id):
+    event = Event.objects.get(pk=event_id)
+    attendance = Attendance.objects.filter(event=event)
+    return render(request, 'report.html', {'event': event, 'attendances': attendance})
