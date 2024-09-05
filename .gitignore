@@ -90,3 +90,5 @@ local_settings.py
 db.sqlite3
 /venv/
 config.ini
+cert.pem
+key.pem
