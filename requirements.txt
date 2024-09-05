@@ -6,5 +6,6 @@ python-dotenv~=1.0.1
 sqlparse~=0.5.0
 squareup==22.0.0.20220921
 configparser
-fastapi
 aiofiles
+django_rename_app==0.1.7
+django_extensions==3.2.3
