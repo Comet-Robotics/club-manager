@@ -39,19 +39,21 @@ class ChooseUserView(View):
     template_name = 'choose_user.html'
 
     def get(self, request, product_id):
+        product = get_object_or_404(Product, id=product_id)
         form = PaymentSignInForm()
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name, {'form': form, 'product_name': product.name})
 
     def post(self, request, product_id):
+        product = get_object_or_404(Product, id=product_id)
         form = PaymentSignInForm(request.POST)
         if form.is_valid():
             username = form.cleaned_data['username']
             try:
                 user = User.objects.get(username=username)
             except User.DoesNotExist:
-                return render(request, self.template_name, {'form': form, 'message': 'User not found'})
+                return render(request, self.template_name, {'form': form, 'message': 'User not found', 'product_name': product.name})
             return redirect('payment_form', product_id=product_id, user_id=user.id)
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name, {'form': form, 'product_name': product.name})
 
 def product_payment(request, product_id, user_id):
     return render(request, 'product_payment.html', {'product_id': product_id, 'user_id': user_id, 'APPLICATION_ID': APPLICATION_ID, 'LOCATION_ID': LOCATION_ID, 'ACCESS_TOKEN': ACCESS_TOKEN, 'PAYMENT_FORM_URL': PAYMENT_FORM_URL, 'ACCOUNT_CURRENCY': ACCOUNT_CURRENCY, 'ACCOUNT_COUNTRY': ACCOUNT_COUNTRY})
