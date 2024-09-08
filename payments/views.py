@@ -5,6 +5,8 @@ import json
 from square.client import Client
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import User
+from django.shortcuts import redirect
 
 
 config = configparser.ConfigParser()
@@ -32,7 +34,17 @@ ACCOUNT_COUNTRY = location["country"]
 
 # Create your views here.
 def choose_user(request, product_id):
-    form = PaymentSignInForm()
+    if request.method == 'POST':
+        form = PaymentSignInForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                return render(request, 'choose_user.html', {'form': form, 'message': 'User not found'})
+            return redirect('payment_form', product_id=product_id, user_id=user.id)
+    else:
+        form = PaymentSignInForm()
     return render(request, 'choose_user.html', {'form': form})
 
 def payment_form(request, product_id, user_id):
