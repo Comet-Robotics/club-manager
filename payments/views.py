@@ -96,7 +96,10 @@ class ChooseUserView(View):
         return render(request, self.template_name, {'form': form, 'product_name': product.name})
 
 def product_payment(request, product_id, user_id):
-    return render(request, 'product_payment.html', {'product_id': product_id, 'user_id': user_id, 'APPLICATION_ID': APPLICATION_ID, 'LOCATION_ID': LOCATION_ID, 'ACCESS_TOKEN': ACCESS_TOKEN, 'PAYMENT_FORM_URL': PAYMENT_FORM_URL, 'ACCOUNT_CURRENCY': ACCOUNT_CURRENCY, 'ACCOUNT_COUNTRY': ACCOUNT_COUNTRY})
+    product = get_object_or_404(Product, id=product_id)
+    process_fee = ceil(product.amount_cents * 0.029) + 30
+    total_cost = product.amount_cents + process_fee
+    return render(request, 'product_payment.html', {'product': product, 'user_id': user_id, 'process_fee': process_fee, 'total_cost': total_cost, 'APPLICATION_ID': APPLICATION_ID, 'LOCATION_ID': LOCATION_ID, 'ACCESS_TOKEN': ACCESS_TOKEN, 'PAYMENT_FORM_URL': PAYMENT_FORM_URL, 'ACCOUNT_CURRENCY': ACCOUNT_CURRENCY, 'ACCOUNT_COUNTRY': ACCOUNT_COUNTRY})
 
 def payment_form(request, product_id, user_id):
     return render(request, 'payment_form.html', {'APPLICATION_ID': APPLICATION_ID, 'LOCATION_ID': LOCATION_ID, 'ACCESS_TOKEN': ACCESS_TOKEN, 'PAYMENT_FORM_URL': PAYMENT_FORM_URL, 'ACCOUNT_CURRENCY': ACCOUNT_CURRENCY, 'ACCOUNT_COUNTRY': ACCOUNT_COUNTRY})

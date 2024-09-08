@@ -1,6 +1,8 @@
-{% extends "publicBase.html" %} {% block title %}Member Due Payment{% endblock %}
+{% extends "publicBase.html" %} 
+{% block title %}Member Due Payment{% endblock %}
 {% block content %}
 {% load static %}
+{% load filter %}
 <head>
     <style>
         .container {
@@ -62,6 +64,12 @@
         .summary span {
             font-weight: bold;
         }
+
+        @media (min-width: 768px) {
+            .container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -70,31 +78,29 @@
             <div class="card-header">Order Summary</div>
             <div class="card-content">
                 <div class="item">
-                    <img src="/placeholder.svg" alt="Product Image">
+                    <img src="{% static 'payments/fallback.svg'%}" alt="Product Image">
                     <div class="item-details">
-                        <h3>Cozy Autumn Blanket</h3>
-                        <p>Warm and soft for chilly nights</p>
+                        <h3>{{ product.name }}</h3>
+                        <p>{{product.description}}</p>
                     </div>
-                    <div class="item-price">$49.99</div>
+                    <div class="item-price">{{ product.amount_cents | cents_to_dollars }}</div>
                 </div>
                 <div class="separator"></div>
                 <div class="summary">
                     <span>Subtotal</span>
-                    <span>$49.99</span>
+                    <span>{{ product.amount_cents | cents_to_dollars }}</span>
                 </div>
                 <div class="summary">
-                    <span>Shipping</span>
-                    <span>$4.99</span>
+                    <span>Processing Fee</span>
+                    <span>{{ process_fee | cents_to_dollars}}</span>
                 </div>
                 <div class="separator"></div>
                 <div class="summary">
                     <span>Total</span>
-                    <span>$54.98</span>
+                    <span>{{ total_cost | cents_to_dollars}}</span>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="container">
         <div class="card">
             <div class="card-header">Payment</div>
             <div class="card-content">
