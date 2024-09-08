@@ -31,15 +31,15 @@ ACCOUNT_CURRENCY = location["currency"]
 ACCOUNT_COUNTRY = location["country"]
 
 # Create your views here.
-def choose_user(request):
+def choose_user(request, product_id):
     form = PaymentSignInForm()
     return render(request, 'choose_user.html', {'form': form})
 
-def payment_form(request):
+def payment_form(request, product_id, user_id):
     return render(request, 'payment_form.html', {'APPLICATION_ID': APPLICATION_ID, 'LOCATION_ID': LOCATION_ID, 'ACCESS_TOKEN': ACCESS_TOKEN, 'PAYMENT_FORM_URL': PAYMENT_FORM_URL, 'ACCOUNT_CURRENCY': ACCOUNT_CURRENCY, 'ACCOUNT_COUNTRY': ACCOUNT_COUNTRY})
 
 @csrf_exempt
-def process_payment(request):
+def process_payment(request, product_id, user_id):
     if request.method == 'POST': 
         requestBody = json.loads(request.body)
         token = requestBody.get('token')
