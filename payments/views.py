@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from django.shortcuts import redirect
+from django.views import View
 
 
 config = configparser.ConfigParser()
@@ -33,19 +34,23 @@ ACCOUNT_CURRENCY = location["currency"]
 ACCOUNT_COUNTRY = location["country"]
 
 # Create your views here.
-def choose_user(request, product_id):
-    if request.method == 'POST':
+class ChooseUserView(View):
+    template_name = 'choose_user.html'
+
+    def get(self, request, product_id):
+        form = PaymentSignInForm()
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request, product_id):
         form = PaymentSignInForm(request.POST)
         if form.is_valid():
             username = form.cleaned_data['username']
             try:
                 user = User.objects.get(username=username)
             except User.DoesNotExist:
-                return render(request, 'choose_user.html', {'form': form, 'message': 'User not found'})
+                return render(request, self.template_name, {'form': form, 'message': 'User not found'})
             return redirect('payment_form', product_id=product_id, user_id=user.id)
-    else:
-        form = PaymentSignInForm()
-    return render(request, 'choose_user.html', {'form': form})
+        return render(request, self.template_name, {'form': form})
 
 def payment_form(request, product_id, user_id):
     return render(request, 'payment_form.html', {'APPLICATION_ID': APPLICATION_ID, 'LOCATION_ID': LOCATION_ID, 'ACCESS_TOKEN': ACCESS_TOKEN, 'PAYMENT_FORM_URL': PAYMENT_FORM_URL, 'ACCOUNT_CURRENCY': ACCOUNT_CURRENCY, 'ACCOUNT_COUNTRY': ACCOUNT_COUNTRY})
