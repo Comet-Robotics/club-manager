@@ -1,0 +1,107 @@
+{% extends "publicBase.html" %} {% block title %}Member Due Payment{% endblock %}
+{% block content %}
+{% load static %}
+<head>
+    <style>
+        .container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            max-width: 1024px;
+            margin: 0 auto;
+            padding: 12px 4px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .card-header {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+        .card-content {
+            display: grid;
+            gap: 16px;
+        }
+        .item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .item img {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+        .item-details {
+            flex-grow: 1;
+        }
+        .item-details h3 {
+            font-weight: bold;
+            margin: 0;
+        }
+        .item-details p {
+            color: #666;
+            margin: 0;
+        }
+        .item-price {
+            font-weight: bold;
+            margin-left: auto;
+        }
+        .separator {
+            border-top: 1px solid #ddd;
+            margin: 16px 0;
+        }
+        .summary {
+            display: flex;
+            justify-content: space-between;
+        }
+        .summary span {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">Order Summary</div>
+            <div class="card-content">
+                <div class="item">
+                    <img src="/placeholder.svg" alt="Product Image">
+                    <div class="item-details">
+                        <h3>Cozy Autumn Blanket</h3>
+                        <p>Warm and soft for chilly nights</p>
+                    </div>
+                    <div class="item-price">$49.99</div>
+                </div>
+                <div class="separator"></div>
+                <div class="summary">
+                    <span>Subtotal</span>
+                    <span>$49.99</span>
+                </div>
+                <div class="summary">
+                    <span>Shipping</span>
+                    <span>$4.99</span>
+                </div>
+                <div class="separator"></div>
+                <div class="summary">
+                    <span>Total</span>
+                    <span>$54.98</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">Payment</div>
+            <div class="card-content">
+                {% include "payment_form.html" %}
+            </div>
+        </div>
+    </div>
+</body>
+
+{% endblock %}

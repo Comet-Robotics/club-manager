@@ -53,6 +53,9 @@ class ChooseUserView(View):
             return redirect('payment_form', product_id=product_id, user_id=user.id)
         return render(request, self.template_name, {'form': form})
 
+def product_payment(request, product_id, user_id):
+    return render(request, 'product_payment.html', {'product_id': product_id, 'user_id': user_id, 'APPLICATION_ID': APPLICATION_ID, 'LOCATION_ID': LOCATION_ID, 'ACCESS_TOKEN': ACCESS_TOKEN, 'PAYMENT_FORM_URL': PAYMENT_FORM_URL, 'ACCOUNT_CURRENCY': ACCOUNT_CURRENCY, 'ACCOUNT_COUNTRY': ACCOUNT_COUNTRY})
+
 def payment_form(request, product_id, user_id):
     return render(request, 'payment_form.html', {'APPLICATION_ID': APPLICATION_ID, 'LOCATION_ID': LOCATION_ID, 'ACCESS_TOKEN': ACCESS_TOKEN, 'PAYMENT_FORM_URL': PAYMENT_FORM_URL, 'ACCOUNT_CURRENCY': ACCOUNT_CURRENCY, 'ACCOUNT_COUNTRY': ACCOUNT_COUNTRY})
 
