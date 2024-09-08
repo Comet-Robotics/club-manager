@@ -38,7 +38,11 @@ class Term(models.Model):
 
 class Payment(models.Model):
   """
-  A Payment is an object representing a payment made by a user for a product.
+  A Payment is an object representing a payment made by a user for a product. A Payment is 'successful' if one of the following conditions is met:
+    - completed_at is set to a datetime that represents the time the payment was completed. This field is intended for tracking completion of 'programmatic' payments, like those made via Square's API.
+    - verified_by is set to a user who can attest to the completion of the payment. This will usually be done by an officer in the admin panel, usually in the case of payments that aren't via Square like in-person cash payments.
+    
+  There are no cases where these 2 fields should be set at the same time. 
   """
   class Methods(models.TextChoices):
     square = 'square', _('Square Online Payment')
@@ -53,9 +57,15 @@ class Payment(models.Model):
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
   verified_by = models.OneToOneField('auth.User', on_delete=models.CASCADE, related_name='verified_by')
+  
+  # TODO: don't allow this to be set in admin panel?
+  completed_at = models.DateTimeField(null=True, blank=True)
   notes = models.TextField()
   metadata = models.JSONField()
   method = models.CharField(choices=Methods, default=Methods.other)
+  
+  # TODO: virtual field for payment success?
 
   def __str__(self):
     return f"{self.user.username} - {self.product.name}"
+ 
