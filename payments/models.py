@@ -14,7 +14,7 @@ class Product(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     amount_cents = models.IntegerField(validators=[MinValueValidator(0)])
 
-    # -1 means unlimited purchases per user. 0 means no purchases allowed (maybe if we want to disable purchases). Any other positive number is the maximum number of purchases allowed
+    # -1 means unlimited purchases per user. 0 means no purchases allowed (maybe if we want to disable purchases). Any other positive number is the maximum number of purchases allowed per user
     max_purchases = models.IntegerField(validators=[MinValueValidator(-1)])
 
     def __str__(self):
@@ -52,11 +52,11 @@ class Payment(models.Model):
     venmo = 'venmo', _('Venmo Payment (LEGACY - DO NOT USE FOR NEW PAYMENTS)')
     cashapp = 'cashapp', _('Cash App Payment (LEGACY - DO NOT USE FOR NEW PAYMENTS)')
 
-  user = models.OneToOneField('auth.User', on_delete=models.CASCADE)
-  product = models.OneToOneField(Product, on_delete=models.CASCADE)
+  user = models.ForeignKey('auth.User', on_delete=models.CASCADE, blank=False)
+  product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=False)
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
-  verified_by = models.OneToOneField('auth.User', on_delete=models.CASCADE, related_name='verified_by', null=True)
+  verified_by = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='verified_by', null=True)
   
   # TODO: don't allow this to be set in admin panel?
   completed_at = models.DateTimeField(null=True)

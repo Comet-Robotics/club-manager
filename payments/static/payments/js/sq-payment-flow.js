@@ -45,7 +45,9 @@ window.createPayment = async function(token) {
       body: dataJsonString
     });
 
-    const data = await response.json();
+    const res = await response.json();
+    
+    const data = res.square_res;
 
     if (data.errors && data.errors.length > 0) {
       if (data.errors[0].detail) {
@@ -55,6 +57,8 @@ window.createPayment = async function(token) {
       }
     } else {
       window.showSuccess('Payment Successful!');
+      const paymentSuccessPage = res.payment_success_page;
+      window.location = new URL(paymentSuccessPage, window.location.origin);
     }
   } catch (error) {
     console.error('Error:', error);

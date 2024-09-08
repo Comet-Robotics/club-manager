@@ -35,6 +35,31 @@ ACCOUNT_CURRENCY = location["currency"]
 ACCOUNT_COUNTRY = location["country"]
 
 # Create your views here.
+def can_purchase_product(product, user):
+    """
+    Returns None if product can be purchased, otherwise returns a string explaining why it can't be purchased
+    """
+    if product.max_purchases == -1:
+        # Unlimited purchases
+        return None
+    elif product.max_purchases == 0:
+      # No purchases allowed
+      return "Payments are currently disabled for this object."
+    else:
+      # Purchases allowed, but need to check if user has reached max purchases
+      allowed = Payment.objects.filter(user=user, product=product).count() < product.max_purchases
+      if allowed:
+          return None
+      else:
+        return "You have reached the maximum number of purchases for this object."
+
+class PaymentSuccessView(View):
+    template_name = 'payment_success.html'
+
+    def get(self, request, payment_id):
+        payment = get_object_or_404(Payment, id=payment_id)
+        return render(request, self.template_name, {'product_name': payment.product.name, 'payment': payment})
+
 class ChooseUserView(View):
     template_name = 'choose_user.html'
 
@@ -44,15 +69,20 @@ class ChooseUserView(View):
         return render(request, self.template_name, {'form': form, 'product_name': product.name})
 
     def post(self, request, product_id):
-        product = get_object_or_404(Product, id=product_id)
         form = PaymentSignInForm(request.POST)
+        product = get_object_or_404(Product, id=product_id)
         if form.is_valid():
             username = form.cleaned_data['username']
             try:
                 user = User.objects.get(username=username)
             except User.DoesNotExist:
                 return render(request, self.template_name, {'form': form, 'message': 'User not found', 'product_name': product.name})
-            return redirect('payment_form', product_id=product_id, user_id=user.id)
+                
+            message = can_purchase_product(product, user)
+            if message:
+                return render(request, self.template_name, {'form': form, 'message': message, 'product_name': product.name})
+            else:
+              return redirect('payment_form', product_id=product_id, user_id=user.id)
         return render(request, self.template_name, {'form': form, 'product_name': product.name})
 
 def product_payment(request, product_id, user_id):
@@ -93,9 +123,9 @@ def process_payment(request, product_id, user_id):
         if create_payment_response.is_success():
             payment.completed_at = timezone.now()
             payment.save()
-            return JsonResponse(create_payment_response.body, safe=False)
+            return JsonResponse({"square_res": create_payment_response.body, "payment_success_page": f"/payments/{payment.id}/success"}, safe=False)
         elif create_payment_response.is_error():
-            return JsonResponse(create_payment_response.body, safe=False)
+            return JsonResponse({"square_res": create_payment_response.body}, safe=False)
     else:
         return JsonResponse({'error': 'Invalid request method'}, safe=False, status_code=405)
             
