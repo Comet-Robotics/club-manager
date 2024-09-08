@@ -1,4 +1,4 @@
-{% extends "publicBase.html" %} {% block title %}Member Due Payment{% endblock %}
+{% extends "publicBase.html" %} {% block title %}{{product_name}}{% endblock %}
 {% block content %}
 {% load static %}
 
@@ -23,13 +23,13 @@
     <div class="flex flex-col bg-primary w-full p-12 gap-4 items-center justify-center">
       <a href="https://cometrobotics.org"><img src="https://cometrobotics.org/_astro/wordmark.CC_C52SA_Z2qVE2U.avif" class="mb-6 w-32" alt="Comet Robotics Logo"></a>
       <h1 class="font-mashine text-white text-lg">Payments</h1>
-      <h2 class="font-unbounded text-white text-3xl">Fall 2024 Member Dues</h2>
-      <p>Enter your netID below to begin processing your payment!</p>
+      <h2 class="font-unbounded text-white text-3xl">{{product_name}}</h2>
+      <p>Enter your Net ID below to begin processing your payment!</p>
     </div>
     <div class="flex flex-col bg-textDark w-full p-12 gap-4 items-center justify-center">
       <form method="post" class="flex flex-col gap-2 items-center justify-center">
         {% csrf_token %} {{ form.as_p }}
-        <button class="btn w-max btn-outline btn-neutral" type="submit">Submit RSVP</button>
+        <button class="btn w-max btn-outline btn-neutral" type="submit">Continue</button>
       </form>
       {% if message %}
       <div role="alert" class="alert alert-info">
