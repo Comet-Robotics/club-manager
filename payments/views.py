@@ -1,13 +1,14 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
 from .forms import PaymentSignInForm
 import configparser
+from datetime import datetime
 import json
 from square.client import Client
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
-from django.shortcuts import redirect
 from django.views import View
+from payments.models import Payment, Product
 
 
 config = configparser.ConfigParser()
@@ -59,25 +60,37 @@ def payment_form(request, product_id, user_id):
 def process_payment(request, product_id, user_id):
     if request.method == 'POST': 
         requestBody = json.loads(request.body)
+        
         token = requestBody.get('token')
         idempotency_key = requestBody.get('idempotencyKey')
         
+        product = get_object_or_404(Product, id=product_id)
+        user = get_object_or_404(User, id=user_id)
         
+        payment = Payment(method=Payment.Methods.square, product=product, user=user)
+        payment.save()
+        
+        # TODO: if square lets us add metadata to payments, we can use that to store the payment id, user_id and other info here, so we have a paper trail in case persisting payment to DB fails
         create_payment_response = client.payments.create_payment(
         body={
             "source_id": token,
             "idempotency_key": idempotency_key,
             "amount_money": {
-                "amount": 50,  # $1.00 charge
+                "amount": payment.product.amount_cents,
                 "currency": ACCOUNT_CURRENCY,
             },
         }
         )
         
-        print(create_payment_response.body)
+        payment.metadata = {"request_body": requestBody, "response_body": create_payment_response.body}
+        payment.save()
         
         if create_payment_response.is_success():
-            print(create_payment_response.body)
+            payment.completed_at = datetime.now()
+            payment.save()
             return JsonResponse(create_payment_response.body, safe=False)
         elif create_payment_response.is_error():
             return JsonResponse(create_payment_response.body, safe=False)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, safe=False, status_code=405)
+            
