@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from django.views import View
 from payments.models import Payment, Product
+from math import ceil
 
 
 config = configparser.ConfigParser()
@@ -37,7 +38,7 @@ ACCOUNT_COUNTRY = location["country"]
 # Create your views here.
 def can_purchase_product(product, user):
     """
-    Returns None if product can be purchased, otherwise returns a string explaining why it can't be purchased
+    Returns None if product can be purchased, otherwise returns a string messsage explaining why it can't be purchased
     """
     if product.max_purchases == -1:
         # Unlimited purchases
@@ -52,6 +53,15 @@ def can_purchase_product(product, user):
           return None
       else:
         return "You have reached the maximum number of purchases for this object."
+
+def product_cost_with_square_fee(product):
+  """
+  Returns the cost of the product with the Square fee applied. See https://developer.squareup.com/docs/payments-pricing#online-and-in-app-payments for reference.
+  """
+  # Square's fee per transaction is 30 cents, plus 2.9% of the transaction amount
+  square_fee = 30 + ceil(product.amount_cents * (0.029 / 100))
+  return product.amount_cents + square_fee
+  
 
 class PaymentSuccessView(View):
     template_name = 'payment_success.html'
@@ -92,7 +102,7 @@ def payment_form(request, product_id, user_id):
     return render(request, 'payment_form.html', {'APPLICATION_ID': APPLICATION_ID, 'LOCATION_ID': LOCATION_ID, 'ACCESS_TOKEN': ACCESS_TOKEN, 'PAYMENT_FORM_URL': PAYMENT_FORM_URL, 'ACCOUNT_CURRENCY': ACCOUNT_CURRENCY, 'ACCOUNT_COUNTRY': ACCOUNT_COUNTRY})
 
 @csrf_exempt
-def process_payment(request, product_id, user_id):
+def process_square_payment(request, product_id, user_id):
     if request.method == 'POST': 
         requestBody = json.loads(request.body)
         
@@ -102,22 +112,26 @@ def process_payment(request, product_id, user_id):
         product = get_object_or_404(Product, id=product_id)
         user = get_object_or_404(User, id=user_id)
         
-        payment = Payment(method=Payment.Methods.square, product=product, user=user)
+        message = can_purchase_product(product, user)
+        if message:
+          return JsonResponse({'square_res': {'errors': [{'detail': message}]}}, safe=False)
+        
+        payment = Payment(method=Payment.Methods.square_api, product=product, user=user, amount_cents=product_cost_with_square_fee(product))
         payment.save()
         
         # TODO: if square lets us add metadata to payments, we can use that to store the payment id, user_id and other info here, so we have a paper trail in case persisting payment to DB fails
         create_payment_response = client.payments.create_payment(
-        body={
+          body={
             "source_id": token,
             "idempotency_key": idempotency_key,
             "amount_money": {
-                "amount": payment.product.amount_cents,
+                "amount": payment.amount_cents,
                 "currency": ACCOUNT_CURRENCY,
             },
-        }
+          }
         )
         
-        payment.metadata = {"request_body": requestBody, "response_body": create_payment_response.body}
+        payment.metadata = {"square_response_body": create_payment_response.body}
         payment.save()
         
         if create_payment_response.is_success():

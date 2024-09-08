@@ -43,9 +43,11 @@ class Payment(models.Model):
     - verified_by is set to a user who can attest to the completion of the payment. This will usually be done by an officer in the admin panel, usually in the case of payments that aren't via Square like in-person cash payments.
     
   There are no (normal) cases where these 2 fields should be set at the same time. 
+  
+  We include the amount_cents field to track the amount of this payment in cents. The associated product's amount_cents will not necessarily match the amount_cents of the payment, since we may need to account for Square fees, which are added to the product's amount_cents to calculate the total amount_cents of the payment.
   """
   class Methods(models.TextChoices):
-    square = 'square', _('Square Online Payment')
+    square_api = 'square_api', _('Credit Card/Debit Card (Online)')
     cash = 'cash', _('In-Person Cash Payment')
     other = 'other', _('Other Payment Method')
     paypal = 'paypal', _('PayPal Payment (LEGACY - DO NOT USE FOR NEW PAYMENTS)')
@@ -54,11 +56,12 @@ class Payment(models.Model):
 
   user = models.ForeignKey('auth.User', on_delete=models.CASCADE, blank=False)
   product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=False)
+  amount_cents = models.IntegerField(validators=[MinValueValidator(0)])
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
   verified_by = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='verified_by', null=True)
   
-  # TODO: don't allow this to be set in admin panel?
+  # TODO: don't allow this to be set in admin panel? this is only for square payments, shouldn't be able to be manually set'
   completed_at = models.DateTimeField(null=True)
   notes = models.TextField(null=True)
   metadata = models.JSONField(null=True)
