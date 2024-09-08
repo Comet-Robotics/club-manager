@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .forms import PaymentSignInForm
 import configparser
-from datetime import datetime
+from django.utils import timezone
 import json
 from square.client import Client
 from django.http import JsonResponse
@@ -89,7 +89,7 @@ def process_payment(request, product_id, user_id):
         payment.save()
         
         if create_payment_response.is_success():
-            payment.completed_at = datetime.now()
+            payment.completed_at = timezone.now()
             payment.save()
             return JsonResponse(create_payment_response.body, safe=False)
         elif create_payment_response.is_error():
