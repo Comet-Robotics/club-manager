@@ -9,7 +9,7 @@ class Product(models.Model):
     A Product is an object representing a purchasable item. This is separate from the Term object so that we could reuse this for other usecases like merchandise.
     """
     name = models.CharField(max_length=100)
-    description = models.TextField()
+    description = models.TextField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     amount_cents = models.IntegerField(validators=[MinValueValidator(0)])
@@ -42,7 +42,7 @@ class Payment(models.Model):
     - completed_at is set to a datetime that represents the time the payment was completed. This field is intended for tracking completion of 'programmatic' payments, like those made via Square's API.
     - verified_by is set to a user who can attest to the completion of the payment. This will usually be done by an officer in the admin panel, usually in the case of payments that aren't via Square like in-person cash payments.
     
-  There are no cases where these 2 fields should be set at the same time. 
+  There are no (normal) cases where these 2 fields should be set at the same time. 
   """
   class Methods(models.TextChoices):
     square = 'square', _('Square Online Payment')
@@ -56,12 +56,12 @@ class Payment(models.Model):
   product = models.OneToOneField(Product, on_delete=models.CASCADE)
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
-  verified_by = models.OneToOneField('auth.User', on_delete=models.CASCADE, related_name='verified_by')
+  verified_by = models.OneToOneField('auth.User', on_delete=models.CASCADE, related_name='verified_by', null=True)
   
   # TODO: don't allow this to be set in admin panel?
-  completed_at = models.DateTimeField(null=True, blank=True)
-  notes = models.TextField()
-  metadata = models.JSONField()
+  completed_at = models.DateTimeField(null=True)
+  notes = models.TextField(null=True)
+  metadata = models.JSONField(null=True)
   method = models.CharField(choices=Methods, default=Methods.other)
   
   # TODO: virtual field for payment success?
