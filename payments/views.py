@@ -40,15 +40,15 @@ def can_purchase_product(product, user):
     """
     Returns None if product can be purchased, otherwise returns a string messsage explaining why it can't be purchased
     """
-    if product.max_purchases == -1:
+    if product.max_purchases_per_user == -1:
         # Unlimited purchases
         return None
-    elif product.max_purchases == 0:
+    elif product.max_purchases_per_user == 0:
       # No purchases allowed
       return "Payments are currently disabled for this object."
     else:
       # Purchases allowed, but need to check if user has reached max purchases
-      allowed = Payment.objects.filter(user=user, product=product).count() < product.max_purchases
+      allowed = Payment.objects.filter(user=user, product=product).count() < product.max_purchases_per_user
       if allowed:
           return None
       else:
