@@ -14,8 +14,8 @@ class Product(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     amount_cents = models.IntegerField(validators=[MinValueValidator(0)])
 
-    # -1 means unlimited purchases per user. 0 means no purchases allowed (maybe if we want to disable purchases). Any other positive number is the maximum number of purchases allowed per user
-    max_purchases = models.IntegerField(validators=[MinValueValidator(-1)])
+    # -1 means unlimited purchases per user. 0 means no user is allowed to purchase (maybe if we want to disable purchases). Any other positive number is the maximum number of purchases allowed per user. So setting this to 1 means that a user can only pay for this product once.
+    max_purchases_per_user = models.IntegerField(validators=[MinValueValidator(-1)])
 
     def __str__(self):
         return self.name
