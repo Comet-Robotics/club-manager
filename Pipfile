@@ -1,0 +1,20 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+django-extensions = "*"
+django-rename-app = "*"
+configparser = "*"
+squareup = "*"
+python-dotenv = "*"
+psycopg2-binary = "*"
+django = "*"
+py-cord = "*"
+django-tables2 = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.11"
