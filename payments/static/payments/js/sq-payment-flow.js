@@ -11,6 +11,9 @@ async function SquarePaymentFlow() {
 
   // Create ACH payment
   ACHPay(document.getElementById('ach-button'));
+
+  // Create Cash App payment
+  CashAppPay(document.getElementById('cash-app-pay'));
 }
 
 window.payments = Square.payments(window.applicationId, window.locationId);
