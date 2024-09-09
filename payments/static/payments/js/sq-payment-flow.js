@@ -55,6 +55,9 @@ window.createPayment = async function(token) {
       } else {
         window.showError('Payment Failed.');
       }
+      
+      // Generate a new idempotency key, so that we are able to fix typos / errors if payment fails. If this is not done, Square rejects the payment (because the idempotency key is already used) and so the user is forced to refresh and start over
+      window.idempotencyKey = window.crypto.randomUUID();
     } else {
       window.showSuccess('Payment Successful!');
       const paymentSuccessPage = res.payment_success_page;
