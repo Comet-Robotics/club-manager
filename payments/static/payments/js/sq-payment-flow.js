@@ -65,18 +65,6 @@ window.createPayment = async function(token) {
   }
 }
 
-// Hardcoded for testing purpose, only used for Apple Pay and Google Pay
-window.getPaymentRequest = function() {
-  return {
-    countryCode: window.country,
-    currencyCode: window.currency,
-    lineItems: [
-      { amount: '10.00', label: 'Fall 2024 Member Due', pending: false },
-    ],
-    requestBillingContact: false,
-    requestShippingContact: false,
-    total: { amount: '0.57', label: 'Total', pending: false },
-  };
-};
+
 
 SquarePaymentFlow();

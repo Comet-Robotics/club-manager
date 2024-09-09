@@ -1,4 +1,5 @@
 {% load static %}
+{% load filter %}
 <!DOCTYPE html>
     <html>
       <head>
@@ -16,6 +17,19 @@
             window.currency = '{{ ACCOUNT_CURRENCY }}';
             window.country = '{{ ACCOUNT_COUNTRY }}';
             window.idempotencyKey = window.crypto.randomUUID();
+            window.getPaymentRequest = function() {
+            return {
+              countryCode: window.country,
+              currencyCode: window.currency,
+              lineItems: [
+                { amount: '{{ product.amount_cents | cents_to_dollars }}', label: '{{product.name}}', pending: false },
+                { amount: '{{ process_fee | cents_to_dollars }}', label: 'Processing Fee', pending: false },
+              ],
+              requestBillingContact: false,
+              requestShippingContact: false,
+              total: { amount: '{{ total_cost | cents_to_dollars}}', label: 'Total', pending: false },
+            };
+};
         </script>
 
         <!-- link to the custom styles for Web SDK -->

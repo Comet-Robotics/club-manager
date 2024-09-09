@@ -83,21 +83,21 @@
                         <h3>{{ product.name }}</h3>
                         <p>{{product.description}}</p>
                     </div>
-                    <div class="item-price">{{ product.amount_cents | cents_to_dollars }}</div>
+                    <div class="item-price">${{ product.amount_cents | cents_to_dollars }}</div>
                 </div>
                 <div class="separator"></div>
                 <div class="summary">
                     <span>Subtotal</span>
-                    <span>{{ product.amount_cents | cents_to_dollars }}</span>
+                    <span>${{ product.amount_cents | cents_to_dollars }}</span>
                 </div>
                 <div class="summary">
                     <span>Processing Fee</span>
-                    <span>{{ process_fee | cents_to_dollars}}</span>
+                    <span>${{ process_fee | cents_to_dollars}}</span>
                 </div>
                 <div class="separator"></div>
                 <div class="summary">
                     <span>Total</span>
-                    <span>{{ total_cost | cents_to_dollars}}</span>
+                    <span>${{ total_cost | cents_to_dollars}}</span>
                 </div>
             </div>
         </div>

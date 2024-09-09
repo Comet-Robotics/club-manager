@@ -83,6 +83,7 @@ class ChooseUserView(View):
         product = get_object_or_404(Product, id=product_id)
         if form.is_valid():
             username = form.cleaned_data['username']
+            payment_choice = form.cleaned_data['payment_method']
             try:
                 user = User.objects.get(username=username)
             except User.DoesNotExist:
@@ -92,7 +93,12 @@ class ChooseUserView(View):
             if message:
                 return render(request, self.template_name, {'form': form, 'message': message, 'product_name': product.name})
             else:
-              return redirect('payment_form', product_id=product_id, user_id=user.id)
+                if payment_choice == 'square_api':
+                    return redirect('payment_form', product_id=product_id, user_id=user.id)
+                else:
+                    payment = Payment(method=Payment.Methods.cash, product=product, user=user, amount_cents=product.amount_cents)
+                    payment.save()
+                    return redirect('payment_success', payment_id=payment.id)
         return render(request, self.template_name, {'form': form, 'product_name': product.name})
 
 def product_payment(request, product_id, user_id):
@@ -100,9 +106,6 @@ def product_payment(request, product_id, user_id):
     process_fee = ceil(product.amount_cents * 0.029) + 30
     total_cost = product.amount_cents + process_fee
     return render(request, 'product_payment.html', {'product': product, 'user_id': user_id, 'process_fee': process_fee, 'total_cost': total_cost, 'APPLICATION_ID': APPLICATION_ID, 'LOCATION_ID': LOCATION_ID, 'ACCESS_TOKEN': ACCESS_TOKEN, 'PAYMENT_FORM_URL': PAYMENT_FORM_URL, 'ACCOUNT_CURRENCY': ACCOUNT_CURRENCY, 'ACCOUNT_COUNTRY': ACCOUNT_COUNTRY})
-
-def payment_form(request, product_id, user_id):
-    return render(request, 'payment_form.html', {'APPLICATION_ID': APPLICATION_ID, 'LOCATION_ID': LOCATION_ID, 'ACCESS_TOKEN': ACCESS_TOKEN, 'PAYMENT_FORM_URL': PAYMENT_FORM_URL, 'ACCOUNT_CURRENCY': ACCOUNT_CURRENCY, 'ACCOUNT_COUNTRY': ACCOUNT_COUNTRY})
 
 @csrf_exempt
 def process_square_payment(request, product_id, user_id):
