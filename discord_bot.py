@@ -1,9 +1,12 @@
+from asgiref.sync import sync_to_async
 import os
-# from ..clubManager.settings import *
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'clubManager.settings')
+
 import django
 import discord
-# django.setup()
+django.setup()
+
+from posters.models import Campaign
 
 bot = discord.Bot()
 
@@ -12,10 +15,17 @@ async def on_ready():
     print(f"{bot.user} is ready and online!")
 
 @bot.slash_command(description="Link your Discord account to your Comet Robotics account")
-async def link(ctx: discord.ApplicationContext, net_id: discord.Option(str, description="Your UT Dallas Net ID", required=True, min_length=9, max_length=9)):
+@discord.option(name="net_id", description="Your UT Dallas Net ID", required=True, min_length=9, max_length=9)
+async def link(
+    ctx: discord.ApplicationContext, 
+    net_id: str
+):
     ctx.respond("Processing...", ephemeral=True)
 
     # TODO: Implement this lol
+
+    campaign = await sync_to_async(Campaign.objects.get)()
+    await ctx.respond(f"{campaign.campaign_name}")
 
     net_id_is_in_db = True
 
