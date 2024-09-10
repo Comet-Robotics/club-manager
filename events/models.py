@@ -21,18 +21,17 @@ class Attendance(models.Model):
 class UserIdentification(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     student_id = models.CharField(max_length=20, unique=True)
-    
+
     def create_extended_user(net_id, student_id, first, last):
-        User.objects.create(username=net_id, first_name=first, last_name=last)
-        UserIdentification.objects.create(user=User.objects.get(username=net_id), student_id=student_id)
-        
+        user = UserIdentification.create_basic_user(net_id, first, last)
+        UserIdentification.objects.create(user=user, student_id=student_id)
+
     def create_basic_user(net_id, first, last):
-        User.objects.create(username=net_id, first_name=first, last_name=last)
-        
+        return User.objects.create(username=net_id, first_name=first, last_name=last)
+
     def link_user(user_id, student_id):
         UserIdentification.objects.create(user=User.objects.get(pk=user_id), student_id=student_id)
 
-    
     def __str__(self):
         return self.user.first_name + '_' + self.user.last_name + '_' + self.student_id
 
