@@ -1,0 +1,20 @@
+{
+  "configurations": [
+    {
+      "name": "Python Debugger: Discord Bot",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/discord_bot/main.py",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Python Debugger: Django",
+      "type": "debugpy",
+      "request": "launch",
+      "args": ["runserver"],
+      "django": true,
+      "autoStartBrowser": false,
+      "program": "${workspaceFolder}/manage.py"
+    }
+  ]
+}
