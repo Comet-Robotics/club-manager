@@ -1,0 +1,10 @@
+[Unit]
+Description=Discord bot for Comet Robotics
+
+[Service]
+User=comet
+WorkingDirectory=/home/comet/clubManager/clubManager
+ExecStart=pipenv run python discord_bot.py
+
+[Install]
+WantedBy=multi-user.target
