@@ -1,8 +1,10 @@
-# notes 
+# notes
 
 you'll need to install python 3.11 and [pipenv](https://pipenv.pypa.io/en/latest/#install-pipenv-today) before continuing.
 
 first, install deps and create virtualenv: `pipenv install`
+
+obtain the config.ini from Jason or Mason for Square
 
 run server: `pipenv run python manage.py runserver`
 run migrations: `pipenv run python manage.py migrate`
