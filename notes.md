@@ -13,4 +13,3 @@ run static: `pipenv run python manage.py collectstatic`
 create superuser: `pipenv run python manage.py createsuperuser`
 
 to redeploy: `git switch main && git pull && pipenv install && pipenv run python manage.py migrate && pipenv run python manage.py collectstatic && sudo systemctl restart gunicorn && sudo systemctl restart discord_bot`
-
