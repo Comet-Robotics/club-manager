@@ -1,0 +1,12 @@
+{% extends "publicBase.html" %}
+{% block title %}Link Social{% endblock %}
+
+
+
+{% block content %}
+<h1>Link Social</h1>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Confirm</button>
+</form>
+{% endblock %}
