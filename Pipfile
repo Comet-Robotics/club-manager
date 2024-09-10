@@ -4,16 +4,16 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django-extensions = "*"
-django-rename-app = "*"
-configparser = "*"
-squareup = "*"
-python-dotenv = "*"
-psycopg2-binary = "*"
-django = "*"
-py-cord = "*"
-django-tables2 = "*"
-gunicorn = "*"
+python-dotenv = "~=1.0.1"
+django = "~=5.1.1"
+py-cord = "~=2.6.0"
+django-extensions = "~=3.2.3"
+django-rename-app = "~=0.1.7"
+django-tables2 = "2.7.0"
+configparser = "~=7.1.0"
+squareup = "~=38.0.0.20240821"
+psycopg2-binary = "~=2.9.9"
+gunicorn = "~=23.0.0"
 
 [dev-packages]
 
