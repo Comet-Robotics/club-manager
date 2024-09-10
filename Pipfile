@@ -13,6 +13,7 @@ psycopg2-binary = "*"
 django = "*"
 py-cord = "*"
 django-tables2 = "*"
+gunicorn = "*"
 
 [dev-packages]
 
