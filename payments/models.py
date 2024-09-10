@@ -22,53 +22,54 @@ class Product(models.Model):
 
 
 class Term(models.Model):
-  """
-  A Term is an object representing a term in a school year. This is used to help track member dues for each semester. A Term is associated with a Product which would hold the member dues amount for that term. A user has 'paid dues' for a term if they have a Payment object associated with that term's Product.
-  """
-  name = models.CharField(max_length=100)
-  start_date = models.DateField()
-  end_date = models.DateField()
-  created_at = models.DateTimeField(auto_now_add=True)
-  updated_at = models.DateTimeField(auto_now=True)
-  product = models.OneToOneField(Product, on_delete=models.CASCADE)
+    """
+    A Term is an object representing a term in a school year. This is used to help track member dues for each semester. A Term is associated with a Product which would hold the member dues amount for that term. A user has 'paid dues' for a term if they have a Payment object associated with that term's Product.
+    """
+    name = models.CharField(max_length=100)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    product = models.OneToOneField(Product, on_delete=models.CASCADE)
 
-  def __str__(self):
-    return self.name
+    def __str__(self):
+        return self.name
 
 
 class Payment(models.Model):
-  """
-  A Payment is an object representing a payment made by a user for a product. A Payment is 'successful' if one of the following conditions is met:
-    - completed_at is set to a datetime that represents the time the payment was completed. This field is intended for tracking completion of 'programmatic' payments, like those made via Square's API.
-    - verified_by is set to a user who can attest to the completion of the payment. This will usually be done by an officer in the admin panel, usually in the case of payments that aren't via Square like in-person cash payments.
+    """
+    A Payment is an object representing a payment made by a user for a product. A Payment is 'successful' if one of the following conditions is met:
+      - completed_at is set to a datetime that represents the time the payment was completed. This field is intended for tracking completion of 'programmatic' payments, like those made via Square's API.
+      - verified_by is set to a user who can attest to the completion of the payment. This will usually be done by an officer in the admin panel, usually in the case of payments that aren't via Square like in-person cash payments.
+      
+    There are no (normal) cases where these 2 fields should be set at the same time. 
     
-  There are no (normal) cases where these 2 fields should be set at the same time. 
-  
-  We include the amount_cents field to track the amount of this payment in cents. The associated product's amount_cents will not necessarily match the amount_cents of the payment, since we may need to account for Square fees, which are added to the product's amount_cents to calculate the total amount_cents of the payment.
-  """
-  class Methods(models.TextChoices):
-    square_api = 'square_api', _('Credit Card/Debit Card (Online)')
-    cash = 'cash', _('In-Person Cash Payment')
-    other = 'other', _('Other Payment Method')
-    paypal = 'paypal', _('PayPal Payment (LEGACY - DO NOT USE FOR NEW PAYMENTS)')
-    venmo = 'venmo', _('Venmo Payment (LEGACY - DO NOT USE FOR NEW PAYMENTS)')
-    cashapp = 'cashapp', _('Cash App Payment (LEGACY - DO NOT USE FOR NEW PAYMENTS)')
+    We include the amount_cents field to track the amount of this payment in cents. The associated product's amount_cents will not necessarily match the amount_cents of the payment, since we may need to account for Square fees, which are added to the product's amount_cents to calculate the total amount_cents of the payment.
+    """
+    class Methods(models.TextChoices):
+        square_api = 'square_api', _('Credit Card/Debit Card (Online)')
+        cash = 'cash', _('In-Person Cash Payment')
+        other = 'other', _('Other Payment Method')
+        paypal = 'paypal', _('PayPal Payment (LEGACY - DO NOT USE FOR NEW PAYMENTS)')
+        venmo = 'venmo', _('Venmo Payment (LEGACY - DO NOT USE FOR NEW PAYMENTS)')
+        cashapp = 'cashapp', _('Cash App Payment (LEGACY - DO NOT USE FOR NEW PAYMENTS)')
 
-  user = models.ForeignKey('auth.User', on_delete=models.CASCADE, blank=False)
-  product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=False)
-  amount_cents = models.IntegerField(validators=[MinValueValidator(0)])
-  created_at = models.DateTimeField(auto_now_add=True)
-  updated_at = models.DateTimeField(auto_now=True)
-  verified_by = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='verified_by', null=True)
-  
-  # TODO: don't allow this to be set in admin panel? this is only for square payments, shouldn't be able to be manually set'
-  completed_at = models.DateTimeField(null=True)
-  notes = models.TextField(null=True)
-  metadata = models.JSONField(null=True)
-  method = models.CharField(choices=Methods, default=Methods.other)
-  
-  # TODO: virtual field for payment success?
+    user = models.ForeignKey('auth.User', on_delete=models.CASCADE, blank=False)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=False)
+    amount_cents = models.IntegerField(validators=[MinValueValidator(0)])
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    verified_by = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='verified_by', null=True)
 
-  def __str__(self):
-    return f"{self.user.username} - {self.product.name}"
+    notes = models.TextField(null=True, blank=True)
+    method = models.CharField(choices=Methods, default=Methods.other)
+
+    # excluded from admin panel
+    completed_at = models.DateTimeField(null=True)
+    metadata = models.JSONField(null=True)
+
+    # TODO: virtual field for payment success?
+
+    def __str__(self):
+        return f"{self.user.username} - {self.product.name}"
  
