@@ -11,25 +11,42 @@ bot = discord.Bot()
 async def on_ready():
     print(f"{bot.user} is ready and online!")
 
-@bot.slash_command(name="please", description="A simple hello command")
-async def please(ctx: discord.ApplicationContext):
-    embed = discord.Embed(
-        title="My Amazing Embed",
-        description="Embeds are super easy, barely an inconvenience.",
-        color=discord.Colour.blurple(), # Pycord provides a class with default colors you can choose from
-    )
-    embed.add_field(name="A Normal Field", value="A really nice field with some information. **The description as well as the fields support markdown!**")
+@bot.slash_command(description="Link your Discord account to your Comet Robotics account")
+async def link(ctx: discord.ApplicationContext, net_id: discord.Option(str, description="Your UT Dallas Net ID", required=True, min_length=9, max_length=9)):
+    ctx.respond("Processing...", ephemeral=True)
 
-    embed.add_field(name="Inline Field 1", value="Inline Field 1", inline=True)
-    embed.add_field(name="Inline Field 2", value="Inline Field 2", inline=True)
-    embed.add_field(name="Inline Field 3", value="Inline Field 3", inline=True)
+    # TODO: Implement this lol
+
+    net_id_is_in_db = True
+
+    if not net_id_is_in_db:
+        return
+
+    net_id_is_linked = False
+
+    if net_id_is_linked:
+        await ctx.respond("That Net ID is already linked to a Discord account. Ping an officer if this looks wrong.", ephemeral=True)
+        return
+
+    discord_id_is_linked = False
+    
+    if discord_id_is_linked:
+        await ctx.respond("This Discord account is already linked to a Comet Robotics account. Ping an officer if this looks wrong.", ephemeral=True)
+        return
+
+    email = f"{net_id}@utdallas.edu"
+    await ctx.respond(f"Sending email to {email}...", ephemeral=True)
+    
+    # TODO: send email
+
+    embed = discord.Embed(
+        title="Email sent!",
+        description=f"Check your email (`{email}`) and click the link to connect your Discord account to your Comet Robotics account.",  
+        color=discord.Colour.red(),
+    )
  
-    embed.set_footer(text="Footer! No markdown here.") # footers can have icons too
-    embed.set_author(name="Pycord Team", icon_url="https://example.com/link-to-my-image.png")
-    embed.set_thumbnail(url="https://example.com/link-to-my-thumbnail.png")
-    embed.set_image(url="https://example.com/link-to-my-banner.png")
- 
-    await ctx.respond("Hello! Here's a cool embed.", embed=embed, ephemeral=True)
+    await ctx.respond(":tada:", embed=embed, ephemeral=True)
+
  
 bot.run(os.getenv("DISCORD_TOKEN"))
 
