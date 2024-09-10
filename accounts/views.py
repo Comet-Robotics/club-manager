@@ -25,3 +25,9 @@ class LinkSocialView(View):
         account_link.delete()
 
         return redirect('link_success')
+
+class LinkSuccessView(View):
+    template_name = 'link_success.html'
+
+    def get(self, request):
+        return render(request, self.template_name)
