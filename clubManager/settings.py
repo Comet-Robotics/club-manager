@@ -35,20 +35,21 @@ CSRF_TRUSTED_ORIGINS = ['https://portal.cometrobotics.org', 'http://127.0.0.1']
 # Application definition
 
 INSTALLED_APPS = [
-    'core.apps.CoreConfig',
-    'posters.apps.PostersConfig',
-    'events.apps.EventsConfig',
-    'payments.apps.PaymentsConfig',
-    'accounts.apps.AccountsConfig',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django_tables2',
-    'django_rename_app',
-        "django_extensions",
+    "core.apps.CoreConfig",
+    "posters.apps.PostersConfig",
+    "events.apps.EventsConfig",
+    "payments.apps.PaymentsConfig",
+    "accounts.apps.AccountsConfig",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django_tables2",
+    "django_rename_app",
+    "django_extensions",
+    "computedfields",
 ]
 
 MIDDLEWARE = [
