@@ -4,6 +4,7 @@ from .models import AccountLink
 from core.models import UserProfile
 import discord
 from clubManager import settings
+from asgiref.sync import sync_to_async
 
 client = discord.Client()
 logged_into_discord = False
@@ -13,7 +14,7 @@ class LinkSocialView(View):
 
     async def get(self, request, uuid):
         global logged_into_discord
-        account_link = AccountLink.objects.get(uuid=uuid)
+        account_link = await sync_to_async(AccountLink.objects.get)(uuid=uuid)
         user = account_link.user
         link_type = account_link.link_type
         social_id = account_link.social_id
@@ -30,15 +31,15 @@ class LinkSocialView(View):
             username = user.name
         return render(request, self.template_name, {'user': user, 'link_type': link_type, 'social_id': social_id, 'pfp': pfp, 'username': username})
 
-    def post(self, request, uuid):
-        account_link = AccountLink.objects.get(uuid=uuid)
+    async def post(self, request, uuid):
+        account_link = await sync_to_async(AccountLink.objects.get)(uuid=uuid)
         user = account_link.user
-        user_profile, created = UserProfile.objects.get_or_create(user=user)
+        user_profile, created = await sync_to_async(UserProfile.objects.get_or_create)(user=user)
         link_type = account_link.link_type
         if (link_type == 'discord'):
             user_profile.discord_id = account_link.social_id
-            user_profile.save()
-        account_link.delete()
+            await sync_to_async(user_profile.save)()
+        await sync_to_async(account_link.delete)()
 
         return redirect('link_success')
 
