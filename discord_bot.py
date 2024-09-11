@@ -85,8 +85,6 @@ async def link(
     email = f"{net_id}@utdallas.edu"
     await ctx.respond(f"Sending email to {email}...", ephemeral=True, delete_after=3.0)
 
-    # TODO: send email
-
     def send_the_email():
         send_mail(
             "Link your Discord to your Comet Robotics account",
@@ -128,7 +126,3 @@ Thanks!
 
 bot.run(os.getenv("DISCORD_TOKEN"))
 
-# TODO: need a way to either start this alongside the django server, or create a separate systemd service for it
-# now that i think about it, running along side django might be weird because the web server (gunicorn?) does some stuff with threads and i don't know if that means we end up running N instances of the bot or not. separate service might be easier idk
-
-# Resolution 2024-09-09: just use another systemd process?

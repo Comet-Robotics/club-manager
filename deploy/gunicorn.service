@@ -6,7 +6,7 @@ After=network.target
 [Service]
 User=comet
 WorkingDirectory=/home/comet/clubManager/clubManager
-ExecStart=pipenv run gunicorn --bind unix:/run/gunicorn.sock clubManager.wsgi --access-logfile - --workers 3
+ExecStart=pipenv --python /usr/bin/python3.11 run gunicorn --bind unix:/run/gunicorn.sock clubManager.wsgi --access-logfile - --workers 3
 
 [Install]
 WantedBy=multi-user.target

@@ -6,7 +6,7 @@ note that for a production deployment, you'll need to install pipenv globally as
 
 first, install deps and create virtualenv: `pipenv install`
 
-obtain the config.ini from Jason or Mason for Square
+obtain the config.ini from Jason or Mason for Square, place at root of project
 
 run server: `pipenv run python manage.py runserver`
 run migrations: `pipenv run python manage.py migrate`
@@ -16,4 +16,7 @@ create superuser: `pipenv run python manage.py createsuperuser`
 
 to \[re-\]deploy: `./deploy/run.sh`
 
->>>>>>> df72590 (deployment updates)
+viewing logs
+- `journalctl -u gunicorn.service`
+- `journalctl -u gunicorn.socket`
+- `journalctl -u discord_bot.service`
