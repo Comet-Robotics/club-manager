@@ -5,6 +5,7 @@ from core.models import UserProfile
 import discord
 from clubManager import settings
 from asgiref.sync import sync_to_async
+import requests
 
 client = discord.Client()
 logged_into_discord = False
@@ -21,14 +22,11 @@ class LinkSocialView(View):
         pfp = None
         username = None
         if link_type == 'discord':
-            if not logged_into_discord:
-                await client.login(settings.DISCORD_TOKEN)
-                logged_into_discord = True
             discord_id = int(account_link.social_id)
-            user = await client.fetch_user(discord_id) 
-            if user.avatar:
-                pfp = user.avatar.url
-            username = user.name
+            user = get_discord_user(discord_id, settings.DISCORD_TOKEN)
+            if user:
+                username = user['username']
+                pfp = user['avatar']
         return render(request, self.template_name, {'user': user, 'link_type': link_type, 'social_id': social_id, 'pfp': pfp, 'username': username})
 
     async def post(self, request, uuid):
@@ -48,3 +46,18 @@ class LinkSuccessView(View):
 
     def get(self, request):
         return render(request, self.template_name)
+
+
+def get_discord_user(user_id, bot_token) -> dict | None:
+    url = f"https://discord.com/api/v10/users/{user_id}"
+    headers = {
+        "Authorization": f"Bot {bot_token}"
+    }
+    
+    response = requests.get(url, headers=headers)
+    
+    if not response.status_code == 200:
+        return None
+    
+    user_data = response.json()
+    return user_data

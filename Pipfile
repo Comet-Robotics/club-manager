@@ -14,5 +14,6 @@ configparser = "~=7.1.0"
 squareup = "~=38.0.0.20240821"
 psycopg2-binary = "~=2.9.9"
 gunicorn = "~=23.0.0"
+requests = "*"
 
 [dev-packages]
