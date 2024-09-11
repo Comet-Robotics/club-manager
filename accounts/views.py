@@ -27,8 +27,7 @@ class LinkSocialView(View):
             if user:
                 username = user['username']
                 if 'avatar' in user:
-                    pfp = f"https://cdn.discordapp.com/{user['avatar']}.png"
-        print(pfp, username)
+                    pfp = f"https://cdn.discordapp.com/avatars/{discord_id}/{user['avatar']}.png"
         return render(request, self.template_name, {'user': user, 'link_type': link_type, 'social_id': social_id, 'pfp': pfp, 'username': username})
 
     def post(self, request, uuid):
