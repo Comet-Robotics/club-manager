@@ -2,7 +2,9 @@ from django.shortcuts import render, redirect
 from django.views import View
 from .models import AccountLink
 from core.models import UserProfile
+import discord
 
+client = discord.Client()
 
 class LinkSocialView(View):
     template_name = 'link_social.html'
@@ -12,7 +14,11 @@ class LinkSocialView(View):
         user = account_link.user
         link_type = account_link.link_type
         social_id = account_link.social_id
-        return render(request, self.template_name, {'user': user, 'link_type': link_type, 'social_id': social_id})
+        pfp = None
+        if link_type == 'discord':
+            #   TODO: get pfp from discord
+          pass
+        return render(request, self.template_name, {'user': user, 'link_type': link_type, 'social_id': social_id, 'pfp': pfp})
 
     def post(self, request, uuid):
         account_link = AccountLink.objects.get(uuid=uuid)

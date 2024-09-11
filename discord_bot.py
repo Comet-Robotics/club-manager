@@ -2,6 +2,7 @@ from asgiref.sync import sync_to_async
 import os
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'clubManager.settings')
+from clubManager import settings
 
 import django
 import discord
@@ -72,7 +73,7 @@ async def link(
     discord_id_is_linked = await sync_to_async(is_discord_linked)()
 
     if discord_id_is_linked:
-        await ctx.respond("This Discord account is already linked to a Comet Robotics account. Ping an officer if this looks wrong.", ephemeral=True)
+        await ctx.respond("Your Discord account is already linked to a Comet Robotics account. Ping an officer if this looks wrong.", ephemeral=True)
         return
 
 
@@ -95,17 +96,11 @@ You have requested to link your Discord account with your Comet Robotics account
 
 Full Name: {user.first_name} {user.last_name}
 Discord Name: {author_name}
-NetID: {net_id}
+Net ID: {net_id}
 
-If the above information is correct, click the button below:
+If the above information is correct, click on <a href="https://portal.cometrobotics.org/accounts/link/{account_link.uuid}">this link</a> to connect your Discord account to your Comet Robotics account.
 
--Button-
-
-or click on this link: https://portal.cometrobotics.org/accounts/link/{account_link.uuid}
-
-If the name is incorrect, contact an officer.
-
-If this was not you, you can safely ignore this email.
+If the name is incorrect, reply to this email and we'll get back to you. If this was not you, you can safely ignore this email.
 
 Thanks!
 """,
@@ -124,5 +119,5 @@ Thanks!
     await ctx.respond(":tada:", embed=embed, ephemeral=True)
 
 
-bot.run(os.getenv("DISCORD_TOKEN"))
+bot.run(settings.DISCORD_TOKEN)
 

@@ -17,6 +17,6 @@ create superuser: `pipenv run python manage.py createsuperuser`
 to \[re-\]deploy: `./deploy/run.sh`
 
 viewing logs
-- `journalctl -u gunicorn.service`
-- `journalctl -u gunicorn.socket`
-- `journalctl -u discord_bot.service`
+- `journalctl -e -u gunicorn.service`
+- `journalctl -e -u gunicorn.socket`
+- `journalctl -e -u discord_bot.service`
