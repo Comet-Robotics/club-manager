@@ -125,7 +125,6 @@ def process_square_payment(request, product_id, user_id):
         payment = Payment(method=Payment.Methods.square_api, product=product, user=user, amount_cents=product_cost_with_square_fee(product))
         payment.save()
         
-        # TODO: if square lets us add metadata to payments, we can use that to store the payment id, user_id and other info here, so we have a paper trail in case persisting payment to DB fails
         create_payment_response = client.payments.create_payment(
           body={
             "source_id": token,
@@ -134,6 +133,8 @@ def process_square_payment(request, product_id, user_id):
                 "amount": payment.amount_cents,
                 "currency": ACCOUNT_CURRENCY,
             },
+            "reference_id": str(payment.pk),
+            "note": str(payment),
           }
         )
         
