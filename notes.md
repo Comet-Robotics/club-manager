@@ -2,6 +2,8 @@
 
 you'll need to install python 3.11 and [pipenv](https://pipenv.pypa.io/en/latest/#install-pipenv-today) before continuing.
 
+note that for a production deployment, you'll need to install pipenv globally as opposed to just for the current user which is recommended in pipenv docs: `sudo pip install pipenv`
+
 first, install deps and create virtualenv: `pipenv install`
 
 obtain the config.ini from Jason or Mason for Square
@@ -12,4 +14,6 @@ create migrations: `pipenv run python manage.py makemigrations`
 run static: `pipenv run python manage.py collectstatic`
 create superuser: `pipenv run python manage.py createsuperuser`
 
-to redeploy: `git switch main && git pull && pipenv install && pipenv run python manage.py migrate && pipenv run python manage.py collectstatic && sudo systemctl restart gunicorn && sudo systemctl restart discord_bot`
+to \[re-\]deploy: `./deploy/run.sh`
+
+>>>>>>> df72590 (deployment updates)
