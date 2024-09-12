@@ -66,7 +66,7 @@ class Payment(ComputedFieldsModel):
     # created_at = models.DateTimeField(auto_now_add=True)  # TODO
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-    verified_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='verified_by', null=True, validators=[validate_staff])
+    verified_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='verified_by', null=True, blank=True, validators=[validate_staff])
 
     notes = models.TextField(null=True, blank=True)
     method = models.CharField(choices=Methods, default=Methods.other)
