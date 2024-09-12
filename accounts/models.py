@@ -12,4 +12,4 @@ class AccountLink(models.Model):
     social_id = models.CharField(max_length=200)
 
     def __str__(self):
-        return self.user.first_name
+        return f"{self.link_type} - {self.user.first_name} {self.user.last_name}"
