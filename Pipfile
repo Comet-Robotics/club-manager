@@ -11,10 +11,11 @@ django-extensions = "~=3.2.3"
 django-rename-app = "~=0.1.7"
 django-tables2 = "2.7.0"
 django-computedfields = "~=0.2.6"
+django-admin-list-filter-dropdown = "~=1.0.3"
 configparser = "~=7.1.0"
 squareup = "~=38.0.0.20240821"
 psycopg2-binary = "~=2.9.9"
 gunicorn = "~=23.0.0"
-requests = "*"
+requests = "~=2.32.3"
 
 [dev-packages]
