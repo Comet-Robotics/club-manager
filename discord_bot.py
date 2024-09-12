@@ -170,8 +170,8 @@ async def profile(ctx):
         current_term, current_payment = user_profile.is_member() 
         body = "**Current Membership:** " + ("Not a member" if not current_payment else f"Active for {current_term.name}")
         
-        past_terms: list[Term] = Term.objects.filter(end_date__lte=models.functions.Now())
-        future_terms: list[Term] = Term.objects.filter(start_date__gte=models.functions.Now()).exclude(pk=current_term.pk)
+        past_terms: list[Term] = Term.objects.filter(end_date__lte=timezone.now())
+        future_terms: list[Term] = Term.objects.filter(start_date__gte=timezone.now()).exclude(pk=current_term.pk)
 
         paid_future_terms = [term for term in future_terms if user_profile.is_member(term)[1]]
         if len(paid_future_terms) > 0:
