@@ -69,7 +69,7 @@ class Payment(ComputedFieldsModel):
     # excluded from admin panel
     completed_at = models.DateTimeField(null=True)
     metadata = models.JSONField(null=True)
-    
+
     @computed(models.BooleanField(), depends=[('self', ['verified_by', 'completed_at'])])
     def is_successful(self):
         return bool(self.verified_by or self.completed_at)

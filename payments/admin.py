@@ -8,6 +8,7 @@ from .models import Product, Payment, Term
 
 class PaymentAdmin(admin.ModelAdmin):
     exclude = ["completed_at", "metadata"]
+    readonly_fields = ["created_at", "updated_at"]
 
 admin.site.register(Product, search_fields=["name"])
 admin.site.register(Term, search_fields=["name"] + SearchFields.PRODUCT)
