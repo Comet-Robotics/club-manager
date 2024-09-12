@@ -177,7 +177,7 @@ async def profile(ctx: discord.ApplicationContext):
     embed.add_field(name="Basic Info", value=basic_info, inline=False)
     embed.add_field(name="Membership Status", value=membership_status, inline=False)
 
-    await ctx.respond(embed=embed, ephemeral=True, view=ProfileActionsView(term_name, due_paying_url))
+    await ctx.respond(embed=embed, ephemeral=True, view=ProfileActionsView(term_name, due_paying_url, user_profile))
 
 
 class ProfileActionsView(discord.ui.View):
