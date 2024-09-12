@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.contrib.auth.models import User
 from django.dispatch import receiver
+from django.utils.translation import gettext_lazy as _
 
 from clubManager import settings
 from payments.models import Payment, Term
@@ -9,10 +10,13 @@ import discord
 
 # Create your models here.
 class UserProfile(models.Model):
-    GENDER_CHOICES = (('M', 'Male'),('F', 'Female'),('O', 'Other'))
+    class GenderChoice(models.TextChoices):
+        MALE = 'M', _('Male')
+        FEMALE = 'F', _('Female')
+        OTHER = 'O', _('Other')
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, null=True, blank=True)
+    gender = models.CharField(max_length=1, choices=GenderChoice.choices, null=True, blank=True)
     discord_id = models.CharField(max_length=200, null=True, blank=True, unique=True)
 
     def __str__(self):
@@ -43,11 +47,6 @@ class UserProfile(models.Model):
             # TODO apply roles
 
         return roles_to_apply
-        
-
-            
-
-
 
 
 @receiver(post_save, sender=User)

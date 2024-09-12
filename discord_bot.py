@@ -136,9 +136,8 @@ Net ID: {net_id}</p>
 @bot.slash_command(name="profile", description="View your Comet Robotics profile")
 async def profile(ctx):
     user = ctx.author
-    try:
-        user_profile = await sync_to_async(UserProfile.objects.get)(discord_id=str(user.id))
-    except UserProfile.DoesNotExist:
+    user_profile = await get_profile_async(discord_id=str(user.id))
+    if user_profile is None:
         await ctx.respond("You don't have a linked Comet Robotics account. Use the `/link` command to connect your Comet Robotics account to your Discord account.", ephemeral=True)
         return
 
@@ -146,9 +145,8 @@ async def profile(ctx):
         return f"""
         **Full Name:** {user_profile.user.first_name} {user_profile.user.last_name}
         **Net ID:** {user_profile.user.username}
-        **Gender:** {user_profile.gender if user_profile.gender else 'Not specified'}
+        **Gender:** {UserProfile.GenderChoice(user_profile.gender).label if user_profile.gender else 'Not specified'}
         """
-
     basic_info = await sync_to_async(get_basic_info)(user_profile)
 
     # Membership Status
@@ -250,6 +248,6 @@ async def thelist(ctx: discord.ApplicationContext):
     )
 
     await ctx.respond(embed=embed, view=ListView(), ephemeral=False)
-    
+
 
 bot.run(settings.DISCORD_TOKEN)
