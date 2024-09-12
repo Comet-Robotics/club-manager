@@ -30,7 +30,7 @@ class UserProfile(models.Model):
     
     def apply_discord_roles(self, dry_run=False): 
         roles_to_apply = []
-        if self.is_member():
+        if self.is_member()[1]:
             pass
             
 

@@ -169,11 +169,11 @@ async def profile(ctx):
         past_terms: list[Term] = []
         future_terms: list[Term] = []
 
-        paid_future_terms = [term for term in future_terms if user_profile.is_member(term)]
+        paid_future_terms = [term for term in future_terms if user_profile.is_member(term)[1]]
         if len(paid_future_terms) > 0:
             body += f"\n**Dues paid for future term(s)**: {', '.join([t.name for t in paid_future_terms])}"
 
-        past_terms_info = ", ".join([term.name for term in past_terms if user_profile.is_member(term)]) if len(past_terms) > 0 else "No past memberships"
+        past_terms_info = ", ".join([term.name for term in past_terms if user_profile.is_member(term)[1]]) if len(past_terms) > 0 else "No past memberships"
 
         body += f"\n**Past Memberships:** {past_terms_info}"
 
