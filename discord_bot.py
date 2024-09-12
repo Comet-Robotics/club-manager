@@ -44,8 +44,8 @@ async def link(
     user = await sync_to_async(get_user)()
 
     if user is None:
-        # await ctx.respond("Your Net ID was not found in our database. If you're sure it's correct, use the `/create` command to create a new account with that Net ID.")
-        await ctx.respond("Your Net ID was not found in our database. Contact an officer to get an account set up.")  # TODO
+        # await ctx.respond("Your Net ID was not found in our database. If you're sure it's correct, use the `/create` command to create a new account with that Net ID.", ephemeral=True, delete_after=3.0)
+        await ctx.respond("Your Net ID was not found in our database. Contact an officer to get an account set up.", ephemeral=True, delete_after=3.0)  # TODO
         return
 
     def get_profile():
