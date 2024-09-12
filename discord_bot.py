@@ -16,7 +16,9 @@ from common.utils import is_valid_net_id
 from django.utils import timezone
 import subprocess
 import socket
+import random
 
+LIST = ["Cafe Brazil", "Biryaniify", "Bulldog Katsu", "LA Burger", "Torchy's Tacos", "Velvet Taco"]
 
 bot = discord.Bot()
 
@@ -248,5 +250,22 @@ async def pay(ctx: discord.ApplicationContext):
 # TODO: /create
 # TODO: /edit
 
+
+class ListView(discord.ui.View):
+    @discord.ui.button(label="I'm Feeling Lucky!", style=discord.ButtonStyle.primary, emoji="🎲") 
+    async def button_callback(self, button, interaction):
+        randomChoice = random.choice(LIST)
+        await interaction.response.send_message(randomChoice, delete_after=10.0)
+
+@bot.slash_command(description="View THE LIST")
+async def thelist(ctx: discord.ApplicationContext):
+    embed = discord.Embed(
+        title="The List",
+        description="\n".join(LIST),
+        color=discord.Color.red()
+    )
+
+    await ctx.respond(embed=embed, view=ListView(), ephemeral=False)
+    
 
 bot.run(settings.DISCORD_TOKEN)
