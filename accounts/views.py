@@ -23,11 +23,11 @@ class LinkSocialView(View):
         username = None
         if link_type == 'discord':
             discord_id = int(account_link.social_id)
-            user = get_discord_user(discord_id, settings.DISCORD_TOKEN)
-            if user:
-                username = user['username']
-                if 'avatar' in user:
-                    pfp = f"https://cdn.discordapp.com/avatars/{discord_id}/{user['avatar']}.png"
+            socialUser = get_discord_user(discord_id, settings.DISCORD_TOKEN)
+            if socialUser:
+                username = socialUser['username']
+                if 'avatar' in socialUser:
+                    pfp = f"https://cdn.discordapp.com/avatars/{discord_id}/{socialUser['avatar']}.png"
         return render(request, self.template_name, {'user': user, 'link_type': link_type, 'social_id': social_id, 'pfp': pfp, 'username': username})
 
     def post(self, request, uuid):

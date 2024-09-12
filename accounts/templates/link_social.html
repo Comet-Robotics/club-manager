@@ -4,9 +4,16 @@
 
 
 {% block content %}
-<h1>Link Social</h1>
-<form method="post">
-    {% csrf_token %}
-    <button type="submit">Confirm</button>
-</form>
+<body style="display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 2em;">
+    <h2 style="font-size: 1.5em;">Hey <strong>{{user.first_name}}</strong></h2>
+    <h2 style="font-size: 1.5em;">you are linking the following Discord account</h2>
+    <div style="margin: 1em;">
+        {% include "_discord_card.html" %}
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <button style="border: solid #818181 3px; padding: .5em; border-radius: 10px;"type="submit">Confirm</button>
+    </form>
+</body>
+
 {% endblock %}
