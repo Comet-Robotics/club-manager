@@ -13,6 +13,8 @@ from django.core.mail import send_mail
 from accounts.models import AccountLink
 from core.models import User, UserProfile
 from common.utils import is_valid_net_id
+from django.utils import timezone
+
 
 bot = discord.Bot()
 
@@ -212,8 +214,32 @@ async def version(ctx: discord.ApplicationContext):
         await ctx.respond(f"An error occurred while fetching version information: {str(e)}", ephemeral=True)
 
 
-# TODO: /pay - links to payment page for term
+@bot.slash_command(description="Pay your member dues to become a Comet Robotics member")
+async def pay(ctx: discord.ApplicationContext):
+
+    def get_payment_links():
+        user = UserProfile.objects.get(discord_id=str(ctx.author.id))
+        active_terms = Term.objects.filter(end_date__gte=timezone.now())
+        if not active_terms:
+            ctx.respond("No active terms available for payment.",  ephemeral=True)
+
+        payment_links = [(f"[Pay for {term.name}](https://portal.cometrobotics.org/payments/{term.product.id}/pay/)" + ('(you\'ve already paid this term\'s dues)' if user.is_member(term)[1] else '')) for term in active_terms]
+        return "\n".join(payment_links)
+
+    payment_links = await sync_to_async(get_payment_links)()
+
+    embed = discord.Embed(
+        title="Become a Comet Robotics Member",
+        description=payment_links,
+        color=discord.Colour.red()
+    )
+    embed.set_footer(text="Click on the links to pay for the respective terms.")
+
+    await ctx.respond(embed=embed, ephemeral=True)
+
+
 # TODO: /create
 # TODO: /edit
+
 
 bot.run(settings.DISCORD_TOKEN)
