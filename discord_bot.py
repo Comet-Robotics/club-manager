@@ -192,6 +192,26 @@ async def profile(ctx):
     await ctx.respond(embed=embed, ephemeral=True)
 
 
+import subprocess
+import socket
+
+@bot.slash_command(description="Get the current version of the bot")
+async def version(ctx: discord.ApplicationContext):
+    try:
+        commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode('utf-8')
+        commit_message = subprocess.check_output(["git", "log", "-1", "--pretty=%B"]).strip().decode('utf-8')
+        hostname = socket.gethostname()
+
+        version_info = f"""
+        **Commit Hash:** {commit_hash}
+        **Commit Message:** {commit_message}
+        **Hostname:** {hostname}
+        """
+        await ctx.respond(version_info, ephemeral=True)
+    except Exception as e:
+        await ctx.respond(f"An error occurred while fetching version information: {str(e)}", ephemeral=True)
+
+
 # TODO: /pay - links to payment page for term
 # TODO: /create
 # TODO: /edit
