@@ -107,6 +107,26 @@ Thanks!
             "cometrobotics@utdallas.edu",
             [email],
             fail_silently=False,
+            html_message=f"""
+<h2>Hello {user.first_name},</h2>
+
+<p>You have requested to link your Discord account with your Comet Robotics account.</p>
+
+<p>Full Name: {user.first_name} {user.last_name}<br>
+Discord Name: {author_name}<br>
+Net ID: {net_id}</p>
+
+
+<p>If the above information is correct, click the button below or the link to connect your Discord account to your Comet Robotics account.</p>
+
+<a href="https://portal.cometrobotics.org/accounts/link/{account_link.uuid}"><button style="border: solid #950000 3px;padding: 1em; border-radius: 10px; background-color:#bf1e2e; color: white;"><strong>Link Account</strong></button></a>
+
+<br><br><a href="https://portal.cometrobotics.org/accounts/link/{account_link.uuid}">https://portal.cometrobotics.org/accounts/link/{account_link.uuid}</a>
+
+<p>If the name is incorrect, reply to this email and we'll get back to you. If this was not you, you can safely ignore this email.</p>
+
+<p>Thanks!</p>
+""",
         )
     await sync_to_async(send_the_email)()
 
