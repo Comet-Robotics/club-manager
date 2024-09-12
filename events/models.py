@@ -17,7 +17,7 @@ class Attendance(models.Model):
     
     def __str__(self):
         return str(self.event) + ' - ' + str(self.timestamp)
-    
+
 class UserIdentification(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     student_id = models.CharField(max_length=20, unique=True)

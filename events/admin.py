@@ -31,6 +31,6 @@ class EventAdmin(admin.ModelAdmin):
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 admin.site.register(UserIdentification, search_fields=['student_id'] + SearchFields.USER)
-admin.site.register(Attendance, search_fields=SearchFields.USER + SearchFields.EVENT)
+admin.site.register(Attendance, autocomplete_fields=['user'], search_fields=SearchFields.USER + SearchFields.EVENT)
 admin.site.register(Reservation, search_fields=SearchFields.USER + SearchFields.EVENT)
 admin.site.register(Event, EventAdmin, search_fields=['event_name', 'id'])

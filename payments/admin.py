@@ -10,7 +10,7 @@ class PaymentAdmin(admin.ModelAdmin):
     exclude = ["completed_at", "metadata"]
     # readonly_fields = ["created_at", "updated_at"]
     readonly_fields = ["updated_at"]  # TODO
-    autocomplete_fields = ["verified_by"]
+    autocomplete_fields = ["user", "verified_by"]
 
 admin.site.register(Product, search_fields=["name"])
 admin.site.register(Term, search_fields=["name"] + SearchFields.PRODUCT)
