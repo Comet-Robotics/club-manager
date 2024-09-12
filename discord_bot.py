@@ -32,7 +32,7 @@ async def link(
     author_name = ctx.author.name
 
     net_id = net_id.lower()
-    if is_valid_net_id(net_id):
+    if not is_valid_net_id(net_id):
         await ctx.respond("Invalid Net ID format!")
         return
 
