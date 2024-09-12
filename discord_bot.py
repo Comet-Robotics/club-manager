@@ -165,9 +165,8 @@ async def profile(ctx):
 
     # Membership Status
     def get_membership_status(user_profile: UserProfile):
-        body = "**Current Membership:** "
         current_term, current_payment = user_profile.is_member() 
-        body += "Not a member" if not current_payment else f"Active for {current_term.name}"
+        body = "**Current Membership:** " + ("Not a member" if not current_payment else f"Active for {current_term.name}")
         
         past_terms: list[Term] = Term.objects.filter(end_date__lte=models.functions.Now())
         future_terms: list[Term] = Term.objects.filter(start_date__gte=models.functions.Now()).exclude(pk=current_term.pk)
@@ -190,7 +189,7 @@ async def profile(ctx):
     )
     embed.add_field(name="Basic Info", value=basic_info, inline=False)
     embed.add_field(name="Membership Status", value=membership_status, inline=False)
-    embed.set_footer(text="To pay member dues, use the `/pay` command :)")
+    embed.set_footer(text="To pay member dues, use the /pay command :)")
 
     await ctx.respond(embed=embed, ephemeral=True)
 
