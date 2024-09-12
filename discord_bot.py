@@ -14,6 +14,8 @@ from accounts.models import AccountLink
 from core.models import User, UserProfile
 from common.utils import is_valid_net_id
 from django.utils import timezone
+import subprocess
+import socket
 
 
 bot = discord.Bot()
@@ -192,9 +194,6 @@ async def profile(ctx):
 
     await ctx.respond(embed=embed, ephemeral=True)
 
-
-import subprocess
-import socket
 
 @bot.slash_command(description="Get the current version of the bot")
 async def version(ctx: discord.ApplicationContext):
