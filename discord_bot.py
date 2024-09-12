@@ -12,6 +12,7 @@ from payments.models import Term
 from django.core.mail import send_mail
 from accounts.models import AccountLink
 from core.models import User, UserProfile
+from common.asyncutils import *
 from common.utils import is_valid_net_id
 from django.utils import timezone
 import subprocess
@@ -42,26 +43,14 @@ async def link(
         await ctx.respond("Invalid Net ID format!", ephemeral=True, delete_after=3.0)
         return
 
-    def get_user():
-        try:
-            return User.objects.get(username=net_id)
-        except:
-            return None
-    user = await sync_to_async(get_user)()
+    user = await get_user_async(username=net_id)
 
     if user is None:
         # await ctx.respond("Your Net ID was not found in our database. If you're sure it's correct, use the `/create` command to create a new account with that Net ID.", ephemeral=True, delete_after=3.0)
         await ctx.respond("Your Net ID was not found in our database. Contact an officer to get an account set up.", ephemeral=True, delete_after=3.0)  # TODO
         return
 
-    def get_profile():
-        try:
-            return UserProfile.objects.get_or_create(user=user)[0]
-        except Exception as e:
-            import traceback
-            traceback.print_exc(e)
-            return None
-    profile = await sync_to_async(get_profile)()
+    profile = await get_or_create_profile_async(user=user)
 
     if not profile:
         # Hopefully never happens
@@ -75,12 +64,7 @@ async def link(
             await ctx.respond("That Net ID is already linked to a different Discord account. Ping an officer if this looks wrong.", ephemeral=True)
         return
 
-    def is_discord_linked():
-        try:
-            return UserProfile.objects.get(discord_id=author_id) is not None
-        except:
-            return False
-    discord_id_is_linked = await sync_to_async(is_discord_linked)()
+    discord_id_is_linked = (await get_profile_async(discord_id=author_id)) is not None
 
     if discord_id_is_linked:
         await ctx.respond("Your Discord account is already linked to a Comet Robotics account. Ping an officer if this looks wrong.", ephemeral=True)
