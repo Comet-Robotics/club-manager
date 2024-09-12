@@ -96,7 +96,7 @@ async def link(
     def send_the_email():
         send_mail(
             "Link your Discord to your Comet Robotics account",
-f"""
+            f"""
 Hello {user.first_name},
 
 You have requested to link your Discord account with your Comet Robotics account.
@@ -105,7 +105,9 @@ Full Name: {user.first_name} {user.last_name}
 Discord Name: {author_name}
 Net ID: {net_id}
 
-If the above information is correct, click on <a href="https://portal.cometrobotics.org/accounts/link/{account_link.uuid}">this link</a> to connect your Discord account to your Comet Robotics account.
+If the above information is correct, click on the below link to connect your Discord account to your Comet Robotics account.
+
+https://portal.cometrobotics.org/accounts/link/{account_link.uuid}
 
 If the name is incorrect, reply to this email and we'll get back to you. If this was not you, you can safely ignore this email.
 
