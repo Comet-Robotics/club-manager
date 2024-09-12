@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from computedfields.models import ComputedFieldsModel, computed
@@ -62,7 +63,8 @@ class Payment(ComputedFieldsModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=False)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=False)
     amount_cents = models.IntegerField(validators=[MinValueValidator(0)])
-    created_at = models.DateTimeField(auto_now_add=True)
+    # created_at = models.DateTimeField(auto_now_add=True)  # TODO
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     verified_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='verified_by', null=True, validators=[validate_staff])
 
