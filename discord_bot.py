@@ -33,7 +33,7 @@ async def link(
 
     net_id = net_id.lower()
     if not is_valid_net_id(net_id):
-        await ctx.respond("Invalid Net ID format!")
+        await ctx.respond("Invalid Net ID format!", ephemeral=True, delete_after=3.0)
         return
 
     def get_user():
@@ -44,7 +44,8 @@ async def link(
     user = await sync_to_async(get_user)()
 
     if user is None:
-        await ctx.respond("Your Net ID was not found in our database. If you're sure it's correct, use the `/create` command to create a new account with that Net ID.")
+        # await ctx.respond("Your Net ID was not found in our database. If you're sure it's correct, use the `/create` command to create a new account with that Net ID.")
+        await ctx.respond("Your Net ID was not found in our database. Contact an officer to get an account set up.")  # TODO
         return
 
     def get_profile():
@@ -79,9 +80,8 @@ async def link(
         await ctx.respond("Your Discord account is already linked to a Comet Robotics account. Ping an officer if this looks wrong.", ephemeral=True)
         return
 
-
     # NetID has been validated, generate the AccountLink and send the email!
-    
+
     def create_account_link():
         return AccountLink.objects.create(user=user, link_type='discord', social_id=str(author_id))
     account_link = await sync_to_async(create_account_link)()
@@ -217,4 +217,3 @@ async def version(ctx: discord.ApplicationContext):
 # TODO: /edit
 
 bot.run(settings.DISCORD_TOKEN)
-
