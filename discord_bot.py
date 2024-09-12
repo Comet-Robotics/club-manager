@@ -19,7 +19,33 @@ import subprocess
 import socket
 import random
 
-LIST = ["Cafe Brazil", "Biryaniify", "Bulldog Katsu", "LA Burger", "Torchy's Tacos", "Velvet Taco"]
+LIST = [
+    "Cafe Brazil",
+    "Biryaniify",
+    "Bulldog Katsu",
+    "LA Burger",
+    "Torchy's Tacos",
+    "Fuzzy's Tacos",
+    "Velvet Taco",
+    "Taco Bell",
+    "Jimmy John's",
+    "Chipotle",
+    "Panera",
+    "Potbelly",
+    "Sky Rocket Burger",
+    "Teriyaki Sensei",
+    "Freebirds",
+    "Unbelievabowl",
+    "Pei Wei",
+    "Masala Wok",
+    "Little Greek",
+    "Liberty Burger",
+    "The Mango's Plano",
+    "Bambu Thai",
+    "Hawaiian Bros",
+    "The String Bean",
+    "Something new",
+]
 
 bot = discord.Bot()
 
@@ -278,13 +304,11 @@ async def pay(ctx: discord.ApplicationContext):
     await ctx.respond(embed=embed, ephemeral=True)
 
 
-
-
 class ListView(discord.ui.View):
     @discord.ui.button(label="I'm Feeling Lucky!", style=discord.ButtonStyle.primary, emoji="🎲") 
     async def button_callback(self, button, interaction):
         randomChoice = random.choice(LIST)
-        await interaction.response.send_message(randomChoice, delete_after=10.0)
+        await interaction.response.send_message(randomChoice, ephemeral=True, delete_after=10.0)
 
 @bot.slash_command(description="View THE LIST")
 async def thelist(ctx: discord.ApplicationContext):
@@ -294,7 +318,7 @@ async def thelist(ctx: discord.ApplicationContext):
         color=discord.Color.red()
     )
 
-    await ctx.respond(embed=embed, view=ListView(), ephemeral=False)
+    await ctx.respond(embed=embed, view=ListView(), ephemeral=False, delete_after=60.0)
 
 
 bot.run(settings.DISCORD_TOKEN)
