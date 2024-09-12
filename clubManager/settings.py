@@ -150,3 +150,5 @@ EMAIL_HOST_USER = str(os.getenv('SMTP_USER'))
 EMAIL_HOST_PASSWORD = str(os.getenv('SMTP_PASS'))
 
 DISCORD_TOKEN = str(os.getenv('DISCORD_TOKEN'))
+DISCORD_OFFICER_ROLE_ID = int(str(os.getenv('DISCORD_OFFICER_ROLE_ID')))
+DISCORD_MEMBER_ROLE_ID = int(str(os.getenv('DISCORD_MEMBER_ROLE_ID')))

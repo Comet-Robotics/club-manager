@@ -32,7 +32,7 @@ class Term(models.Model):
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    product = models.OneToOneField(Product, on_delete=models.CASCADE)
+    product: Product = models.OneToOneField(Product, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name

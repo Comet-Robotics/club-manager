@@ -8,9 +8,11 @@ import django
 import discord
 django.setup()
 
+from payments.models import Term
 from django.core.mail import send_mail
 from accounts.models import AccountLink
 from core.models import User, UserProfile
+from common.utils import is_valid_net_id
 
 bot = discord.Bot()
 
@@ -29,8 +31,9 @@ async def link(
     author_id = ctx.author.id
     author_name = ctx.author.name
 
-    if not (net_id[:3].isalpha() and net_id[3:].isdigit()):
-        await ctx.respond("Invalid NetID format!")
+    net_id = net_id.lower()
+    if is_valid_net_id(net_id):
+        await ctx.respond("Invalid Net ID format!")
         return
 
     def get_user():
@@ -41,7 +44,7 @@ async def link(
     user = await sync_to_async(get_user)()
 
     if user is None:
-        await ctx.respond("NetID not found!")
+        await ctx.respond("Your Net ID was not found in our database. If you're sure it's correct, use the `/create` command to create a new account with that Net ID.")
         return
 
     def get_profile():
@@ -138,6 +141,60 @@ Net ID: {net_id}</p>
 
     await ctx.respond(":tada:", embed=embed, ephemeral=True)
 
+@bot.slash_command(name="profile", description="View your Comet Robotics profile")
+async def profile(ctx):
+    user = ctx.author
+    try:
+        user_profile = await sync_to_async(UserProfile.objects.get)(discord_id=str(user.id))
+    except UserProfile.DoesNotExist:
+        await ctx.respond("You don't have a linked Comet Robotics account. Use the `/link` command to connect your Comet Robotics account to your Discord account.", ephemeral=True)
+        return
+
+    def get_basic_info(user_profile: UserProfile):
+        return f"""
+        **Full Name:** {user_profile.user.first_name} {user_profile.user.last_name}
+        **Net ID:** {user_profile.user.username}
+        **Gender:** {user_profile.gender if user_profile.gender else 'Not specified'}
+        """
+
+    basic_info = await sync_to_async(get_basic_info)(user_profile)
+
+    # Membership Status
+    def get_membership_status(user_profile: UserProfile):
+        body = "**Current Membership:** "
+        current_term, current_payment = user_profile.is_member() 
+        body += "Not a member" if current_payment else f"Active for {current_term.name}"
+        
+        # TODO: these
+        past_terms: list[Term] = []
+        future_terms: list[Term] = []
+
+        paid_future_terms = [term for term in future_terms if user_profile.is_member(term)]
+        if len(paid_future_terms) > 0:
+            body += f"\n**Dues paid for future term(s)**: {', '.join([t.name for t in paid_future_terms])}"
+
+        past_terms_info = ", ".join([term.name for term in past_terms if user_profile.is_member(term)]) if len(past_terms) > 0 else "No past memberships"
+
+        body += f"\n**Past Memberships:** {past_terms_info}"
+
+        return body
+    membership_status = await sync_to_async(get_membership_status)(user_profile)
+
+
+    embed = discord.Embed(
+        title="Your Comet Robotics Profile",
+        color=discord.Colour.red()
+    )
+    embed.add_field(name="Basic Info", value=basic_info, inline=False)
+    embed.add_field(name="Membership Status", value=membership_status, inline=False)
+    embed.set_footer(text="To pay member dues, use the `/pay` command :)")
+
+    await ctx.respond(embed=embed, ephemeral=True)
+
+
+# TODO: /pay - links to payment page for term
+# TODO: /create
+# TODO: /edit
 
 bot.run(settings.DISCORD_TOKEN)
 

@@ -3,6 +3,8 @@ from django.db.models.signals import post_save
 from django.contrib.auth.models import User
 from django.dispatch import receiver
 
+from payments.models import Payment, Term
+
 # Create your models here.
 class UserProfile(models.Model):
     GENDER_CHOICES = (('M', 'Male'),('F', 'Female'),('O', 'Other'))
@@ -13,6 +15,26 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.user.first_name + '_' + self.user.last_name
+    
+    def is_member(self, for_term: Term | None = None) -> tuple[Term, Payment | None]:
+        if for_term:
+            term = for_term
+        else:
+            term = Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).first()
+            if not term:
+                raise Exception("No current Term found.")
+
+        payment = Payment.objects.filter(user=self.user, product=term.product, is_successful=True)
+
+        return term, payment.first()
+    
+    def apply_discord_roles(self, dry_run=False): 
+        roles_to_apply = []
+        if self.is_member():
+            pass
+            
+
+
 
 
 @receiver(post_save, sender=User)
