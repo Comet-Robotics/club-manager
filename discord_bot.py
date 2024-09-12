@@ -140,7 +140,7 @@ Net ID: {net_id}</p>
     embed = discord.Embed(
         title="Email sent!",
         description=f"Check your email (`{email}`) and click the link to connect your Discord account to your Comet Robotics account.",  
-        color=discord.Colour.red(),
+        color=discord.Color.red(),
     )
 
     await ctx.respond(":tada:", embed=embed, ephemeral=True)
@@ -186,7 +186,7 @@ async def profile(ctx):
 
     embed = discord.Embed(
         title="Your Comet Robotics Profile",
-        color=discord.Colour.red()
+        color=discord.Color.red()
     )
     embed.add_field(name="Basic Info", value=basic_info, inline=False)
     embed.add_field(name="Membership Status", value=membership_status, inline=False)
@@ -197,17 +197,25 @@ async def profile(ctx):
 
 @bot.slash_command(description="Get the current version of the bot")
 async def version(ctx: discord.ApplicationContext):
+    """
+    Returns the current version of the bot. 
+
+    NOTE: This command should only be accessible to org leaders (people with the Team Lead, Project Manager, or Officer roles). This needs to be configured manually in Discord server settings > Integrations.
+    """
     try:
         commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode('utf-8')
         commit_message = subprocess.check_output(["git", "log", "-1", "--pretty=%B"]).strip().decode('utf-8')
         hostname = socket.gethostname()
 
-        version_info = f"""
-        **Commit Hash:** {commit_hash}
-        **Commit Message:** {commit_message}
-        **Hostname:** {hostname}
-        """
-        await ctx.respond(version_info, ephemeral=True)
+        embed = discord.Embed(
+            title="Bot Version Information",
+            color=discord.Color.red()
+        )
+        embed.add_field(name="Commit Hash", value=commit_hash, inline=False)
+        embed.add_field(name="Commit Message", value=commit_message, inline=False)
+        embed.add_field(name="Hostname", value=hostname, inline=False)
+
+        await ctx.respond(embed=embed, ephemeral=True)
     except Exception as e:
         await ctx.respond(f"An error occurred while fetching version information: {str(e)}", ephemeral=True)
 
@@ -229,7 +237,7 @@ async def pay(ctx: discord.ApplicationContext):
     embed = discord.Embed(
         title="Become a Comet Robotics Member",
         description=payment_links,
-        color=discord.Colour.red()
+        color=discord.Color.red()
     )
     embed.set_footer(text="Click on the links to pay for the respective terms.")
 
