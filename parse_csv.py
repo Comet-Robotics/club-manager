@@ -23,9 +23,9 @@ def parse_csv_and_store_data(file_path):
         for row in reader:
             try:
                 payment_date = make_aware(datetime.strptime(row['Timestamp'], '%m/%d/%Y %H:%M:%S')) if row['Timestamp'] else None
-                first_name = row['First Name']
-                last_name = row['Last Name']
-                net_id = row['Net ID'].lower()
+                first_name = row['First Name'].strip()
+                last_name = row['Last Name'].strip()
+                net_id = row['Net ID'].lower().strip()
                 payment_method = row['Which payment method will you use to pay your $10 member dues?']
                 has_paid = row['Has Paid?'] == 'Yes'
                 approval_date = make_aware(datetime.strptime(row['When?'], '%m/%d/%Y %I:%M %p')) if row['When?'] else None
