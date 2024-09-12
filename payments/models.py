@@ -1,8 +1,11 @@
 from django.db import models
+from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.translation import gettext_lazy as _
 
 from computedfields.models import ComputedFieldsModel, computed
+
+from common.utils import validate_staff
 
 # Create your models here.
 
@@ -56,12 +59,12 @@ class Payment(ComputedFieldsModel):
         venmo = 'venmo', _('Venmo Payment (LEGACY - DO NOT USE FOR NEW PAYMENTS)')
         cashapp = 'cashapp', _('Cash App Payment (LEGACY - DO NOT USE FOR NEW PAYMENTS)')
 
-    user = models.ForeignKey('auth.User', on_delete=models.CASCADE, blank=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=False)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=False)
     amount_cents = models.IntegerField(validators=[MinValueValidator(0)])
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    verified_by = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='verified_by', null=True)
+    verified_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='verified_by', null=True, validators=[validate_staff])
 
     notes = models.TextField(null=True, blank=True)
     method = models.CharField(choices=Methods, default=Methods.other)
