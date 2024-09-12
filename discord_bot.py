@@ -181,14 +181,18 @@ async def profile(ctx: discord.ApplicationContext):
 
 
 class ProfileActionsView(discord.ui.View):
-    def __init__(self, term_name: str, due_paying_url: str | None):
+    def __init__(self, term_name: str, due_paying_url: str | None, user_profile: UserProfile | None = None) -> None:
         super().__init__()
+        self.user_profile = user_profile
         self.add_item(discord.ui.Button(label=f"Pay Dues for {term_name}", url=due_paying_url or 'https://cometrobotics.org', disabled=not due_paying_url))
+
+        # TODO: Implement interaction for gender
+        discord_gender = [discord.SelectOption(label=str(obj._name_), value=str(obj)) for obj in UserProfile.GenderChoice]
+        self.add_item(discord.ui.Select(placeholder="Edit Gender...", options=discord_gender))
 
     @discord.ui.button(label="Edit Profile", style=discord.ButtonStyle.primary)
     async def edit_profile(self, button, interaction):
-        await interaction.response.defer()
-        # await interaction.response.send_modal(ProfileEditView())
+        await interaction.response.send_modal(ProfileEditView(user_profile=self.user_profile))
 
 
 
@@ -196,15 +200,31 @@ class ProfileEditView(discord.ui.Modal):
     def __init__(self, user_profile: UserProfile | None, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs, title="Edit Profile")
 
-        self.add_item(discord.ui.InputText(label="Net ID", value=user_profile.user.username if user_profile else '', required=True, style=discord.InputTextStyle.short, disabled=user_profile is not None))
+        self.user_profile = user_profile
+
+        self.first_name = discord.ui.InputText(label="First Name", value=user_profile.user.first_name if user_profile else '', required=True, style=discord.InputTextStyle.short)
+        self.last_name = discord.ui.InputText(label="Last Name", value=user_profile.user.last_name if user_profile else '', required=True, style=discord.InputTextStyle.short)
+        self.net_id = discord.ui.InputText(label="Net ID", value='', required=True, style=discord.InputTextStyle.short, min_length=9, max_length=9)
+
+        self.add_item(self.first_name)
+        self.add_item(self.last_name)
+        if not user_profile:
+            self.add_item(self.net_id)
 
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        # embed = discord.Embed(title="Modal Results")
-        # embed.add_field(name="Short Input", value=self.children[0].value)
-        # embed.add_field(name="Long Input", value=self.children[1].value)
-        # await interaction.response.send_message(embeds=[embed])
-        pass
+        making_new_profile = self.user_profile is None
+
+        if making_new_profile:
+            user, created_user = User.objects.get_or_create(username=self.net_id.value)
+            self.user_profile = UserProfile.objects.create(user=user)
+        
+        if self.user_profile:
+            self.user_profile.user.first_name = self.first_name.value or ''
+            self.user_profile.user.last_name = self.last_name.value or ''
+            self.user_profile.user.save()
+
+
+# TODO: /create
 
 @bot.slash_command(description="Get the current version of the bot")
 async def version(ctx: discord.ApplicationContext):
