@@ -163,7 +163,7 @@ async def profile(ctx):
     def get_membership_status(user_profile: UserProfile):
         body = "**Current Membership:** "
         current_term, current_payment = user_profile.is_member() 
-        body += "Not a member" if current_payment else f"Active for {current_term.name}"
+        body += "Not a member" if not current_payment else f"Active for {current_term.name}"
         
         # TODO: these
         past_terms: list[Term] = []
