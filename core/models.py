@@ -17,6 +17,9 @@ class UserProfile(models.Model):
         return self.user.first_name + '_' + self.user.last_name
     
     def is_member(self, for_term: Term | None = None) -> tuple[Term, Payment | None]:
+        """
+        Returns a tuple with the Term and Payment object for the current member if the user is a member for the given term, or a tuple with the given Term and None if they are not a member.
+        """
         if for_term:
             term = for_term
         else:
