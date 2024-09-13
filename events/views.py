@@ -8,9 +8,10 @@ from .tables import UserTable, LinkUserTable
 
 @staff_member_required
 def sign_in(request, event_id):
-    if request.method == 'POST': 
+    current_event = Event.objects.get(pk=event_id)
+    event_name = current_event.event_name
+    if request.method == 'POST':
         form = SignInForm(request.POST)
-        current_event = Event.objects.get(pk=event_id)
         if form.is_valid():
             student_id = form.cleaned_data['card_data']       
             try:
@@ -25,12 +26,12 @@ def sign_in(request, event_id):
             except UserIdentification.DoesNotExist:
                 return redirect('lookup-user', event_id=event_id, student_id=student_id)
             
-            return render(request, 'sign_in.html', {'form': form, 'message': message, 'status': status, 'user': user_profile.user, 'event_id': event_id})
+            return render(request, 'sign_in.html', {'form': form, 'message': message, 'status': status, 'user': user_profile.user, 'event_id': event_id, 'event_name': event_name})
 
     else:
         form = SignInForm()
 
-    return render(request, 'sign_in.html', {'form': form, 'event_id': event_id})
+    return render(request, 'sign_in.html', {'form': form, 'event_id': event_id, 'event_name': event_name})
 
 @staff_member_required
 def pass_sign_in(request, event_id, user_id):
