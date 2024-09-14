@@ -162,7 +162,7 @@ Net ID: {net_id}</p>
 @bot.slash_command(name="profile", description="View your Comet Robotics profile")
 async def profile(ctx: discord.ApplicationContext):
     user = ctx.author
-    user_profile = await get_profile_async(discord_id=str(user.id))
+    user_profile: UserProfile | None = await get_profile_async(discord_id=str(user.id))
     if user_profile is None:
         await ctx.respond("You don't have a linked Comet Robotics account. Use the `/link` command to connect your Comet Robotics account to your Discord account.", ephemeral=True)
         return
@@ -205,37 +205,32 @@ async def profile(ctx: discord.ApplicationContext):
 
     await ctx.respond(embed=embed, ephemeral=True, view=ProfileActionsView(term_name, due_paying_url, user_profile))
 
-
 class ProfileActionsView(discord.ui.View):
-    def __init__(self, term_name: str, due_paying_url: str | None, user_profile: UserProfile | None = None) -> None:
+    def __init__(self, term_name: str, due_paying_url: str | None, user_profile: UserProfile) -> None:
         super().__init__()
         self.user_profile = user_profile
-        self.add_item(discord.ui.Button(label=f"Pay Dues for {term_name}", url=due_paying_url or 'https://cometrobotics.org', disabled=not due_paying_url))
+        self.add_item(discord.ui.Button(label=f"Pay Dues for {term_name}" if due_paying_url else f"Dues paid for {term_name} :)", url=due_paying_url or 'https://cometrobotics.org', disabled=not due_paying_url))
 
-        # TODO: Implement interaction for gender
-        discord_gender = [discord.SelectOption(label=str(obj._name_), value=str(obj)) for obj in UserProfile.GenderChoice]
-        self.add_item(discord.ui.Select(placeholder="Edit Gender...", options=discord_gender))
+        # # TODO: Implement interaction for gender
+        # discord_gender = [discord.SelectOption(label=str(obj._name_), value=str(obj)) for obj in UserProfile.GenderChoice]
+        # self.add_item(discord.ui.Select(placeholder="Edit Gender...", options=discord_gender))
 
-    @discord.ui.button(label="Edit Profile", style=discord.ButtonStyle.primary)
+    @discord.ui.button(label="Edit Profile (WIP)", style=discord.ButtonStyle.primary, disabled=True)
     async def edit_profile(self, button, interaction):
         await interaction.response.send_modal(ProfileEditView(user_profile=self.user_profile))
 
-
-
 class ProfileEditView(discord.ui.Modal):
-    def __init__(self, user_profile: UserProfile | None, *args, **kwargs) -> None:
+    def __init__(self, user_profile: UserProfile, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs, title="Edit Profile")
 
         self.user_profile = user_profile
 
-        self.first_name = discord.ui.InputText(label="First Name", value=user_profile.user.first_name if user_profile else '', required=True, style=discord.InputTextStyle.short)
-        self.last_name = discord.ui.InputText(label="Last Name", value=user_profile.user.last_name if user_profile else '', required=True, style=discord.InputTextStyle.short)
-        self.net_id = discord.ui.InputText(label="Net ID", value='', required=True, style=discord.InputTextStyle.short, min_length=9, max_length=9)
+        self.first_name = discord.ui.InputText(label="First Name", value=user_profile.user.first_name, required=True, style=discord.InputTextStyle.short)
+        self.last_name = discord.ui.InputText(label="Last Name", value=user_profile.user.last_name, required=True, style=discord.InputTextStyle.short)
 
-        self.add_item(self.first_name)
-        self.add_item(self.last_name)
-        if not user_profile:
-            self.add_item(self.net_id)
+        # People should not be able to change name without talking to us - Colin
+        # self.add_item(self.first_name)
+        # self.add_item(self.last_name)
 
     async def callback(self, interaction: discord.Interaction):
         making_new_profile = self.user_profile is None
