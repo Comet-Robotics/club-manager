@@ -313,7 +313,7 @@ async def thelist(ctx: discord.ApplicationContext):
         color=discord.Color.red()
     )
 
-    await ctx.respond(embed=embed, view=ListView(), ephemeral=False, delete_after=60.0)
+    await ctx.respond(embed=embed, view=ListView(), ephemeral=True, delete_after=60.0)
 
 
 bot.run(settings.DISCORD_TOKEN)
