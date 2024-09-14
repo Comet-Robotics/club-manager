@@ -14,7 +14,7 @@ create migrations: `pipenv run python manage.py makemigrations`
 run static: `pipenv run python manage.py collectstatic`
 create superuser: `pipenv run python manage.py createsuperuser`
 
-to \[re-\]deploy: `./deploy/run.sh`
+to \[re-\]deploy: `./deploy/run.sh` (does not include pulling from git)
 
 viewing logs
 - `journalctl -e -u gunicorn.service`

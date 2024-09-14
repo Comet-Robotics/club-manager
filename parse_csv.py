@@ -66,7 +66,8 @@ def parse_csv_and_store_data(file_path):
                     updated_at=approval_date,
                     method=methods[payment_method],
                     verified_by=verifier,
-                    notes=f"{scanTime} - Imported from CSV"                )
+                    notes=f"{scanTime} - Imported from CSV"
+                )
             except Exception as e:
                 print(f"Error processing row: {row}")
                 print(e)
