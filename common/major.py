@@ -21,6 +21,6 @@ def get_major_from_netid(netid: str):
     for p in soup.find_all('p'):
         if p.contents[0].string == 'Major':
             major = p.contents[1].string.replace(': ','')
-            short_code = [ o[0] for o in get_majors().items() if o[1] == major ][0]
-            return short_code
+            matching_short_codes = [ o[0] for o in get_majors().items() if o[1] == major ]
+            return matching_short_codes[0] if len(matching_short_codes) > 0 else None
     return None
