@@ -299,6 +299,15 @@ async def pay(ctx: discord.ApplicationContext):
     await ctx.respond(embed=embed, ephemeral=True)
 
 
+@bot.slash_command(description="Give member roles to paid members")
+async def givememberroles(ctx: discord.ApplicationContext):
+    pass
+
+@bot.slash_command(description="Purge member roles from non-paying members")
+async def purgememberroles(ctx: discord.ApplicationContext):
+    pass
+
+
 class ListView(discord.ui.View):
     @discord.ui.button(label="I'm Feeling Lucky!", style=discord.ButtonStyle.primary, emoji="🎲") 
     async def button_callback(self, button, interaction):
