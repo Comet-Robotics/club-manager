@@ -63,10 +63,8 @@ class Payment(ComputedFieldsModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=False)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=False)
     amount_cents = models.IntegerField(validators=[MinValueValidator(0)])
-    # created_at = models.DateTimeField(auto_now_add=True)  # TODO
-    # updated_at = models.DateTimeField(auto_now=True)
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     verified_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='verified_by', null=True, blank=True, validators=[validate_staff])
 
     notes = models.TextField(null=True, blank=True)
