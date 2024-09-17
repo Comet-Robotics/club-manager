@@ -4,6 +4,7 @@ import configparser
 from django.utils import timezone
 import json
 from square.client import Client
+from django.db.models import Q
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
@@ -48,7 +49,7 @@ def can_purchase_product(product, user):
       return "Payments are currently disabled for this object."
     else:
       # Purchases allowed, but need to check if user has reached max purchases
-      allowed = Payment.objects.filter(user=user, product=product, is_successful=True).count() < product.max_purchases_per_user
+      allowed = Payment.objects.filter(Q(user=user) & Q(product=product) & (Q(is_successful=True) | Q(method=Payment.Method.cash))).count() < product.max_purchases_per_user
       if allowed:
           return None
       else:
@@ -96,7 +97,7 @@ class ChooseUserView(View):
                 if payment_choice == 'square_api':
                     return redirect('payment_form', product_id=product_id, user_id=user.id)
                 else:
-                    payment = Payment(method=Payment.Methods.cash, product=product, user=user, amount_cents=product.amount_cents)
+                    payment = Payment(method=Payment.Method.cash, product=product, user=user, amount_cents=product.amount_cents)
                     payment.save()
                     return redirect('payment_success', payment_id=payment.id)
         return render(request, self.template_name, {'form': form, 'product_name': product.name})
@@ -122,7 +123,7 @@ def process_square_payment(request, product_id, user_id):
         if message:
           return JsonResponse({'square_res': {'errors': [{'detail': message}]}}, safe=False)
         
-        payment = Payment(method=Payment.Methods.square_api, product=product, user=user, amount_cents=product_cost_with_square_fee(product))
+        payment = Payment(method=Payment.Method.square_api, product=product, user=user, amount_cents=product_cost_with_square_fee(product))
         payment.save()
         
         create_payment_response = client.payments.create_payment(

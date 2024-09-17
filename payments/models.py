@@ -52,7 +52,7 @@ class Payment(ComputedFieldsModel):
     
     We include the amount_cents field to track the amount of this payment in cents. The associated product's amount_cents will not necessarily match the amount_cents of the payment, since we may need to account for Square fees, which are added to the product's amount_cents to calculate the total amount_cents of the payment.
     """
-    class Methods(models.TextChoices):
+    class Method(models.TextChoices):
         square_api = 'square_api', _('Credit Card/Debit Card (Online)')
         cash = 'cash', _('In-Person Cash Payment')
         other = 'other', _('Other Payment Method')
@@ -68,7 +68,7 @@ class Payment(ComputedFieldsModel):
     verified_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='verified_by', null=True, blank=True, validators=[validate_staff])
 
     notes = models.TextField(null=True, blank=True)
-    method = models.CharField(choices=Methods, default=Methods.other)
+    method = models.CharField(choices=Method, default=Method.other)
 
     # excluded from admin panel
     completed_at = models.DateTimeField(null=True)
