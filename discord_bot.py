@@ -311,7 +311,7 @@ async def givememberroles(ctx: discord.ApplicationContext):
     guild = bot.get_guild(settings.DISCORD_SERVER_ID)
     member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
 
-    message = await ctx.respond("Processing...", ephemeral=True)
+    message = await ctx.respond("Processing...")
 
     def get_ids_to_add():
         current_term = Term.objects.filter(
