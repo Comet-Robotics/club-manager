@@ -9,7 +9,7 @@ from .models import Product, Payment, Term
 
 class PaymentAdmin(admin.ModelAdmin):
     exclude = ["completed_at", "metadata"]
-    readonly_fields = ["created_at", "updated_at"]
+    readonly_fields = ["created_at", "updated_at", "metadata", "completed_at"]
     autocomplete_fields = ["user", "verified_by"]
     list_filter = [
         "is_successful",
