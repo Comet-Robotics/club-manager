@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "django_rename_app",
     "django_extensions",
     "computedfields",
+    "more_admin_filters",
 ]
 
 MIDDLEWARE = [

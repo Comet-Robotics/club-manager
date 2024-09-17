@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "177c3fe65fe5b6a3c91b53b5c873d12f8cd8942bc4373359d4a5730a9359619f"
+            "sha256": "5463cf128e60c81efa675d6fa714222aba2e4122213cfd40f709ef9c2636c8f7"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -339,6 +339,14 @@
                 "sha256:76ad711a1dc193e20233458d584e51ad6d354663b8952ada768eec1d997abc3c"
             ],
             "version": "==0.2.3"
+        },
+        "django-more-admin-filters": {
+            "hashes": [
+                "sha256:2d5dd9e8b55d85638d5e260dfb694b1903288b61c37e655b9443b70a5f36833f",
+                "sha256:fc4d3a3bf0367763a887dceca4b469e467ad062a9e8da1c29b6d6137c5b0e3cd"
+            ],
+            "index": "pypi",
+            "version": "==1.8"
         },
         "django-rename-app": {
             "hashes": [
