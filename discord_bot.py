@@ -10,6 +10,7 @@ django.setup()
 
 from payments.models import Term
 from django.core.mail import send_mail
+from django.db import models
 from accounts.models import AccountLink
 from core.models import User, UserProfile
 from common.asyncutils import *
@@ -47,7 +48,12 @@ LIST = [
     "Something new",
 ]
 
-bot = discord.Bot()
+intents = discord.Intents.default()
+intents.members = True
+intents.presences = True
+intents.message_content = True
+
+bot = discord.Bot(intents=intents)
 
 @bot.event
 async def on_ready():
@@ -301,7 +307,26 @@ async def pay(ctx: discord.ApplicationContext):
 
 @bot.slash_command(description="Give member roles to paid members")
 async def givememberroles(ctx: discord.ApplicationContext):
-    pass
+    guild = bot.get_guild(settings.DISCORD_SERVER_ID)
+    member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
+
+    def get_ids_to_add():
+        current_term = Term.objects.filter(
+            start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()
+        ).first()
+        profiles = UserProfile.objects.exclude(discord_id__isnull=True)
+        valid_ids: list[int] = []
+        for profile in profiles:
+            if profile.is_member(current_term)[1]:
+                if profile.discord_id is not None:
+                    valid_ids.append(int(profile.discord_id))
+        return valid_ids
+    ids_to_add = await sync_to_async(get_ids_to_add)()
+    for discord_id in ids_to_add:
+        member = guild.get_member(discord_id)
+        await member.add_roles(member_role)
+    
+    await ctx.respond(f"Member role addition success! Added member role to {len(ids_to_add)} users.")
 
 @bot.slash_command(description="Purge member roles from non-paying members")
 async def purgememberroles(ctx: discord.ApplicationContext):
