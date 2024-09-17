@@ -8,9 +8,12 @@ import django
 import discord
 django.setup()
 
-from payments.models import Term
+from payments.models import Payment, Term
 from django.core.mail import send_mail
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
 from accounts.models import AccountLink
 from core.models import User, UserProfile
 from common.asyncutils import *
@@ -304,6 +307,37 @@ async def pay(ctx: discord.ApplicationContext):
     embed.set_footer(text="Click on the links to pay for the respective terms.")
 
     await ctx.respond(embed=embed, ephemeral=True)
+
+
+async def add_role_unchecked(member_id: int | str):
+    print("method execute")
+    guild = bot.get_guild(settings.DISCORD_SERVER_ID)
+    member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
+    member = guild.get_member(int(member_id))
+    if member:
+        await member.add_roles(member_role)
+    else:
+        print(f"could not find member with id {member_id}")
+
+@bot.event
+async def on_member_join(member: discord.Member):
+    def is_profile_valid():
+        profile = UserProfile.objects.filter(discord_id=str(member.id)).first()
+        return profile and profile.is_member()[1]
+    profile_valid = await sync_to_async(is_profile_valid)()
+    if profile_valid:
+        await add_role_unchecked(member.id)
+
+# TODO: signals don't work in here
+# @receiver(post_save, sender=UserProfile)
+# async def update_roles_profile_signal(sender, instance: UserProfile, created, **kwargs):
+#     if (discord_id:=instance.discord_id) and instance.is_member()[1]:
+#         await add_role_unchecked(discord_id)
+
+# @receiver(post_save, sender=Payment)
+# async def update_roles_payment_signal(sender, instance: Payment, created, **kwargs):
+#     if (discord_id:=instance.user.userprofile.discord_id) and instance.user.userprofile.is_member()[1]:
+#         await add_role_unchecked(discord_id)
 
 
 @bot.slash_command(description="Give member roles to paid members")
