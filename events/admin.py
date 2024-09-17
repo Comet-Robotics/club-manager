@@ -18,6 +18,8 @@ class UserIDInline(admin.StackedInline):
 
 class UserAdmin(BaseUserAdmin):
     inlines = [UserIDInline, UserProfileInline]
+    list_filter = [("userprofile__discord_id", admin.EmptyFieldListFilter)]
+    list_select_related = ["userprofile"]
 
 class EventAdmin(admin.ModelAdmin):
     readonly_fields = ["id"]
