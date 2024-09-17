@@ -288,7 +288,8 @@ async def pay(ctx: discord.ApplicationContext):
         user = UserProfile.objects.get(discord_id=str(ctx.author.id))
         active_terms = Term.objects.filter(end_date__gte=timezone.now())
         if not active_terms:
-            ctx.respond("No active terms available for payment.",  ephemeral=True)
+            # ctx.respond("No active terms available for payment.",  ephemeral=True)  # TODO: move to separate func to await
+            pass
 
         payment_links = [(f"[Pay for {term.name}](https://portal.cometrobotics.org/payments/{term.product.id}/pay/)" + ('(you\'ve already paid this term\'s dues)' if user.is_member(term)[1] else '')) for term in active_terms]
         return "\n".join(payment_links)
@@ -310,6 +311,8 @@ async def givememberroles(ctx: discord.ApplicationContext):
     guild = bot.get_guild(settings.DISCORD_SERVER_ID)
     member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
 
+    message = await ctx.respond("Processing...", ephemeral=True)
+
     def get_ids_to_add():
         current_term = Term.objects.filter(
             start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()
@@ -325,8 +328,8 @@ async def givememberroles(ctx: discord.ApplicationContext):
     for discord_id in ids_to_add:
         member = guild.get_member(discord_id)
         await member.add_roles(member_role)
-    
-    await ctx.respond(f"Member role addition success! Added member role to {len(ids_to_add)} users.")
+
+    await message.edit_original_response(content=f"Member role addition success! Added member role to {len(ids_to_add)} users.")
 
 @bot.slash_command(description="Purge member roles from non-paying members")
 async def purgememberroles(ctx: discord.ApplicationContext):
