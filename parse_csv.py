@@ -1,7 +1,6 @@
 import os
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'clubManager.settings')
-from clubManager import settings
 
 import django
 django.setup()

@@ -2,7 +2,7 @@ from asgiref.sync import sync_to_async
 import os
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'clubManager.settings')
-from clubManager import settings
+from django.conf import settings
 
 import django
 import discord
