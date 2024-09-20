@@ -288,16 +288,23 @@ async def version(ctx: discord.ApplicationContext):
 async def pay(ctx: discord.ApplicationContext):
 
     def get_payment_links():
-        user = UserProfile.objects.get(discord_id=str(ctx.author.id))
+        try:
+            user = UserProfile.objects.get(discord_id=str(ctx.author.id))
+        except:
+            return None
         active_terms = Term.objects.filter(end_date__gte=timezone.now())
         if not active_terms:
             # ctx.respond("No active terms available for payment.",  ephemeral=True)  # TODO: move to separate func to await
             pass
 
-        payment_links = [(f"[Pay for {term.name}](https://portal.cometrobotics.org/payments/{term.product.id}/pay/)" + ('(you\'ve already paid this term\'s dues)' if user.is_member(term)[1] else '')) for term in active_terms]
+        payment_links = [(f"[Pay for {term.name}](https://portal.cometrobotics.org/payments/{term.product.id}/pay/)" + (' (you\'ve already paid this term\'s dues)' if user.is_member(term)[1] else '')) for term in active_terms]
         return "\n".join(payment_links)
 
     payment_links = await sync_to_async(get_payment_links)()
+    
+    if payment_links is None:
+        await ctx.respond("You're not linked yet! Use `/link` with your NetID to link your Discord account to your Comet Robotics account, then try again.", ephemeral=True)
+        return
 
     embed = discord.Embed(
         title="Become a Comet Robotics Member",
