@@ -61,7 +61,5 @@ def update_user_signal(sender, instance, created, **kwargs):
 @receiver(post_save, sender=UserProfile)
 def update_profile_signal(sender, instance, created, **kwargs):
     if created or instance.major is None:
-        instance.major = get_major_from_netid(instance.user.username)
-        if instance.major is None:
-            instance.major = "unknown"
+        instance.major = get_major_from_netid(instance.user.username) or "unknown"
         instance.save()
