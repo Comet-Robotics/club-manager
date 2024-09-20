@@ -5,6 +5,7 @@ from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 
 from clubManager import settings
+from common.major import get_majors, get_major_from_netid
 from payments.models import Payment, Term
 import discord
 
@@ -18,6 +19,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     gender = models.CharField(max_length=1, choices=GenderChoice.choices, null=True, blank=True)
     discord_id = models.CharField(max_length=200, null=True, blank=True, unique=True)
+    major = models.CharField(choices=list(get_majors().items())+[("unknown", "Unknown")], null=True, blank=True, default=None)  # NULL indicates major needs to be fetched
 
     def __str__(self):
         return self.user.first_name + '_' + self.user.last_name
@@ -50,8 +52,16 @@ class UserProfile(models.Model):
 
 
 @receiver(post_save, sender=User)
-def update_profile_signal(sender, instance, created, **kwargs):
+def update_user_signal(sender, instance, created, **kwargs):
     # if created:
     if created or not hasattr(instance, "userprofile"):
         UserProfile.objects.create(user=instance)
     instance.userprofile.save()
+
+@receiver(post_save, sender=UserProfile)
+def update_profile_signal(sender, instance, created, **kwargs):
+    if created or instance.major is None:
+        instance.major = get_major_from_netid(instance.user.username)
+        if instance.major is None:
+            instance.major = "unknown"
+        instance.save()

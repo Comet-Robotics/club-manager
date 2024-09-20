@@ -6,6 +6,11 @@ __all__ = ['get_majors', 'get_major_from_netid']
 
 @functools.lru_cache()
 def get_majors() -> dict[str, str]:
+    """Fetches the list of majors from the directory dropdown filter. Caches the list for fast retrieval.
+
+    Returns:
+        dict[str, str]: The dictionary of major short codes to major full text.
+    """
     r = requests.get("https://www.utdallas.edu/directory/")
     soup = bs4.BeautifulSoup(r.text, 'html.parser')
     dirMajor = soup.find(id="dirMajor")
@@ -13,7 +18,15 @@ def get_majors() -> dict[str, str]:
     del options['All']
     return options
 
-def get_major_from_netid(netid: str):
+def get_major_from_netid(netid: str) -> str | None:
+    """Gets the major short code from the directory for a particular NetID.
+
+    Args:
+        netid (str): The NetID to look up.
+
+    Returns:
+        str | None: The major short code if successful, otherwise None.
+    """
     r = requests.get(
         f"https://websvcs.utdallas.edu/directory/includes/directories.class.php?dirType=displayname&dirSearch={netid}&dirAffil=All&dirDept=All&dirMajor=All&dirSchool=All"
     )
