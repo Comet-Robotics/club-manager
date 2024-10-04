@@ -374,7 +374,32 @@ async def givememberroles(ctx: discord.ApplicationContext):
 
 @bot.slash_command(description="Purge member roles from non-paying members")
 async def purgememberroles(ctx: discord.ApplicationContext):
-    pass
+    guild = bot.get_guild(settings.DISCORD_SERVER_ID)
+    member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
+    
+    message = await ctx.respond("Processing...")
+    
+    def get_valid_members():
+        current_term = Term.objects.filter(
+            start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()
+        ).first()
+        profiles = UserProfile.objects.exclude(discord_id__isnull=True)
+        valid_ids: list[int] = []
+        for profile in profiles:
+            if profile.is_member(current_term)[1]:
+                if profile.discord_id is not None:
+                    valid_ids.append(int(profile.discord_id))
+        return valid_ids
+    
+    removed_count = 0
+    discord_members = guild.members
+    valid_members = await sync_to_async(get_valid_members)()
+    for discord_member in discord_members:
+        if discord_member.id not in valid_members:
+            removed_count += 1
+            await discord_member.remove_roles(member_role)
+
+    await message.edit_original_response(content=f"Member role purge success! Removed member role for {removed_count} users.")
 
 
 class ListView(discord.ui.View):
