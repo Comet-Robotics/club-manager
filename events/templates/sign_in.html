@@ -8,21 +8,31 @@
     {% csrf_token %} {{ form.as_p }}
     <button class="btn" type="submit">Sign In</button>
   </form>
-  <a href="{% url 'lookup-user' event_id %}"><button class="btn">Lookup User</button></a>
+  <a href="{% url 'lookup-user' event_id %}"
+    ><button class="btn">Lookup User</button></a
+  >
   <br />
-  {% if message %} {% if message == 'repeat' %}
-  <h1>You already signed in at {{ status.timestamp }}</h1>
-  {% else %}
-  <h1>You're all checked in!</h1>
-  {% endif %}
-  <h2>{{ user.first_name }} {{user.last_name}}</h2>
-  <h3>ID: {{ user.username }}</h3>
-  <br />
-  <img
-    src="https://cdn.pixabay.com/photo/2023/03/30/00/21/check-7886573_1280.png"
-    alt="Success"
-    style="width: 200px"
-  />
+  {% if message %} 
+    {% if message == 'repeat' %}
+    <h1>You already signed in at {{ status.timestamp }}</h1>
+    {% elif message == 'nomember' %}
+    <h1>You need to pay member dues!</h1>
+    <img
+      src="https://media1.tenor.com/m/bfgjTc0DxiIAAAAC/sad-emoji.gif"
+      alt="Not a Member"
+      style="width: 200px"
+    />
+    {% else %}
+    <h1>You're all checked in!</h1>
+    {% endif %}
+    <h2>{{ user.first_name }} {{user.last_name}}</h2>
+    <h3>ID: {{ user.username }}</h3>
+    <br />
+    <img
+      src="https://cdn.pixabay.com/photo/2023/03/30/00/21/check-7886573_1280.png"
+      alt="Success"
+      style="width: 200px"
+    />
   {% endif %}
 </body>
 {% endblock %}

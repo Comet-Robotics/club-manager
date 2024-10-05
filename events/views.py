@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.http import Http404
 from .forms import SignInForm, CreateProfileForm, UserSearchForm, RSVPForm
 from .models import UserIdentification, Attendance, Event, Reservation
+from core.models import UserProfile
 from django.contrib.auth.models import User
 from django.contrib.admin.views.decorators import staff_member_required
 from .tables import UserTable, LinkUserTable
@@ -17,12 +18,19 @@ def sign_in(request, event_id):
             try:
                 user_profile = UserIdentification.objects.get(student_id=student_id)
                 if user_profile:
+                    user = User.objects.get(username=user_profile.user)
+                    valid_payment = UserProfile.objects.get(user=user).is_member()[1]
+                    print(valid_payment)
                     form = SignInForm()
                     status, created = Attendance.objects.get_or_create(event=current_event, user=user_profile.user)
                     if created:
                         message = ("success")
+                        if not valid_payment:
+                            message = ("nomember")
                     else:
                         message = ("repeat")
+                        if not valid_payment:
+                            message = ("nomember")
             except UserIdentification.DoesNotExist:
                 return redirect('lookup-user', event_id=event_id, student_id=student_id)
             
