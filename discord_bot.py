@@ -19,9 +19,11 @@ from core.models import User, UserProfile
 from common.asyncutils import *
 from common.utils import is_valid_net_id
 from django.utils import timezone
+import io
 import subprocess
 import socket
 import random
+import requests
 
 LIST = [
     "Cafe Brazil",
@@ -417,6 +419,36 @@ async def thelist(ctx: discord.ApplicationContext):
     )
 
     await ctx.respond(embed=embed, view=ListView(), ephemeral=True, delete_after=60.0)
+
+
+@bot.slash_command(description="View the printers") # TODO: change to the Makerspace
+async def camera(ctx: discord.ApplicationContext):
+
+    message = await ctx.respond("Processing...", ephemeral=True)
+
+    def get_valid_members():
+        current_term = Term.objects.filter(
+            start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()
+        ).first()
+        profiles = UserProfile.objects.exclude(discord_id__isnull=True)
+        valid_ids: list[int] = []
+        for profile in profiles:
+            if profile.is_member(current_term)[1]:
+                if profile.discord_id is not None:
+                    valid_ids.append(int(profile.discord_id))
+        return valid_ids
+
+    valid_members = await sync_to_async(get_valid_members)()
+
+    if ctx.author.id not in valid_members:
+        await message.edit_original_response(
+            content=f"You are not registered as a member of Comet Robotics!"
+        )
+    else:
+        # url = "http://eric1:8080/stream" # TODO: probably /snapshot instead of /stream
+        url = "http://eric2.lab.cometrobotics.org:8001/snapshot"
+        img = discord.File(io.BytesIO(requests.get(url).content), "stream.jpg")
+        await message.edit_original_response(content="", file=img)
 
 
 bot.run(settings.DISCORD_TOKEN)
