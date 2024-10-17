@@ -244,10 +244,10 @@ async def profile(ctx: discord.ApplicationContext):
 
     def get_basic_info(user_profile: UserProfile):
         return f"""
-        **Full Name:** {user_profile.user.first_name} {user_profile.user.last_name}
-        **Net ID:** {user_profile.user.username}
-        **Gender:** {UserProfile.GenderChoice(user_profile.gender).label if user_profile.gender else 'Not specified'}
-        """
+**Full Name:** {user_profile.user.first_name} {user_profile.user.last_name}
+**Net ID:** {user_profile.user.username}
+**Gender:** {UserProfile.GenderChoice(user_profile.gender).label if user_profile.gender else 'Not specified'}
+"""
     basic_info = await sync_to_async(get_basic_info)(user_profile)
 
     # Membership Status
