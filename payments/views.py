@@ -36,7 +36,6 @@ location = client.locations.retrieve_location(location_id=LOCATION_ID).body["loc
 ACCOUNT_CURRENCY = location["currency"]
 ACCOUNT_COUNTRY = location["country"]
 
-# Create your views here.
 def can_purchase_product(product, user):
     """
     Returns None if product can be purchased, otherwise returns a string messsage explaining why it can't be purchased
@@ -59,6 +58,7 @@ def product_cost_with_square_fee(product):
   """
   Returns the cost of the product with the Square fee applied. See https://developer.squareup.com/docs/payments-pricing#online-and-in-app-payments for reference.
   """
+  # TODO: Somehow we ended up losing a little bit of money on the Square fee. We need to figure out why this is happening. This function needs to be revisited.
   # Square's fee per transaction is 30 cents, plus 2.9% of the transaction amount
   square_fee = 30 + ceil(product.amount_cents * 0.029)
   return product.amount_cents + square_fee
