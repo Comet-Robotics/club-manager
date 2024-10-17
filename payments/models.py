@@ -50,7 +50,7 @@ class Payment(ComputedFieldsModel):
       
     There are no (normal) cases where these 2 fields should be set at the same time. 
     
-    We include the amount_cents field to track the amount of this payment in cents. The associated product's amount_cents will not necessarily match the amount_cents of the payment, since we may need to account for Square fees, which are added to the product's amount_cents to calculate the total amount_cents of the payment.
+    We include the amount_cents field to track the amount of this payment in cents. This is calculated by summing the amount of each PurchasedProduct associated with this payment, and then including Square fees (if applicable).
     """
     class Method(models.TextChoices):
         square_api = 'square_api', _('Credit Card/Debit Card (Online)')
@@ -80,3 +80,12 @@ class Payment(ComputedFieldsModel):
 
     def __str__(self):
         return f"{self.user.username} - {self.product.name}"
+
+
+class PurchasedProduct(ComputedFieldsModel):
+    """
+    A PurchasedProduct is an object representing a product that a user has purchased. 
+    """
+    product: Product = models.OneToOneField(Product, on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=1, validators=[MinValueValidator(0)])
+    payment: Payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name='purchased_products')

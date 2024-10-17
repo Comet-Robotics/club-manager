@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from django.views import View
-from payments.models import Payment, Product
+from payments.models import Payment, Product, PurchasedProduct
 from math import ceil
 
 
@@ -47,6 +47,7 @@ def can_purchase_product(product, user):
       # No purchases allowed
       return "Payments are currently disabled for this object."
     else:
+      # TODO: redo this logic
       # Purchases allowed, but need to check if user has reached max purchases
       allowed = Payment.objects.filter(Q(user=user) & Q(product=product) & (Q(is_successful=True) | Q(method=Payment.Method.cash))).count() < product.max_purchases_per_user
       if allowed:
@@ -96,14 +97,17 @@ class ChooseUserView(View):
             else:
                 if payment_choice == 'square_api':
                     return redirect('payment_form', product_id=product_id, user_id=user.id)
+                elif payment_choice == 'cash':
+                    purchased_product = PurchasedProduct(product=product, payment=Payment(method=Payment.Method.cash, user=user, amount_cents=product.amount_cents))
+                    purchased_product.save()
+                    return redirect('payment_success', payment_id=purchased_product.payment.id)
                 else:
-                    payment = Payment(method=Payment.Method.cash, product=product, user=user, amount_cents=product.amount_cents)
-                    payment.save()
-                    return redirect('payment_success', payment_id=payment.id)
+                  raise Exception("Invalid payment choice")
         return render(request, self.template_name, {'form': form, 'product_name': product.name})
 
 def product_payment(request, product_id, user_id):
     product = get_object_or_404(Product, id=product_id)
+    # TODO: this should use the product_cost_with_square_fee function
     process_fee = ceil(product.amount_cents * 0.029) + 30
     total_cost = product.amount_cents + process_fee
     return render(request, 'product_payment.html', {'product': product, 'user_id': user_id, 'process_fee': process_fee, 'total_cost': total_cost, 'APPLICATION_ID': APPLICATION_ID, 'LOCATION_ID': LOCATION_ID, 'ACCESS_TOKEN': ACCESS_TOKEN, 'PAYMENT_FORM_URL': PAYMENT_FORM_URL, 'ACCOUNT_CURRENCY': ACCOUNT_CURRENCY, 'ACCOUNT_COUNTRY': ACCOUNT_COUNTRY})
@@ -124,7 +128,9 @@ def process_square_payment(request, product_id, user_id):
           return JsonResponse({'square_res': {'errors': [{'detail': message}]}}, safe=False)
         
         payment = Payment(method=Payment.Method.square_api, product=product, user=user, amount_cents=product_cost_with_square_fee(product))
-        payment.save()
+        purchased_product = PurchasedProduct(product=product, payment=payment)
+        # TODO: confirm that this creates the Payment object as well
+        purchased_product.save()
         
         create_payment_response = client.payments.create_payment(
           body={
