@@ -1,14 +1,15 @@
 from asgiref.sync import sync_to_async
 import os
 
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'clubManager.settings')
 from clubManager import settings
 
 import django
 import discord
+from discord.ext import pages
 django.setup()
 
-from payments.models import Payment, Term
 from django.core.mail import send_mail
 from django.db import models
 from django.db.models.signals import post_save
@@ -19,11 +20,15 @@ from core.models import User, UserProfile
 from common.asyncutils import *
 from common.utils import is_valid_net_id
 from django.utils import timezone
+from events.models import Attendance
+from payments.models import Term
+from datetime import datetime, time as dttime
 import io
 import subprocess
 import socket
 import random
 import requests
+from operator import itemgetter
 
 LIST = [
     "Cafe Brazil",
@@ -59,6 +64,65 @@ intents.presences = True
 intents.message_content = True
 
 bot = discord.Bot(intents=intents)
+
+# -------- Utility methods --------
+
+async def get_user_attendances(user_profile: UserProfile):
+    def get_attendances():
+        return sorted(Attendance.objects.filter(user=user_profile.user), key=lambda a: a.event.event_date, reverse=True)
+    return await sync_to_async(get_attendances)()
+
+async def respond_user_attendances(interaction: discord.Interaction, user_profile: UserProfile):
+    attendances = await get_user_attendances(user_profile)
+    def get_attended_events():
+        return [ a.event for a in attendances ]
+    events = await sync_to_async(get_attended_events)()
+    ev_date_mapped = sorted({
+        date: list(filter(lambda e: date == e.event_date.date(), events))
+        for date in set(map(lambda e: e.event_date.date(), events))
+    }.items(), key=itemgetter(0), reverse=True)
+    attendance_strs = list(
+        map(
+            lambda de: (discord.utils.format_dt(datetime.combine(de[0], dttime.min), style="D") + "\n"
+                        + "\n".join(map(lambda e: f"- **{e.event_name}**", sorted(de[1], key=lambda x: x.event_date, reverse=False)))),
+            ev_date_mapped,
+        )
+    )
+    page_size = 8
+    attendance_strs_paginated = [ attendance_strs[i:i+page_size] for i in range(0, len(attendance_strs), page_size) ]
+    def make_embed(desc: str, **kwargs):
+        return discord.Embed(
+            title = f"{user_profile.user.get_short_name()}'s Attendances",
+            color = discord.Color.blurple(),
+            description = desc,
+            **kwargs
+        )
+    if not len(attendance_strs_paginated):
+        await interaction.respond(embed=make_embed("No attendances found!"), ephemeral=True)
+        return
+
+    attendance_embeds = [
+        make_embed(
+            "\n\n".join(ls),
+            footer=discord.EmbedFooter(text = f"Total: {len(events)}\nDays attended: {len(attendance_strs)}"), # TODO: weekly streak
+        ) for ls in attendance_strs_paginated
+    ]
+    paginator = pages.Paginator(attendance_embeds)
+    await paginator.respond(interaction, ephemeral=True)
+
+async def get_current_member_discord_ids():
+    def run():
+        current_term = Term.get_current_term()
+        profiles = UserProfile.objects.exclude(discord_id__isnull=True)
+        valid_ids: list[int] = []
+        for profile in profiles:
+            if profile.is_member(current_term)[1]:
+                if profile.discord_id is not None:
+                    valid_ids.append(int(profile.discord_id))
+        return valid_ids
+    return await sync_to_async(run)()
+
+# -------- Bot commands --------
 
 @bot.event
 async def on_ready():
@@ -170,7 +234,7 @@ Net ID: {net_id}</p>
 
     await ctx.respond(":tada:", embed=embed, ephemeral=True)
 
-@bot.slash_command(name="profile", description="View your Comet Robotics profile")
+@bot.slash_command(description="View your Comet Robotics profile")
 async def profile(ctx: discord.ApplicationContext):
     user = ctx.author
     user_profile: UserProfile | None = await get_profile_async(discord_id=str(user.id))
@@ -226,8 +290,12 @@ class ProfileActionsView(discord.ui.View):
         # discord_gender = [discord.SelectOption(label=str(obj._name_), value=str(obj)) for obj in UserProfile.GenderChoice]
         # self.add_item(discord.ui.Select(placeholder="Edit Gender...", options=discord_gender))
 
+    @discord.ui.button(label="View Attendances", style=discord.ButtonStyle.primary)
+    async def view_attendances(self, button, interaction: discord.Interaction):
+        await respond_user_attendances(interaction, self.user_profile)
+
     @discord.ui.button(label="Edit Profile (WIP)", style=discord.ButtonStyle.primary, disabled=True)
-    async def edit_profile(self, button, interaction):
+    async def edit_profile(self, button, interaction: discord.Interaction):
         await interaction.response.send_modal(ProfileEditView(user_profile=self.user_profile))
 
 class ProfileEditView(discord.ui.Modal):
@@ -259,7 +327,18 @@ class ProfileEditView(discord.ui.Modal):
         await sync_to_async(run)()
 
 
-# TODO: /create
+@bot.slash_command(description="View your meeting attendances")
+async def attendances(ctx: discord.ApplicationContext):
+    user = ctx.author
+    user_profile: UserProfile | None = await get_profile_async(discord_id=str(user.id))
+    if user_profile is None:
+        await ctx.respond("You don't have a linked Comet Robotics account. Use the `/link` command to connect your Comet Robotics account to your Discord account.", ephemeral=True)
+        return
+
+    await respond_user_attendances(ctx.interaction, user_profile)
+
+
+# TODO: /create - should send a confirmation email before creating account (extra impl for /accounts/link endpoint?)
 
 @bot.slash_command(description="Get the current version of the bot")
 async def version(ctx: discord.ApplicationContext):
@@ -356,18 +435,7 @@ async def givememberroles(ctx: discord.ApplicationContext):
 
     message = await ctx.respond("Processing...")
 
-    def get_ids_to_add():
-        current_term = Term.objects.filter(
-            start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()
-        ).first()
-        profiles = UserProfile.objects.exclude(discord_id__isnull=True)
-        valid_ids: list[int] = []
-        for profile in profiles:
-            if profile.is_member(current_term)[1]:
-                if profile.discord_id is not None:
-                    valid_ids.append(int(profile.discord_id))
-        return valid_ids
-    ids_to_add = await sync_to_async(get_ids_to_add)()
+    ids_to_add = await get_current_member_discord_ids()
     for discord_id in ids_to_add:
         member = guild.get_member(discord_id)
         await member.add_roles(member_role)
@@ -381,21 +449,9 @@ async def purgememberroles(ctx: discord.ApplicationContext):
     
     message = await ctx.respond("Processing...")
     
-    def get_valid_members():
-        current_term = Term.objects.filter(
-            start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()
-        ).first()
-        profiles = UserProfile.objects.exclude(discord_id__isnull=True)
-        valid_ids: list[int] = []
-        for profile in profiles:
-            if profile.is_member(current_term)[1]:
-                if profile.discord_id is not None:
-                    valid_ids.append(int(profile.discord_id))
-        return valid_ids
-    
     removed_count = 0
     discord_members = guild.members
-    valid_members = await sync_to_async(get_valid_members)()
+    valid_members = await get_current_member_discord_ids()
     for discord_member in discord_members:
         if discord_member.id not in valid_members:
             removed_count += 1
@@ -426,20 +482,7 @@ async def camera(ctx: discord.ApplicationContext):
 
     message = await ctx.respond("Processing...", ephemeral=True)
 
-    def get_valid_members():
-        current_term = Term.objects.filter(
-            start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()
-        ).first()
-        profiles = UserProfile.objects.exclude(discord_id__isnull=True)
-        valid_ids: list[int] = []
-        for profile in profiles:
-            if profile.is_member(current_term)[1]:
-                if profile.discord_id is not None:
-                    valid_ids.append(int(profile.discord_id))
-        return valid_ids
-
-    valid_members = await sync_to_async(get_valid_members)()
-
+    valid_members = await get_current_member_discord_ids()
     if ctx.author.id not in valid_members:
         await message.edit_original_response(
             content=f"You are not registered as a member of Comet Robotics!"
