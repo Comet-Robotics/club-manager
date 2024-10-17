@@ -20,7 +20,7 @@ class UserProfile(models.Model):
     gender = models.CharField(max_length=1, choices=GenderChoice.choices, null=True, blank=True)
     discord_id = models.CharField(max_length=200, null=True, blank=True, unique=True)
     major = models.CharField(choices=list(get_majors().items())+[("unknown", "Unknown")], null=True, blank=True, default=None)  # NULL indicates major needs to be fetched
-    is_utd_affiliate = models.BooleanField(null=False, blank=False)
+    is_utd_affiliate = models.BooleanField(null=False, blank=False, default=True) # TODO: get rid of default=True and fix UserProfile creation with null field
     date_of_birth = models.DateField(null=True, blank=True)
 
     def __str__(self):
