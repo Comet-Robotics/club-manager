@@ -18,4 +18,5 @@ export default defineConfig((state) => ({
       outDir: "dist/vite",
   },
   base: state.mode === 'build' ? 'vite' : '/',
+  publicDir: 'static'
 }))
