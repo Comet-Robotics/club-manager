@@ -62,7 +62,7 @@ def update_user_signal(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=UserProfile)
 def update_profile_signal(sender, instance, created, **kwargs):
-    if not instance.user.is_utd_affiliate:
+    if not instance.is_utd_affiliate:
         return
     if created or instance.major is None:
         instance.major = get_major_from_netid(instance.user.username) or "unknown"
