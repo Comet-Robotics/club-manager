@@ -20,5 +20,6 @@ requests = "~=2.32.3"
 beautifulsoup4 = "~=4.12.3"
 django-more-admin-filters = "*"
 tqdm = "*"
+djangorestframework = "*"
 
 [dev-packages]

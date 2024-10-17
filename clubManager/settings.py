@@ -28,6 +28,10 @@ SECRET_KEY = str(os.getenv('SECRET_KEY'))
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+CSRF_COOKIE_SAMESITE = 'Strict'
+SESSION_COOKIE_SAMESITE = 'Strict'
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_HTTPONLY = True
 ALLOWED_HOSTS = ["127.0.0.1", "*", 'https://portal.cometrobotics.org'] 
 CSRF_TRUSTED_ORIGINS = ['https://portal.cometrobotics.org', 'http://127.0.0.1']
 
@@ -51,6 +55,7 @@ INSTALLED_APPS = [
     "django_extensions",
     "computedfields",
     "more_admin_filters",
+    'rest_framework',
 ]
 
 DISABLE_CSRF = False
