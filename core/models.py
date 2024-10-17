@@ -21,6 +21,7 @@ class UserProfile(models.Model):
     discord_id = models.CharField(max_length=200, null=True, blank=True, unique=True)
     major = models.CharField(choices=list(get_majors().items())+[("unknown", "Unknown")], null=True, blank=True, default=None)  # NULL indicates major needs to be fetched
     is_utd_affiliate = models.BooleanField(null=False, blank=False)
+    date_of_birth = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return self.user.first_name + '_' + self.user.last_name
