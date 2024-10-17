@@ -33,7 +33,7 @@ class UserProfile(models.Model):
         if for_term:
             term = for_term
         else:
-            term = Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).first()
+            term = Term.get_current_term()
             if not term:
                 raise Exception("No current Term found.")
 
