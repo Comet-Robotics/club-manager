@@ -91,3 +91,5 @@ db.sqlite3
 config.ini
 cert.pem
 key.pem
+
+./static/
