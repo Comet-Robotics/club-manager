@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Progress } from "@/components/ui/progress"
 
 export default function ClubDashboard() {
-  const [attendanceProgress, setAttendanceProgress] = useState(75)
+  const [attendanceProgress, _] = useState(75)
 
   return (
     <div className="min-h-screen bg-background">
