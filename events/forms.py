@@ -41,5 +41,6 @@ class RSVPForm(forms.Form):
                               attrs={'class': "input input-bordered"}))
     last_name = forms.CharField(label='Last Name', max_length=100, widget=forms.TextInput(
                               attrs={'class': "input input-bordered"}))
+    # TODO: allow username to not be a net id
     net_id = NetIDField(label='Net ID', max_length=20, widget=forms.TextInput(
                               attrs={'class': "input input-bordered"}))

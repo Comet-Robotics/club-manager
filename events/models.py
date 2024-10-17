@@ -19,6 +19,7 @@ class Attendance(models.Model):
         return str(self.event) + ' - ' + str(self.timestamp)
 
 class UserIdentification(models.Model):
+    # TODO: we should combine the UserProfile and UserIdentification models. this model is redundant since it only has one field
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     student_id = models.CharField(max_length=20, unique=True)
 
