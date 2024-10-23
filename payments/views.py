@@ -4,13 +4,14 @@ import configparser
 from django.utils import timezone
 import json
 from square.client import Client
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from django.views import View
-from payments.models import Payment, Product
+from payments.models import Payment, Product, PurchasedProduct
 from math import ceil
+from typing import TypedDict
 
 
 config = configparser.ConfigParser()
@@ -48,20 +49,47 @@ def can_purchase_product(product, user):
       return "Payments are currently disabled for this object."
     else:
       # Purchases allowed, but need to check if user has reached max purchases
-      allowed = Payment.objects.filter(Q(user=user) & Q(product=product) & (Q(is_successful=True) | Q(method=Payment.Method.cash))).count() < product.max_purchases_per_user
+      
+      # TODO: need to test this
+  
+      total_purchased = PurchasedProduct.objects.filter(
+                  product=product,
+                  payment__user=user,
+                  payment__is_successful=True
+              ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
+      
+      allowed = total_purchased < product.max_purchases_per_user
+      
       if allowed:
           return None
       else:
         return "You have reached the maximum number of purchases for this object."
 
-def product_cost_with_square_fee(product):
+class CostWithFee(TypedDict):
+    product_amount_cents: int
+    square_fee_cents: int
+    total_payment_amount_cents: int
+
+
+# TODO: rename this arg to something more descriptive
+def cost_with_square_fee(product_amount_cents: int) -> CostWithFee:
   """
   Returns the cost of the product with the Square fee applied. See https://developer.squareup.com/docs/payments-pricing#online-and-in-app-payments for reference.
   """
-  # TODO: Somehow we ended up losing a little bit of money on the Square fee. We need to figure out why this is happening. This function needs to be revisited.
-  # Square's fee per transaction is 30 cents, plus 2.9% of the transaction amount
-  square_fee = 30 + ceil(product.amount_cents * 0.029)
-  return product.amount_cents + square_fee
+  # Square's fee per transaction is 30 cents, plus 2.9% of the transaction amount.
+  # square_fee = 30 + ceil(product.amount_cents * 0.029)
+  # 
+  # TODO: explain why we have to do this weird / not intuitive calculation:
+  # (amount_we_want + fixed_cost) / (1 - variable_cost)
+  
+  total_payment_amount_cents = ceil((product_amount_cents + 30) / (1 - 0.029))
+  square_fee_cents = total_payment_amount_cents - product_amount_cents
+  
+  return CostWithFee(
+        product_amount_cents=product_amount_cents,
+        square_fee_cents=square_fee_cents,
+        total_payment_amount_cents=total_payment_amount_cents
+  )
   
 
 class PaymentSuccessView(View):
@@ -96,16 +124,23 @@ class ChooseUserView(View):
             else:
                 if payment_choice == 'square_api':
                     return redirect('payment_form', product_id=product_id, user_id=user.id)
+                elif payment_choice == 'cash':
+                    purchased_product = PurchasedProduct(product=product, payment=Payment(method=Payment.Method.cash, user=user, amount_cents=product.amount_cents))
+                    purchased_product.save()
+                    return redirect('payment_success', payment_id=purchased_product.payment.id)
                 else:
-                    payment = Payment(method=Payment.Method.cash, product=product, user=user, amount_cents=product.amount_cents)
-                    payment.save()
-                    return redirect('payment_success', payment_id=payment.id)
+                  raise Exception("Invalid payment choice")
         return render(request, self.template_name, {'form': form, 'product_name': product.name})
 
 def product_payment(request, product_id, user_id):
     product = get_object_or_404(Product, id=product_id)
-    process_fee = ceil(product.amount_cents * 0.029) + 30
-    total_cost = product.amount_cents + process_fee
+    # TODO: this should use the product_cost_with_square_fee function
+    fees = cost_with_square_fee(product.amount_cents)
+    
+    process_fee = fees["square_fee_cents"]
+    total_cost = fees["total_payment_amount_cents"]
+    
+    
     return render(request, 'product_payment.html', {'product': product, 'user_id': user_id, 'process_fee': process_fee, 'total_cost': total_cost, 'APPLICATION_ID': APPLICATION_ID, 'LOCATION_ID': LOCATION_ID, 'ACCESS_TOKEN': ACCESS_TOKEN, 'PAYMENT_FORM_URL': PAYMENT_FORM_URL, 'ACCOUNT_CURRENCY': ACCOUNT_CURRENCY, 'ACCOUNT_COUNTRY': ACCOUNT_COUNTRY})
 
 @csrf_exempt
@@ -123,8 +158,12 @@ def process_square_payment(request, product_id, user_id):
         if message:
           return JsonResponse({'square_res': {'errors': [{'detail': message}]}}, safe=False)
         
-        payment = Payment(method=Payment.Method.square_api, product=product, user=user, amount_cents=product_cost_with_square_fee(product))
-        payment.save()
+        fees = cost_with_square_fee(product.amount_cents)
+        
+        payment = Payment(method=Payment.Method.square_api, product=product, user=user, amount_cents=fees["total_payment_amount_cents"])
+        purchased_product = PurchasedProduct(product=product, payment=payment)
+        # TODO: confirm that this creates the Payment object as well
+        purchased_product.save()
         
         create_payment_response = client.payments.create_payment(
           body={

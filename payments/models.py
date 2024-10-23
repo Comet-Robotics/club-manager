@@ -55,7 +55,7 @@ class Payment(ComputedFieldsModel):
       
     There are no (normal) cases where these 2 fields should be set at the same time. 
     
-    We include the amount_cents field to track the amount of this payment in cents. The associated product's amount_cents will not necessarily match the amount_cents of the payment, since we may need to account for Square fees, which are added to the product's amount_cents to calculate the total amount_cents of the payment.
+    We include the amount_cents field to track the amount of this payment in cents. This is calculated by summing the amount of each PurchasedProduct associated with this payment, and then including Square fees (if applicable).
     """
     class Method(models.TextChoices):
         square_api = 'square_api', _('Credit Card/Debit Card (Online)')
@@ -66,7 +66,9 @@ class Payment(ComputedFieldsModel):
         cashapp = 'cashapp', _('Cash App Payment (LEGACY - DO NOT USE FOR NEW PAYMENTS)')
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=False)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=False)
+    
+    # NOTE: as a part of this refactor, we need to migrate payments which have a direct relationship to the Product model to use the PurchasedProduct model. This needs to be done in a migration before we can remove the field entirely. We've edited this field to allow payments to have a null product, which will indicate that its been migrated to the new PurchasedProduct model. Once we see that the field is null for every payment, we can remove it (in a separate migration).
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=False, null=True, unique=False)
     amount_cents = models.IntegerField(validators=[MinValueValidator(0)])
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -85,3 +87,12 @@ class Payment(ComputedFieldsModel):
 
     def __str__(self):
         return f"{self.user.username} - {self.product.name}"
+
+
+class PurchasedProduct(models.Model):
+    """
+    A PurchasedProduct is an object representing a product that a user has purchased. 
+    """
+    product: Product = models.ForeignKey(Product, on_delete=models.CASCADE, null=False)
+    quantity = models.IntegerField(default=1, validators=[MinValueValidator(1)], null=False)
+    payment: Payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name='purchased_products', null=False)
