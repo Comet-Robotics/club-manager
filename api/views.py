@@ -1,8 +1,9 @@
 from django.shortcuts import render
 from django.contrib.auth.models import Group, User
-from .serializers import UserSerializer
+from payments.models import Product
+from .serializers import UserSerializer, ProductSerializer
 from rest_framework import permissions, viewsets
-from .permissions import IsOwnerOrStaff, DeleteNotAllowed
+from .permissions import IsOwnerOrStaff, DeleteNotAllowed, ReadOnlyView
 import json
 
 from django.contrib.auth import authenticate, login, logout
@@ -18,6 +19,10 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     queryset = User.objects.all()
 
+class ProductViewSet(viewsets.ModelViewSet):
+    permission_classes = [ReadOnlyView]
+    serializer_class = ProductSerializer
+    queryset = Product.objects.all()
 
 
 def get_csrf(request):

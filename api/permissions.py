@@ -27,3 +27,13 @@ class DeleteNotAllowed(permissions.BasePermission):
         if request.method == 'DELETE' and not request.user.is_staff:
             return False
         return True
+        
+class ReadOnlyView(permissions.BasePermission):
+    """
+    Custom permission to only allow read-only access to the API.
+    """
+    def has_permission(self, request, view):
+        # Allow GET, HEAD, OPTIONS requests
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return False
