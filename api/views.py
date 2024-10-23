@@ -31,6 +31,7 @@ def get_csrf(request):
     return response
 
 
+# TODO: refactor auth routes to use APIView and extend_schema so they are documented in the OpenAPI schema + client generation
 @require_POST
 def login_view(request):
     data = json.loads(request.body)
@@ -69,4 +70,4 @@ def whoami_view(request):
     if not request.user.is_authenticated:
         return JsonResponse({'isAuthenticated': False})
 
-    return JsonResponse({'username': request.user.username})
+    return JsonResponse({'username': request.user.username, 'id': request.user.id})
