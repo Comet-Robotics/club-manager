@@ -21,7 +21,9 @@ class Attendance(models.Model):
 
 
 class CombatEvent(models.Model):
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='public_events')
+    # SUGGESTION (to consider when I am not sleep deprived): instead of creating a CombatEvent model, add models for EventWith Waivers, EventWithPayments, EventWithRobotCombatEvents, etc.
+
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='combat_events')
     # Documenso is an open source DocuSign clone that we use to store the waivers for minors and adults. It sends an email with a link to the document that they can e-sign (or we can optionally embed that same flow into our project via a React component).
     # If a user's DOB indicates they are under 18, they will receive the minor waiver to sign, which also requires their parent to sign before Documenso will mark it as complete. most of what we found on COPPA said that we should be fine storing minor data as long as we have parental permission which this can cover
     documenso_minor_waiver_id = models.CharField()
