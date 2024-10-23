@@ -84,7 +84,7 @@ class Payment(ComputedFieldsModel):
         return bool(self.verified_by or self.completed_at)
 
     def __str__(self):
-        return f"{self.user.username} - {self.product.name}"
+        return f"{self.user.username} - {','.join(self.purchased_products.values_list('product__name', flat=True))}"
 
 
 class PurchasedProduct(models.Model):
