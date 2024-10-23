@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 
 from clubManager import settings
 from common.major import get_majors, get_major_from_netid
-from payments.models import Payment, Term
+from payments.models import Payment, PurchasedProduct, Term
 import discord
 
 # Create your models here.
@@ -26,9 +26,9 @@ class UserProfile(models.Model):
     def __str__(self):
         return self.user.first_name + '_' + self.user.last_name
     
-    def is_member(self, for_term: Term | None = None) -> tuple[Term, Payment | None]:
+    def is_member(self, for_term: Term | None = None) -> tuple[Term, PurchasedProduct | None]:
         """
-        Returns a tuple with the Term and Payment object for the current member if the user is a member for the given term, or a tuple with the given Term and None if they are not a member.
+        Returns a tuple with the Term and PurchasedProduct object for the current member if the user is a member for the given term, or a tuple with the given Term and None if they are not a member.
         """
         if for_term:
             term = for_term
@@ -37,9 +37,9 @@ class UserProfile(models.Model):
             if not term:
                 raise Exception("No current Term found.")
 
-        payment = Payment.objects.filter(user=self.user, product=term.product, is_successful=True)
+        purchased_product = PurchasedProduct.objects.filter(payment__user=self.user, product=term.product, payment__is_successful=True)
 
-        return term, payment.first()
+        return term, purchased_product.first()
     
     def apply_discord_roles(self, dry_run=False): 
         roles_to_apply: list[int] = []
