@@ -5,7 +5,7 @@ from more_admin_filters import MultiSelectDropdownFilter
 
 # Register your models here.
 
-from .models import Product, Payment, Term
+from .models import Product, Payment, Term, PurchasedProduct
 
 class PaymentAdmin(admin.ModelAdmin):
     exclude = ["completed_at", "metadata"]
@@ -19,6 +19,5 @@ class PaymentAdmin(admin.ModelAdmin):
 
 admin.site.register(Product, search_fields=["name"])
 admin.site.register(Term, search_fields=["name"] + SearchFields.PRODUCT)
-admin.site.register(Payment, PaymentAdmin, search_fields=SearchFields.USER)
-# TODO: fix this
-# admin.site.register(Payment, PaymentAdmin, search_fields=SearchFields.USER + SearchFields.PRODUCT)
+admin.site.register(Payment, PaymentAdmin, search_fields=SearchFields.USER + SearchFields.PURCHASED_PRODUCT)
+admin.site.register(PurchasedProduct, search_fields=SearchFields.PRODUCT)
