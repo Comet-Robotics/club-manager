@@ -66,6 +66,7 @@ class Payment(ComputedFieldsModel):
         cashapp = 'cashapp', _('Cash App Payment (LEGACY - DO NOT USE FOR NEW PAYMENTS)')
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=False)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=False)
     amount_cents = models.IntegerField(validators=[MinValueValidator(0)])
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -91,5 +92,5 @@ class PurchasedProduct(ComputedFieldsModel):
     A PurchasedProduct is an object representing a product that a user has purchased. 
     """
     product: Product = models.OneToOneField(Product, on_delete=models.CASCADE)
-    quantity = models.IntegerField(default=1, validators=[MinValueValidator(1)])
+    quantity = models.IntegerField(default=1, validators=[MinValueValidator(0)])
     payment: Payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name='purchased_products')
