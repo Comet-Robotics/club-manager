@@ -4,7 +4,7 @@ import configparser
 from django.utils import timezone
 import json
 from square.client import Client
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
@@ -47,9 +47,18 @@ def can_purchase_product(product, user):
       # No purchases allowed
       return "Payments are currently disabled for this object."
     else:
-      # TODO: redo this logic
       # Purchases allowed, but need to check if user has reached max purchases
-      allowed = Payment.objects.filter(Q(user=user) & Q(product=product) & (Q(is_successful=True) | Q(method=Payment.Method.cash))).count() < product.max_purchases_per_user
+      
+      # TODO: need to test this
+  
+      total_purchased = PurchasedProduct.objects.filter(
+                  product=product,
+                  payment__user=user,
+                  payment__is_successful=True
+              ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
+      
+      allowed = total_purchased < product.max_purchases_per_user
+      
       if allowed:
           return None
       else:
