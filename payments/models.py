@@ -67,8 +67,6 @@ class Payment(ComputedFieldsModel):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=False)
     
-    # NOTE: as a part of this refactor, we need to migrate payments which have a direct relationship to the Product model to use the PurchasedProduct model. This needs to be done in a migration before we can remove the field entirely. We've edited this field to allow payments to have a null product, which will indicate that its been migrated to the new PurchasedProduct model. Once we see that the field is null for every payment, we can remove it (in a separate migration).
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=False, null=True, unique=False)
     amount_cents = models.IntegerField(validators=[MinValueValidator(0)])
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
