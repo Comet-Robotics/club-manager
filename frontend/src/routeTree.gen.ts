@@ -21,7 +21,6 @@ const IndexLazyImport = createFileRoute('/')()
 // Create/Update Routes
 
 const IndexLazyRoute = IndexLazyImport.update({
-  id: '/',
   path: '/',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/index.lazy').then((d) => d.Route))
