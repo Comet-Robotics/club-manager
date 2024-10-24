@@ -27,14 +27,7 @@ const App = observer(function App() {
         onChange={(e) => setPassword(e.target.value)}
       />
       <button
-        onClick={async () => {
-          const user = await authStore$.login(username, password)
-          if (user) {
-            console.log("logged in")
-          } else {
-            console.log("invalid login")
-          }
-        }}
+        onClick={() => authStore$.login(username, password)}
       >login lol</button>
     </>
   )

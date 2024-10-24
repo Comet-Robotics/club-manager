@@ -11,7 +11,7 @@ type TestStore = {
   user: string
 }
 
-export const testStore$  = observable<TestStore>({
+export const testStore$ = observable<TestStore>({
   user: "This is some sample state that gets persisted on refresh",
 })
 
@@ -36,10 +36,10 @@ export const authStore$ = observable<AuthStore>({
         password: password
       }
     })
-    if (loginRes.error) return null
+    if (loginRes.error || !loginRes.data) return null
     
     const whoamiRes = await apiClient.GET("/api/auth/whoami/")
-    if (whoamiRes.error) return null
+    if (whoamiRes.error || !whoamiRes.data) return null
     
     const userRes = await apiClient.GET("/api/users/{id}/", {
       params: {
@@ -48,7 +48,7 @@ export const authStore$ = observable<AuthStore>({
         }
       }
     })
-    if (userRes.error) return null
+    if (userRes.error || !userRes.data) return null
     
     const user = userRes.data
     authStore$.user.set(user)
