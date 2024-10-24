@@ -33,7 +33,7 @@ SESSION_COOKIE_SAMESITE = 'Strict'
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
 ALLOWED_HOSTS = ["127.0.0.1", "*", 'https://portal.cometrobotics.org'] 
-CSRF_TRUSTED_ORIGINS = ['https://portal.cometrobotics.org', 'http://127.0.0.1']
+CSRF_TRUSTED_ORIGINS = ['https://portal.cometrobotics.org', 'http://127.0.0.1', 'http://localhost:5173']
 
 
 # Application definition

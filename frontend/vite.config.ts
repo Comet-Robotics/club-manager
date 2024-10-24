@@ -18,5 +18,14 @@ export default defineConfig((state) => ({
       outDir: "dist/vite",
   },
   base: state.mode === 'build' ? 'vite' : '/',
-  publicDir: 'static'
+  publicDir: 'static',
+  // NOTE: this only applies to dev mode
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    }
+  }
 }))

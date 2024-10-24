@@ -5,10 +5,7 @@ import { User } from "./types";
 import type { paths } from "./api-schema";
 import createClient from "openapi-fetch";
 
-
-// TODO: baseURL should be configurable
-const apiClient = createClient<paths>({ baseUrl: "http://localhost:8000" })
-
+const apiClient = createClient<paths>({ baseUrl: "/" })
 
 type TestStore = {
   user: string
