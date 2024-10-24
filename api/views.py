@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.contrib.auth.models import Group, User
 from payments.models import Product
 from .serializers import UserSerializer, ProductSerializer
-from rest_framework import permissions, viewsets
+from rest_framework import permissions, viewsets, status, serializers
 from .permissions import IsOwnerOrStaff, DeleteNotAllowed, ReadOnlyView
 import json
 
@@ -11,6 +11,11 @@ from django.http import JsonResponse
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.decorators import permission_classes
+from drf_spectacular.utils import extend_schema
 
 
 # Create your views here.
@@ -31,43 +36,110 @@ def get_csrf(request):
     return response
 
 
-# TODO: refactor auth routes to use APIView and extend_schema so they are documented in the OpenAPI schema + client generation
-@require_POST
-def login_view(request):
-    data = json.loads(request.body)
-    username = data.get('username')
-    password = data.get('password')
-
-    if username is None or password is None:
-        return JsonResponse({'detail': 'Please provide username and password.'}, status=400)
-
-    user = authenticate(username=username, password=password)
-
-    if user is None:
-        return JsonResponse({'detail': 'Invalid credentials.'}, status=400)
-
-    login(request, user)
-    return JsonResponse({'detail': 'Successfully logged in.'})
+class LoginRequestSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
 
 
-def logout_view(request):
-    if not request.user.is_authenticated:
-        return JsonResponse({'detail': 'You\'re not logged in.'}, status=400)
+class LoginResponseSerializer(serializers.Serializer):
+    detail = serializers.CharField()
+    
 
-    logout(request)
-    return JsonResponse({'detail': 'Successfully logged out.'})
+class LoginView(APIView):
+    @extend_schema(
+        request=LoginRequestSerializer,
+        responses={
+            200: LoginResponseSerializer,
+            401: LoginResponseSerializer
+        },
+        description='Login with username and password'
+    )
+    def post(self, request):
+        data = request.data
+        username = data.get('username')
+        password = data.get('password')
+
+        user = authenticate(username=username, password=password)
+
+        if user is None:
+            return Response({'detail': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        login(request, user)
+        return Response({'detail': 'Successfully logged in.'})
 
 
-@ensure_csrf_cookie
-def session_view(request):
-    if not request.user.is_authenticated:
-        return JsonResponse({'isAuthenticated': False})
 
-    return JsonResponse({'isAuthenticated': True})
+class LogoutResponseSerializer(serializers.Serializer):
+    detail = serializers.CharField()
 
 
-def whoami_view(request):
-    if not request.user.is_authenticated:
-        return JsonResponse({'isAuthenticated': False})
+class LogoutView(APIView):
+    @extend_schema(
+        responses={
+            200: LogoutResponseSerializer,
+            400: LogoutResponseSerializer
+        },
+        description='Logout current user'
+    )
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return Response({'detail': 'You\'re not logged in.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    return JsonResponse({'username': request.user.username, 'id': request.user.id})
+        logout(request)
+        return Response({'detail': 'Successfully logged out.'})
+
+
+class SessionResponseSerializer(serializers.Serializer):
+    isAuthenticated = serializers.BooleanField()
+    
+    
+class SessionView(APIView):
+    @extend_schema(
+        responses={200: SessionResponseSerializer},
+        description='Check if user is authenticated'
+    )
+    @ensure_csrf_cookie 
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return Response({'isAuthenticated': False})
+
+        return Response({'isAuthenticated': True})
+
+
+class WhoAmIView(APIView):
+    @extend_schema(
+        responses={
+          403: {
+            "type": "object",
+            "properties": {
+                "isAuthenticated": {
+                    "type": "boolean",
+                    "enum": [False]
+                }
+            },
+            "required": ["isAuthenticated"]
+          }, 
+          200: {
+              "type": "object",
+              "properties": {
+                  "isAuthenticated": {
+                      "type": "boolean",
+                      "enum": [True]
+                  },
+                  "username": {
+                      "type": "string"
+                  },
+                  "id": {
+                      "type": "integer"
+                  }
+              },
+              "required": ["isAuthenticated", "username", "id"]
+          }
+        },
+        description='Get current user information'
+    )
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return Response({'isAuthenticated': False}, status=status.HTTP_403_FORBIDDEN)
+
+        return Response({'username': request.user.username, 'id': request.user.id, 'isAuthenticated': True})
