@@ -15,11 +15,11 @@ export default defineConfig((state) => ({
     },
   },
   build: {
-      outDir: "dist/vite",
+      outDir: "dist",
   },
-  base: state.mode === 'build' ? 'vite' : '/',
-  publicDir: 'static',
-  // NOTE: this only applies to dev mode
+  // TODO: figure out static files. may not even be needed since we can import assets from frontend/assets
+  publicDir: false as const,
+  // NOTE: this proxy is only used in dev mode
   server: {
     proxy: {
       '/api': {
