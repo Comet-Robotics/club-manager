@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+
+set -e
+
 pipenv install --deploy
 pushd frontend
 npm install && npm run build
