@@ -57,7 +57,15 @@ INSTALLED_APPS = [
     "more_admin_filters",
     'rest_framework',
     'drf_spectacular',
+    'django_vite',
 ]
+
+
+DJANGO_VITE = {
+  "default": {
+    "dev_mode": DEBUG
+  }
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',

@@ -22,5 +22,6 @@ django-more-admin-filters = "*"
 tqdm = "*"
 djangorestframework = "*"
 drf-spectacular = "0.27.2" # need to manually keep track of this dep and keep up to date as minors may have breaking changes for our usecase - see https://drf-spectacular.readthedocs.io/en/latest/readme.html#release-management
+django-vite = "*"
 
 [dev-packages]

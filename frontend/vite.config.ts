@@ -14,18 +14,15 @@ export default defineConfig((state) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  base: '/static',
   build: {
       outDir: "dist",
+      manifest: 'manifest.json',
+      // manifest: true,
   },
   // TODO: figure out static files. may not even be needed since we can import assets from frontend/assets
   publicDir: false as const,
-  // NOTE: this proxy is only used in dev mode
   server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-    }
+    // origin: 'http://127.0.0.1:5173',
   }
 }))
