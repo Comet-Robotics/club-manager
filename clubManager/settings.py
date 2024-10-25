@@ -63,7 +63,8 @@ INSTALLED_APPS = [
 
 DJANGO_VITE = {
   "default": {
-    "dev_mode": DEBUG
+    "dev_mode": DEBUG,
+    "static_url_prefix": "vite/",
   }
 }
 
@@ -167,8 +168,6 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.getenv('STATIC_ROOT')
-
-DJANGO_VITE_STATIC_URL_PREFIX = 'vite/'
 
 STATICFILES_DIRS = [
     BASE_DIR / "frontend/dist",
