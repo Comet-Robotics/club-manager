@@ -16,11 +16,17 @@ import { Route as rootRoute } from './routes/__root'
 
 // Create Virtual Routes
 
+const StoreLazyImport = createFileRoute('/store')()
 const StateLazyImport = createFileRoute('/state')()
 const LoginLazyImport = createFileRoute('/login')()
 const IndexLazyImport = createFileRoute('/')()
 
 // Create/Update Routes
+
+const StoreLazyRoute = StoreLazyImport.update({
+  path: '/store',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/store.lazy').then((d) => d.Route))
 
 const StateLazyRoute = StateLazyImport.update({
   path: '/state',
@@ -62,6 +68,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StateLazyImport
       parentRoute: typeof rootRoute
     }
+    '/store': {
+      id: '/store'
+      path: '/store'
+      fullPath: '/store'
+      preLoaderRoute: typeof StoreLazyImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -71,12 +84,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
   '/login': typeof LoginLazyRoute
   '/state': typeof StateLazyRoute
+  '/store': typeof StoreLazyRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexLazyRoute
   '/login': typeof LoginLazyRoute
   '/state': typeof StateLazyRoute
+  '/store': typeof StoreLazyRoute
 }
 
 export interface FileRoutesById {
@@ -84,14 +99,15 @@ export interface FileRoutesById {
   '/': typeof IndexLazyRoute
   '/login': typeof LoginLazyRoute
   '/state': typeof StateLazyRoute
+  '/store': typeof StoreLazyRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/state'
+  fullPaths: '/' | '/login' | '/state' | '/store'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/state'
-  id: '__root__' | '/' | '/login' | '/state'
+  to: '/' | '/login' | '/state' | '/store'
+  id: '__root__' | '/' | '/login' | '/state' | '/store'
   fileRoutesById: FileRoutesById
 }
 
@@ -99,12 +115,14 @@ export interface RootRouteChildren {
   IndexLazyRoute: typeof IndexLazyRoute
   LoginLazyRoute: typeof LoginLazyRoute
   StateLazyRoute: typeof StateLazyRoute
+  StoreLazyRoute: typeof StoreLazyRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexLazyRoute: IndexLazyRoute,
   LoginLazyRoute: LoginLazyRoute,
   StateLazyRoute: StateLazyRoute,
+  StoreLazyRoute: StoreLazyRoute,
 }
 
 export const routeTree = rootRoute
@@ -121,7 +139,8 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/login",
-        "/state"
+        "/state",
+        "/store"
       ]
     },
     "/": {
@@ -132,6 +151,9 @@ export const routeTree = rootRoute
     },
     "/state": {
       "filePath": "state.lazy.tsx"
+    },
+    "/store": {
+      "filePath": "store.lazy.tsx"
     }
   }
 }

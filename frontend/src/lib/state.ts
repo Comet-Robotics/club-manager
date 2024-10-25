@@ -5,11 +5,19 @@ import { User } from "./types";
 import type { paths } from "./api-schema";
 import createClient from "openapi-fetch";
 
-const apiClient = createClient<paths>({ baseUrl: "/" })
+export const apiClient = createClient<paths>({ baseUrl: "/" })
 
 type TestStore = {
   user: string
 }
+
+type Cart = {
+  quantities: { [key: number]: number }
+}
+
+export const cart$ = observable<Cart>({
+  quantities: {},
+})
 
 export const testStore$ = observable<TestStore>({
   user: "This is some sample state that gets persisted on refresh",
