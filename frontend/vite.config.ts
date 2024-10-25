@@ -16,9 +16,8 @@ export default defineConfig(() => ({
   },
   base: '/static',
   build: {
-      outDir: "dist",
+      outDir: "dist/vite",
       manifest: 'manifest.json',
-      // manifest: true,
   },
   // TODO: figure out static files. may not even be needed since we can import assets from frontend/assets
   publicDir: false as const,
