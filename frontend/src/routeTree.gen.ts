@@ -17,9 +17,8 @@ import { Route as rootRoute } from './routes/__root'
 // Create Virtual Routes
 
 const StoreLazyImport = createFileRoute('/store')()
-const StateLazyImport = createFileRoute('/state')()
 const LoginLazyImport = createFileRoute('/login')()
-const IndexLazyImport = createFileRoute('/')()
+const CheckoutLazyImport = createFileRoute('/checkout')()
 
 // Create/Update Routes
 
@@ -28,30 +27,25 @@ const StoreLazyRoute = StoreLazyImport.update({
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/store.lazy').then((d) => d.Route))
 
-const StateLazyRoute = StateLazyImport.update({
-  path: '/state',
-  getParentRoute: () => rootRoute,
-} as any).lazy(() => import('./routes/state.lazy').then((d) => d.Route))
-
 const LoginLazyRoute = LoginLazyImport.update({
   path: '/login',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/login.lazy').then((d) => d.Route))
 
-const IndexLazyRoute = IndexLazyImport.update({
-  path: '/',
+const CheckoutLazyRoute = CheckoutLazyImport.update({
+  path: '/checkout',
   getParentRoute: () => rootRoute,
-} as any).lazy(() => import('./routes/index.lazy').then((d) => d.Route))
+} as any).lazy(() => import('./routes/checkout.lazy').then((d) => d.Route))
 
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexLazyImport
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutLazyImport
       parentRoute: typeof rootRoute
     }
     '/login': {
@@ -59,13 +53,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginLazyImport
-      parentRoute: typeof rootRoute
-    }
-    '/state': {
-      id: '/state'
-      path: '/state'
-      fullPath: '/state'
-      preLoaderRoute: typeof StateLazyImport
       parentRoute: typeof rootRoute
     }
     '/store': {
@@ -81,47 +68,42 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexLazyRoute
+  '/checkout': typeof CheckoutLazyRoute
   '/login': typeof LoginLazyRoute
-  '/state': typeof StateLazyRoute
   '/store': typeof StoreLazyRoute
 }
 
 export interface FileRoutesByTo {
-  '/': typeof IndexLazyRoute
+  '/checkout': typeof CheckoutLazyRoute
   '/login': typeof LoginLazyRoute
-  '/state': typeof StateLazyRoute
   '/store': typeof StoreLazyRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
-  '/': typeof IndexLazyRoute
+  '/checkout': typeof CheckoutLazyRoute
   '/login': typeof LoginLazyRoute
-  '/state': typeof StateLazyRoute
   '/store': typeof StoreLazyRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/state' | '/store'
+  fullPaths: '/checkout' | '/login' | '/store'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/state' | '/store'
-  id: '__root__' | '/' | '/login' | '/state' | '/store'
+  to: '/checkout' | '/login' | '/store'
+  id: '__root__' | '/checkout' | '/login' | '/store'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
-  IndexLazyRoute: typeof IndexLazyRoute
+  CheckoutLazyRoute: typeof CheckoutLazyRoute
   LoginLazyRoute: typeof LoginLazyRoute
-  StateLazyRoute: typeof StateLazyRoute
   StoreLazyRoute: typeof StoreLazyRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexLazyRoute: IndexLazyRoute,
+  CheckoutLazyRoute: CheckoutLazyRoute,
   LoginLazyRoute: LoginLazyRoute,
-  StateLazyRoute: StateLazyRoute,
   StoreLazyRoute: StoreLazyRoute,
 }
 
@@ -137,20 +119,16 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/",
+        "/checkout",
         "/login",
-        "/state",
         "/store"
       ]
     },
-    "/": {
-      "filePath": "index.lazy.tsx"
+    "/checkout": {
+      "filePath": "checkout.lazy.tsx"
     },
     "/login": {
       "filePath": "login.lazy.tsx"
-    },
-    "/state": {
-      "filePath": "state.lazy.tsx"
     },
     "/store": {
       "filePath": "store.lazy.tsx"

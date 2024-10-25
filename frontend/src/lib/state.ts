@@ -4,30 +4,25 @@ import { ObservablePersistLocalStorage } from "@legendapp/state/persist-plugins/
 import { User } from "./types";
 import type { paths } from "./api-schema";
 import createClient from "openapi-fetch";
+import { syncedCrud } from '@legendapp/state/sync-plugins/crud'
 
 export const apiClient = createClient<paths>({ baseUrl: "/" })
 
-type TestStore = {
-  user: string
-}
-
-type Cart = {
+type CartStore = {
   quantities: { [key: number]: number }
 }
 
-export const cart$ = observable<Cart>({
+export const products$ = observable(syncedCrud({
+  list: async () => {
+    const res = await apiClient.GET("/api/products/")
+    if (res.error || !res.data) return []
+    return res.data
+  }
+}))
+
+
+export const cart$ = observable<CartStore>({
   quantities: {},
-})
-
-export const testStore$ = observable<TestStore>({
-  user: "This is some sample state that gets persisted on refresh",
-})
-
-syncObservable(testStore$, {
-    persist: {
-        name: 'testStore',
-        plugin: ObservablePersistLocalStorage
-    }
 })
 
 type AuthStore = {

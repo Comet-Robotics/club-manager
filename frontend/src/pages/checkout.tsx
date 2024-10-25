@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -7,23 +7,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { PaymentForm, CreditCard, ApplePay,
     GooglePay } from 'react-square-web-payments-sdk';
+import { cart$, products$ } from '@/lib/state'
+import { observer } from "@legendapp/state/react"
+import type { Product } from '@/lib/types'
 
+export default observer(Component)
 
-export default function Component() {
-  const [cartItems, setCartItems] = useState([
-    { id: 1, name: "Product 1", price: 19.99, quantity: 2 },
-    { id: 2, name: "Product 2", price: 29.99, quantity: 1 },
-    { id: 3, name: "Product 3", price: 39.99, quantity: 3 },
-  ])
-
-  const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0)
-  const tax = subtotal * 0.1 // Assuming 10% tax
-  const total = subtotal + tax
+function Component() {
+  const cartQuantities = cart$.quantities.get()
+  
+  const cartItems = useMemo(() => {
+    return Object.entries(cartQuantities).reduce((acc, [productId, quantity]) => {
+      const item = products$.get()[productId as number]
+      if (!item) return acc
+      return [...acc, {...item, quantity}]
+    }, [] as (Product & {quantity: number})[])
+  }, [cartQuantities])
+  
+  const subtotal = Object.entries(cartItems).reduce((acc, [productId, quantity]) => {
+    const item = products$.get()[productId]
+    return acc + (item?.amount_cents * quantity)
+  }, 0)
+  const total = subtotal
 
   const updateQuantity = (id: number, newQuantity: number) => {
-    setCartItems(cartItems.map(item => 
-      item.id === id ? { ...item, quantity: newQuantity } : item
-    ))
+    cart$.quantities.set({ ...cartQuantities, [id]: newQuantity })
   }
 
   return (
@@ -43,7 +51,7 @@ export default function Component() {
                     <div className="w-16 h-16 bg-gray-200 rounded-md"></div>
                     <div>
                       <h3 className="font-semibold">{item.name}</h3>
-                      <p className="text-sm text-gray-500">${item.price.toFixed(2)}</p>
+                      <p className="text-sm text-gray-500">${(item.amount_cents/100).toFixed(2)}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -69,7 +77,6 @@ export default function Component() {
             <Separator className="my-4" />
             <CardFooter className="flex flex-col items-end">
               <div className="text-sm text-gray-500">Subtotal: ${subtotal.toFixed(2)}</div>
-              <div className="text-sm text-gray-500">Tax: ${tax.toFixed(2)}</div>
               <div className="text-lg font-semibold">Total: ${total.toFixed(2)}</div>
             </CardFooter>
           </Card>

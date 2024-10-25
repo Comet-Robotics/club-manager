@@ -2,30 +2,15 @@ import { useEffect, useState } from 'react'
 import { ShoppingCart, Minus, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { cart$ } from '@/lib/state'
+import { cart$, products$ } from '@/lib/state'
 import { observer } from "@legendapp/state/react"
 import { apiClient } from '@/lib/state'
+import type { Product } from '@/lib/types'
+import { Link } from '@tanstack/react-router'
 
 export default observer(ProductGrid)
 
-interface Product {
-    id: number
-    name: string
-    amount_cents: number
-    image: string
-}
-
 export function ProductGrid() {
-
-    const [products, setProducts] = useState([] as Product[])
-
-    useEffect(()=>{
-      apiClient.GET("/api/products/").then((res) => {
-        if (res.error || !res.data) return
-        setProducts(res.data)
-      })
-    }, [])
-
   const addToCart = (productId: number) => {
     cart$.quantities.set({ ...cart$.quantities.get(), [productId]: (cart$.quantities.get()[productId] || 0) + 1 })
   }
@@ -40,23 +25,26 @@ export function ProductGrid() {
     cart$.quantities.set(newQuantities)
   }
 
-    const cartCount = Object.values(cart$.quantities.get()).reduce((acc, quantity) => acc + quantity, 0)
+  const cartCount = Object.values(cart$.quantities.get()).reduce((acc, quantity) => acc + quantity, 0)
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-end mb-4">
-        <Button variant="default" size="sm" className="relative">
-          <ShoppingCart className="h-5 w-5 mr-2" />
-          Cart
-          {cartCount > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-              {cartCount}
-            </span>
-          )}
-        </Button>
+        <Link to="/checkout">
+              <Button variant="default" size="sm" className="relative">
+                <ShoppingCart className="h-5 w-5 mr-2" />
+                Cart
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
+        
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map(product => (
+        {Object.values(products$.get() ?? {}).map(product => (
           <Card key={product.id} className="overflow-hidden">
             <img
               src={product.image}
