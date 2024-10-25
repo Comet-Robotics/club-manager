@@ -134,7 +134,6 @@ class ChooseUserView(View):
 
 def product_payment(request, product_id, user_id):
     product = get_object_or_404(Product, id=product_id)
-    # TODO: this should use the product_cost_with_square_fee function
     fees = cost_with_square_fee(product.amount_cents)
     
     process_fee = fees["square_fee_cents"]

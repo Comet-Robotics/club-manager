@@ -46,11 +46,13 @@ export function ProductGrid() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {Object.values(products$.get() ?? {}).map(product => (
           <Card key={product.id} className="overflow-hidden">
-            <img
-              src={product.image}
-              alt={product.name}
-              className="w-full h-[300px] object-cover"
-            />
+            <div className="w-full h-[300px] bg-gray-200 rounded-md">
+              {product.image && <img
+                src={product.image}
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />}
+            </div>
             <CardContent className="p-4">
               <h2 className="text-lg font-semibold mb-2">{product.name}</h2>
               <p className="text-gray-600 mb-4">${(product.amount_cents/100).toFixed(2)}</p>

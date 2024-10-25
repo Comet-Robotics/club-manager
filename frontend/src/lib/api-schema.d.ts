@@ -176,6 +176,8 @@ export interface components {
             description?: string | null;
             amount_cents?: number;
             max_purchases_per_user?: number;
+            /** Format: uri */
+            image?: string | null;
         };
         PatchedUser: {
             /** Format: uri */
@@ -197,6 +199,8 @@ export interface components {
             description?: string | null;
             amount_cents: number;
             max_purchases_per_user: number;
+            /** Format: uri */
+            image?: string | null;
         };
         SessionResponse: {
             isAuthenticated: boolean;
