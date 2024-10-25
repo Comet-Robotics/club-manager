@@ -31,6 +31,7 @@ import requests
 from operator import itemgetter
 
 LIST = [
+    "Madina Halal Grill",
     "Cafe Brazil",
     "Biryaniify",
     "Bulldog Katsu",
