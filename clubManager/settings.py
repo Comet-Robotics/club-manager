@@ -64,7 +64,7 @@ INSTALLED_APPS = [
 DJANGO_VITE = {
   "default": {
     "dev_mode": DEBUG,
-    "static_url_prefix": "vite/",
+    "static_url_prefix": "" if DEBUG else "/vite/",
   }
 }
 

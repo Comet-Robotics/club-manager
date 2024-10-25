@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ShoppingCart, Minus, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -18,10 +18,12 @@ export function ProductGrid() {
 
     const [products, setProducts] = useState([] as Product[])
 
-    apiClient.GET("/api/products/").then((res) => {
-    if (res.error || !res.data) return
-    setProducts(res.data)
-    })
+    useEffect(()=>{
+      apiClient.GET("/api/products/").then((res) => {
+        if (res.error || !res.data) return
+        setProducts(res.data)
+      })
+    }, [])
 
   const addToCart = (productId: number) => {
     cart$.quantities.set({ ...cart$.quantities.get(), [productId]: (cart$.quantities.get()[productId] || 0) + 1 })
