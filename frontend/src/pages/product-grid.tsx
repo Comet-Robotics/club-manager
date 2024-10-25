@@ -12,6 +12,7 @@ interface Product {
     id: number
     name: string
     amount_cents: number
+    image: string
 }
 
 export function ProductGrid() {

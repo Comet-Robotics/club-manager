@@ -180,7 +180,8 @@ STORAGES = {
             "bucket_name": str(os.getenv('AWS_STORAGE_BUCKET_NAME')),
             "endpoint_url": str(os.getenv('AWS_ENDPOINT_URL')),
             "access_key": str(os.getenv('AWS_ACCESS_KEY_ID')),
-            "secret_key": str(os.getenv('AWS_SECRET_ACCESS_KEY'))
+            "secret_key": str(os.getenv('AWS_SECRET_ACCESS_KEY')),
+            "signature_version": "s3v4"
         },
     },
     'staticfiles': {
