@@ -10,6 +10,10 @@
     {% vite_react_refresh %}
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      {%if DEBUG%}
+      <p>If you're seeing this, the SPA has not mounted yet. If you're seeing this, make sure you are running the Vite dev server.</p>
+      {%endif%}
+    </div>
   </body>
 </html>

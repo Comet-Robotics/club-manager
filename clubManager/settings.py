@@ -168,6 +168,8 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.getenv('STATIC_ROOT')
 
+DJANGO_VITE_STATIC_URL_PREFIX = 'vite/'
+
 STATICFILES_DIRS = [
     BASE_DIR / "frontend/dist",
 ]
