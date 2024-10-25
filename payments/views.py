@@ -12,6 +12,7 @@ from django.views import View
 from payments.models import Payment, Product, PurchasedProduct
 from math import ceil
 from typing import TypedDict
+from django.db import transaction
 
 
 config = configparser.ConfigParser()
@@ -97,7 +98,7 @@ class PaymentSuccessView(View):
 
     def get(self, request, payment_id):
         payment = get_object_or_404(Payment, id=payment_id)
-        return render(request, self.template_name, {'product_name': payment.product.name, 'payment': payment})
+        return render(request, self.template_name, {'product_name': payment.purchased_products.first().product.name, 'payment': payment})
 
 class ChooseUserView(View):
     template_name = 'choose_user.html'
@@ -125,9 +126,12 @@ class ChooseUserView(View):
                 if payment_choice == 'square_api':
                     return redirect('payment_form', product_id=product_id, user_id=user.id)
                 elif payment_choice == 'cash':
-                    purchased_product = PurchasedProduct(product=product, payment=Payment(method=Payment.Method.cash, user=user, amount_cents=product.amount_cents))
+                  with transaction.atomic():
+                    payment = Payment(method=Payment.Method.cash, user=user, amount_cents=product.amount_cents)
+                    payment.save()
+                    purchased_product = PurchasedProduct(product=product, payment=payment)
                     purchased_product.save()
-                    return redirect('payment_success', payment_id=purchased_product.payment.id)
+                  return redirect('payment_success', payment_id=purchased_product.payment.id)
                 else:
                   raise Exception("Invalid payment choice")
         return render(request, self.template_name, {'form': form, 'product_name': product.name})
@@ -159,10 +163,11 @@ def process_square_payment(request, product_id, user_id):
         
         fees = cost_with_square_fee(product.amount_cents)
         
-        payment = Payment(method=Payment.Method.square_api, product=product, user=user, amount_cents=fees["total_payment_amount_cents"])
-        purchased_product = PurchasedProduct(product=product, payment=payment)
-        # TODO: confirm that this creates the Payment object as well
-        purchased_product.save()
+        with transaction.atomic():
+          payment = Payment(method=Payment.Method.square_api, product=product, user=user, amount_cents=fees["total_payment_amount_cents"])
+          payment.save()
+          purchased_product = PurchasedProduct(product=product, payment=payment)
+          purchased_product.save()
         
         create_payment_response = client.payments.create_payment(
           body={
