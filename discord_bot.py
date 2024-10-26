@@ -32,6 +32,8 @@ from operator import itemgetter
 
 LIST = [
     "Madina Halal Grill",
+    "Zenna Thai & Japanese",
+    "Zio Al's Pizza & Pasta",
     "Cafe Brazil",
     "Biryaniify",
     "Bulldog Katsu",
