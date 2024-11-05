@@ -19,6 +19,9 @@ class Poster(models.Model):
     def __str__(self):
         return str(self.campaign) + ' - ' + self.location
     
+    def visits_count(self):
+        return self.visits.count()
+
 
 class Visit(models.Model):
     poster = models.ForeignKey(Poster, on_delete=models.CASCADE, related_name='visits')

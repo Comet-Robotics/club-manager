@@ -67,8 +67,5 @@ def log_poster(request):
 class PosterListView(ListView):
     model = Poster
     paginate_by = 30
-    
-    def get_queryset(self) -> QuerySet[Any]:
-        queryset = super().get_queryset()
-        queryset.annotate(visits_count=Count('visits')).order_by('-visits_count')
-        return queryset
+
+    ordering = ['-visits_count']
