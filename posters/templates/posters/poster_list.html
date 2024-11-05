@@ -82,7 +82,7 @@
             parseFloat(poster.latitude),
             parseFloat(poster.longitude),
           ]).addTo(map);
-          marker.bindPopup(L.popup().setContent(poster.location + " - " + poster.visits.count())).openPopup();
+          // marker.bindPopup(L.popup().setContent(poster.location + " - " + poster.visits.count())).openPopup();
         });
       })
       .catch((error) => console.error("Error fetching poster data:", error));
