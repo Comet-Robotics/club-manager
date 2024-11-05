@@ -71,7 +71,7 @@
           parseFloat(poster.longitude),
         ]);
         console.log(locationData)
-        var heat = L.heatLayer(heatData, { radius: 20 }).addTo(map);
+        var heat = L.heatLayer(heatData, { max: 10.0, radius: 40 }).addTo(map);
         locationData.forEach((coords) => {
           L.marker(coords).addTo(map);
         });
