@@ -1,5 +1,7 @@
 from datetime import datetime
 from typing import Any
+from django.db.models import Count
+from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.http import HttpRequest, HttpResponse, JsonResponse
@@ -66,4 +68,7 @@ class PosterListView(ListView):
     model = Poster
     paginate_by = 30
     
-    ordering = ["-visits__count"]
+    def get_queryset(self) -> QuerySet[Any]:
+        queryset = super().get_queryset()
+        queryset.annotate(visits_count=Count('visits')).order_by('-visits_count')
+        return queryset
