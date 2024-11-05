@@ -78,7 +78,9 @@
           L.marker([
             parseFloat(poster.latitude),
             parseFloat(poster.longitude),
-          ]).bindPopup(poster.location + " - " + poster.visits.count()).addTo(map);
+          ])
+          //.bindPopup(poster.location + " - " + poster.visits.count())
+          .addTo(map);
         });
       })
       .catch((error) => console.error("Error fetching poster data:", error));
