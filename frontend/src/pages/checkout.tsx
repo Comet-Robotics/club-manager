@@ -19,7 +19,7 @@ function Component() {
   
   const cartItems = useMemo(() => {
     return Object.entries(cartQuantities || {}).reduce((acc, [productId, quantity]) => {
-      const item = products$.get()[productId as number]
+      const item = products$.get()[productId]
       if (!item) return acc
       console.log(acc)
       return [...acc, {...item, quantity}]
