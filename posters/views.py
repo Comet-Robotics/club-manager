@@ -36,6 +36,8 @@ def poster_stats(request: HttpRequest) -> JsonResponse:
             'visits': visits_count
         })
 
+    data.sort(key=lambda o: o['visits'], reverse=True)
+
     return JsonResponse(data, safe=False)
 
 @login_required
