@@ -50,6 +50,9 @@
   <script>
     // Set default icon size to less
     L.Icon.Default.prototype.options.iconSize = [15, 25];
+    L.Icon.Default.prototype.options.iconAnchor = [7, 25];
+    L.Icon.Default.prototype.options.popupAnchor = [15, 25];
+    L.Icon.Default.prototype.options.shadowSize = [25, 25];
 
     // Initialize the map
     var map = L.map("map").setView([32.98725, -96.74837], 17); // Set default view
@@ -79,7 +82,7 @@
             parseFloat(poster.latitude),
             parseFloat(poster.longitude),
           ])
-          //.bindPopup(poster.location + " - " + poster.visits.count())
+          .bindPopup(L.popup().setContent(poster.location + " - " + poster.visits.count()))
           .addTo(map);
         });
       })
