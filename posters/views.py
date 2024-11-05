@@ -68,4 +68,8 @@ class PosterListView(ListView):
     model = Poster
     paginate_by = 30
 
+    def get_queryset(self) -> QuerySet[Any]:
+        queryset = super().get_queryset()
+        return queryset.annotate(visits_count=Count('visits'))
+
     ordering = ['-visits_count']
