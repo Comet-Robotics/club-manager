@@ -78,12 +78,11 @@
           parseFloat(poster.longitude),
         ]);
         data.forEach((poster) => {
-          L.marker([
+          var marker = L.marker([
             parseFloat(poster.latitude),
             parseFloat(poster.longitude),
-          ])
-          .bindPopup(L.popup().setContent(poster.location + " - " + poster.visits.count()))
-          .addTo(map);
+          ]).addTo(map);
+          marker.bindPopup(L.popup().setContent(poster.location + " - " + poster.visits.count())).openPopup();
         });
       })
       .catch((error) => console.error("Error fetching poster data:", error));
