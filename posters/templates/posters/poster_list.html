@@ -48,6 +48,9 @@
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
   <script>
+    // Set default icon size to less
+    L.Icon.Default.prototype.options.iconSize = [10, 35];
+
     // Initialize the map
     var map = L.map("map").setView([32.98725, -96.74837], 17); // Set default view
 
@@ -66,14 +69,16 @@
           poster.longitude,
           poster.visits,
         ]);
+        var heat = L.heatLayer(heatData, { max: 10.0, radius: 40 }).addTo(map);
         var locationData = data.map((poster) => [
           parseFloat(poster.latitude),
           parseFloat(poster.longitude),
         ]);
-        console.log(locationData)
-        var heat = L.heatLayer(heatData, { max: 10.0, radius: 40 }).addTo(map);
-        locationData.forEach((coords) => {
-          L.marker(coords).addTo(map);
+        data.forEach((poster) => {
+          L.marker([
+            parseFloat(poster.latitude),
+            parseFloat(poster.longitude),
+          ]).bindPopup(poster.location + " - " + poster.visits.count()).addTo(map);
         });
       })
       .catch((error) => console.error("Error fetching poster data:", error));

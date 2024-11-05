@@ -66,3 +66,4 @@ class PosterListView(ListView):
     model = Poster
     paginate_by = 30
     
+    ordering = ["-visits.count"]
