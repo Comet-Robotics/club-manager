@@ -9,35 +9,20 @@ import { PaymentForm, CreditCard, ApplePay,
     GooglePay } from 'react-square-web-payments-sdk';
 import { cart$, products$ } from '@/lib/state'
 import { observer } from "@legendapp/state/react"
-import type { Product } from '@/lib/types'
 import { Link } from '@tanstack/react-router'
 
 export default observer(Component)
 
 function Component() {
-  const cartQuantities = cart$.quantities.get()
   
-  const cartItems = useMemo(() => {
-    return Object.entries(cartQuantities || {}).reduce((acc, [productId, quantity]) => {
-      const item = products$.get()[productId]
-      if (!item) return acc
-      console.log(acc)
-      return [...acc, {...item, quantity}]
-    }, [] as (Product & {quantity: number})[])
-  }, [cartQuantities])
   
-  const subtotal = Object.values(cartItems).reduce((acc, item) => {
-    return acc + (item.amount_cents/100 * item.quantity)
-  }, 0)
+  const subtotal = cart$.subTotal.get()
   const total = subtotal
 
-  const updateQuantity = (id: number, newQuantity: number) => {
-    cart$.quantities.set({ ...cartQuantities, [id]: newQuantity })
-  }
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Checkdfsdout</h1>
+      <h1 className="text-2xl font-bold mb-6">Checkout</h1>
       <Link to="/store" className="text-blue-500 hover:underline">Back to store</Link>
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-2/3">
@@ -47,7 +32,9 @@ function Component() {
               <CardDescription>Review your items before checkout</CardDescription>
             </CardHeader>
             <CardContent>
-              {cartItems.map((item) => (
+              {cart$.cartItems.map((item$) => {
+                const item = item$.get()
+                return (
                 <div key={item.id} className="flex items-center justify-between py-4">
                   <div className="flex items-center space-x-4">
                     <div className="w-16 h-16 bg-gray-200 rounded-md">
@@ -66,7 +53,7 @@ function Component() {
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 1))}
+                      onClick={() => cart$.updateQuantity(item.id, Math.max(0, item.quantity - 1))}
                     >
                       -
                     </Button>
@@ -74,13 +61,13 @@ function Component() {
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      onClick={() => cart$.updateQuantity(item.id, item.quantity + 1)}
                     >
                       +
                     </Button>
                   </div>
                 </div>
-              ))}
+              )})}
             </CardContent>
             <Separator className="my-4" />
             <CardFooter className="flex flex-col items-end">

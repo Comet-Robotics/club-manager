@@ -1,16 +1,12 @@
-import { observable } from "@legendapp/state";
+import { observable, syncState } from "@legendapp/state";
 import { syncObservable } from '@legendapp/state/sync'
 import { ObservablePersistLocalStorage } from "@legendapp/state/persist-plugins/local-storage"
-import { User } from "./types";
+import type { Product, User } from "./types";
 import type { paths } from "./api-schema";
 import createClient from "openapi-fetch";
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud'
 
 export const apiClient = createClient<paths>({ baseUrl: "/" })
-
-type CartStore = {
-  quantities: { [key: number]: number }
-}
 
 export const products$ = observable(syncedCrud({
   list: async () => {
@@ -20,9 +16,35 @@ export const products$ = observable(syncedCrud({
   }
 }))
 
+export const productMeta$ = syncState(products$) 
 
-export const cart$ = observable<CartStore>({
-  quantities: {},
+
+export const cart$ = observable({
+  quantities: {} as { [key: string]: number },
+  cartCount: () => Object.values(cart$.quantities.get()).reduce((acc, quantity) => acc + quantity, 0),
+  subTotal: () => Object.values(cart$.cartItems.get()).reduce((acc, product) => {
+    return acc + product.quantity * product.amount_cents/100
+  }, 0),
+  addToCart: (productId: number) => {
+    cart$.quantities.set({ ...cart$.quantities.get(), [productId]: 1 })
+  },
+  updateQuantity: (productId: number, delta: number) => {
+    const newQuantities = { ...cart$.quantities.get() }
+    if (!newQuantities[productId]) return
+    newQuantities[productId] += delta
+    if (newQuantities[productId] <= 0) {
+      delete newQuantities[productId]
+    }
+    cart$.quantities.set(newQuantities)
+  },
+  cartItems: () => {
+    return Object.entries(cart$.quantities.get()).reduce((acc, [productId, quantity]) => {
+      const item = products$.get()[productId as unknown as number]
+      if (!item) return acc
+      return [...acc, {...item, quantity}]
+    }, [] as (Product & {quantity: number})[])
+  }
+
 })
 
 type AuthStore = {
