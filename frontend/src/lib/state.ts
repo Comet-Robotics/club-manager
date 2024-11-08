@@ -26,16 +26,20 @@ export const cart$ = observable({
     return acc + product.quantity * product.amount_cents/100
   }, 0),
   addToCart: (productId: number) => {
-    cart$.quantities.set({ ...cart$.quantities.get(), [productId]: 1 })
+    cart$.quantities.assign({ [productId]: 1 })
   },
   updateQuantity: (productId: number, delta: number) => {
-    const newQuantities = { ...cart$.quantities.get() }
-    if (!newQuantities[productId]) return
-    newQuantities[productId] += delta
-    if (newQuantities[productId] <= 0) {
-      delete newQuantities[productId]
+    
+    const prev = cart$.quantities[productId]?.get()
+    if (!prev) return
+    const newState = prev + delta
+
+    if (newState <= 0) {
+      cart$.quantities[productId]?.delete()
+    } else {
+      cart$.quantities.assign({ [productId]: newState })
     }
-    cart$.quantities.set(newQuantities)
+
   },
   cartItems: () => {
     return Object.entries(cart$.quantities.get()).reduce((acc, [productId, quantity]) => {

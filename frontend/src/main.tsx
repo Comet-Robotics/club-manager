@@ -8,7 +8,7 @@ import 'vite/modulepreload-polyfill';
 import { routeTree } from './routeTree.gen'
 
 // Create a new router instance
-const router = createRouter({ routeTree, basepath: '_' })
+const router = createRouter({ routeTree, basepath: '_', defaultPreload: 'intent' })
 
 // Register the router instance for type safety
 declare module '@tanstack/react-router' {
