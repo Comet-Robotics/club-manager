@@ -17,8 +17,10 @@ import { Route as rootRoute } from './routes/__root'
 // Create Virtual Routes
 
 const StoreLazyImport = createFileRoute('/store')()
+const RoboteventLazyImport = createFileRoute('/robot_event')()
 const LoginLazyImport = createFileRoute('/login')()
 const CheckoutLazyImport = createFileRoute('/checkout')()
+const AuthLazyImport = createFileRoute('/auth')()
 
 // Create/Update Routes
 
@@ -26,6 +28,11 @@ const StoreLazyRoute = StoreLazyImport.update({
   path: '/store',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/store.lazy').then((d) => d.Route))
+
+const RoboteventLazyRoute = RoboteventLazyImport.update({
+  path: '/robot_event',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/robot_event.lazy').then((d) => d.Route))
 
 const LoginLazyRoute = LoginLazyImport.update({
   path: '/login',
@@ -37,10 +44,22 @@ const CheckoutLazyRoute = CheckoutLazyImport.update({
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/checkout.lazy').then((d) => d.Route))
 
+const AuthLazyRoute = AuthLazyImport.update({
+  path: '/auth',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/auth.lazy').then((d) => d.Route))
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthLazyImport
+      parentRoute: typeof rootRoute
+    }
     '/checkout': {
       id: '/checkout'
       path: '/checkout'
@@ -53,6 +72,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginLazyImport
+      parentRoute: typeof rootRoute
+    }
+    '/robot_event': {
+      id: '/robot_event'
+      path: '/robot_event'
+      fullPath: '/robot_event'
+      preLoaderRoute: typeof RoboteventLazyImport
       parentRoute: typeof rootRoute
     }
     '/store': {
@@ -68,42 +94,52 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 export interface FileRoutesByFullPath {
+  '/auth': typeof AuthLazyRoute
   '/checkout': typeof CheckoutLazyRoute
   '/login': typeof LoginLazyRoute
+  '/robot_event': typeof RoboteventLazyRoute
   '/store': typeof StoreLazyRoute
 }
 
 export interface FileRoutesByTo {
+  '/auth': typeof AuthLazyRoute
   '/checkout': typeof CheckoutLazyRoute
   '/login': typeof LoginLazyRoute
+  '/robot_event': typeof RoboteventLazyRoute
   '/store': typeof StoreLazyRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
+  '/auth': typeof AuthLazyRoute
   '/checkout': typeof CheckoutLazyRoute
   '/login': typeof LoginLazyRoute
+  '/robot_event': typeof RoboteventLazyRoute
   '/store': typeof StoreLazyRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/checkout' | '/login' | '/store'
+  fullPaths: '/auth' | '/checkout' | '/login' | '/robot_event' | '/store'
   fileRoutesByTo: FileRoutesByTo
-  to: '/checkout' | '/login' | '/store'
-  id: '__root__' | '/checkout' | '/login' | '/store'
+  to: '/auth' | '/checkout' | '/login' | '/robot_event' | '/store'
+  id: '__root__' | '/auth' | '/checkout' | '/login' | '/robot_event' | '/store'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
+  AuthLazyRoute: typeof AuthLazyRoute
   CheckoutLazyRoute: typeof CheckoutLazyRoute
   LoginLazyRoute: typeof LoginLazyRoute
+  RoboteventLazyRoute: typeof RoboteventLazyRoute
   StoreLazyRoute: typeof StoreLazyRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  AuthLazyRoute: AuthLazyRoute,
   CheckoutLazyRoute: CheckoutLazyRoute,
   LoginLazyRoute: LoginLazyRoute,
+  RoboteventLazyRoute: RoboteventLazyRoute,
   StoreLazyRoute: StoreLazyRoute,
 }
 
@@ -119,16 +155,24 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
+        "/auth",
         "/checkout",
         "/login",
+        "/robot_event",
         "/store"
       ]
+    },
+    "/auth": {
+      "filePath": "auth.lazy.tsx"
     },
     "/checkout": {
       "filePath": "checkout.lazy.tsx"
     },
     "/login": {
       "filePath": "login.lazy.tsx"
+    },
+    "/robot_event": {
+      "filePath": "robot_event.lazy.tsx"
     },
     "/store": {
       "filePath": "store.lazy.tsx"
