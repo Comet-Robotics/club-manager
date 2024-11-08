@@ -169,23 +169,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/combatteams/{id}/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["combatteams_retrieve"];
-        put: operations["combatteams_update"];
-        post?: never;
-        delete: operations["combatteams_destroy"];
-        options?: never;
-        head?: never;
-        patch: operations["combatteams_partial_update"];
-        trace?: never;
-    };
-    "/api/combatteams/{team_id}/robots/": {
+    "/api/combatteams/{combatteam_id}/robots/": {
         parameters: {
             query?: never;
             header?: never;
@@ -200,6 +184,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/combatteams/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["combatteams_retrieve"];
+        put: operations["combatteams_update"];
+        post?: never;
+        delete: operations["combatteams_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["combatteams_partial_update"];
         trace?: never;
     };
     "/api/events/": {
@@ -318,6 +318,38 @@ export interface paths {
         patch: operations["users_partial_update"];
         trace?: never;
     };
+    "/api/waivers/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["waivers_list"];
+        put?: never;
+        post: operations["waivers_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/waivers/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["waivers_retrieve"];
+        put: operations["waivers_update"];
+        post?: never;
+        delete: operations["waivers_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["waivers_partial_update"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -329,6 +361,7 @@ export interface components {
             robot_combat_events_event_id: string;
             /** Format: uri */
             product_id: string;
+            readonly waivers: components["schemas"]["Waiver"][];
         };
         CombatRobot: {
             readonly id: number;
@@ -368,6 +401,7 @@ export interface components {
             robot_combat_events_event_id?: string;
             /** Format: uri */
             product_id?: string;
+            readonly waivers?: components["schemas"]["Waiver"][];
         };
         PatchedCombatRobot: {
             readonly id?: number;
@@ -413,6 +447,16 @@ export interface components {
             /** @description The groups this user belongs to. A user will get all permissions granted to each of their groups. */
             groups?: string[];
         };
+        PatchedWaiver: {
+            readonly id?: number;
+            name?: string;
+            /** Format: uri */
+            alternate_for_waiver_id?: string | null;
+            is_alternate_waiver_for_minors?: boolean;
+            documenso_id?: string;
+            /** Format: uri */
+            combat_event?: string;
+        };
         Product: {
             readonly id: number;
             name: string;
@@ -438,6 +482,16 @@ export interface components {
             email?: string;
             /** @description The groups this user belongs to. A user will get all permissions granted to each of their groups. */
             groups?: string[];
+        };
+        Waiver: {
+            readonly id: number;
+            name: string;
+            /** Format: uri */
+            alternate_for_waiver_id?: string | null;
+            is_alternate_waiver_for_minors?: boolean;
+            documenso_id: string;
+            /** Format: uri */
+            combat_event: string;
         };
     };
     responses: never;
@@ -921,6 +975,35 @@ export interface operations {
             };
         };
     };
+    combatteams_robots_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                combatteam_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatRobot"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatRobot"];
+                };
+            };
+        };
+    };
     combatteams_retrieve: {
         parameters: {
             query?: never;
@@ -1016,35 +1099,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CombatTeam"];
-                };
-            };
-        };
-    };
-    combatteams_robots_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                team_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CombatRobot"];
-                };
-            };
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CombatRobot"];
                 };
             };
         };
@@ -1507,6 +1561,149 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["User"];
+                };
+            };
+        };
+    };
+    waivers_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Waiver"][];
+                };
+            };
+        };
+    };
+    waivers_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Waiver"];
+                "application/x-www-form-urlencoded": components["schemas"]["Waiver"];
+                "multipart/form-data": components["schemas"]["Waiver"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Waiver"];
+                };
+            };
+        };
+    };
+    waivers_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this waiver. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Waiver"];
+                };
+            };
+        };
+    };
+    waivers_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this waiver. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Waiver"];
+                "application/x-www-form-urlencoded": components["schemas"]["Waiver"];
+                "multipart/form-data": components["schemas"]["Waiver"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Waiver"];
+                };
+            };
+        };
+    };
+    waivers_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this waiver. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    waivers_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this waiver. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedWaiver"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedWaiver"];
+                "multipart/form-data": components["schemas"]["PatchedWaiver"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Waiver"];
                 };
             };
         };

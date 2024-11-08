@@ -11,6 +11,7 @@ router.register(r'combatteams', views.CombatTeamViewSet, basename='combatteam')
 router.register(r'combatrobots', views.CombatRobotViewSet, basename='combatrobot')
 router.register(r'combatevents', views.CombatEventViewSet, basename='combatevent')
 router.register(r'events', views.EventViewSet, basename='event')
+router.register(r'waivers', views.WaiverViewSet, basename='waiver')
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.

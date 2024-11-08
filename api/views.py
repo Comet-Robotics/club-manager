@@ -1,23 +1,19 @@
-from django.shortcuts import render
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import User
 from payments.models import Product
-from .serializers import UserSerializer, ProductSerializer, CombatTeamSerializer, CombatRobotSerializer, CombatEventSerializer, EventSerializer
-from rest_framework import permissions, viewsets, status, serializers
+from .serializers import UserSerializer, ProductSerializer, CombatTeamSerializer, CombatRobotSerializer, CombatEventSerializer, EventSerializer, WaiverSerializer
+from rest_framework import viewsets, status, serializers
 from .permissions import IsOwnerOrStaff, DeleteNotAllowed, ReadOnlyView
-import json
 
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_POST
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.decorators import permission_classes
 from drf_spectacular.utils import extend_schema
 
-from events.models import Event, CombatTeam, CombatRobot, CombatEvent
+from events.models import Event, CombatTeam, CombatRobot, CombatEvent, Waiver
 
 # Create your views here.
 class UserViewSet(viewsets.ModelViewSet):
@@ -49,6 +45,11 @@ class EventViewSet(viewsets.ModelViewSet):
     permission_classes = [ReadOnlyView]
     serializer_class = EventSerializer
     queryset = Event.objects.all()
+
+class WaiverViewSet(viewsets.ModelViewSet):
+    permission_classes = [ReadOnlyView]
+    serializer_class = WaiverSerializer
+    queryset = Waiver.objects.all()
 
 def get_csrf(request):
     response = JsonResponse({'detail': 'CSRF cookie set'})

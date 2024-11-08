@@ -9,7 +9,7 @@ from common.admin import SearchFields
 from core.admin import UserProfileInline
 
 # Register your models here.
-from .models import CombatTeam, CombatRobot, Event, CombatEvent, Attendance, Reservation, UserIdentification
+from .models import CombatTeam, CombatRobot, Event, CombatEvent, Attendance, Reservation, UserIdentification, Waiver, WaiverStatus
 
 class UserIDInline(admin.StackedInline):
     model = UserIdentification
@@ -39,3 +39,5 @@ admin.site.register(Event, EventAdmin, search_fields=['event_name', 'id'])
 admin.site.register(CombatEvent)
 admin.site.register(CombatTeam)
 admin.site.register(CombatRobot)
+admin.site.register(Waiver)
+admin.site.register(WaiverStatus)

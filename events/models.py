@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from payments.models import Product, PurchasedProduct
+from common.utils import validate_staff
+from computedfields.models import ComputedFieldsModel, computed
 
 
 # Create your models here.
@@ -43,27 +45,42 @@ class Waiver(models.Model):
       A Waiver is an object representing a waiver that can be signed by a user. 
       """
     
-      event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='waivers')
+      combat_event = models.ForeignKey(CombatEvent, on_delete=models.CASCADE, related_name='waivers')
       name = models.CharField(max_length=200)
       internal_description = models.CharField(max_length=200)
       alternate_for_waiver_id = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
-      minors_must_complete =  models.BooleanField(default=False)
+      is_alternate_waiver_for_minors =  models.BooleanField(default=False)
       documenso_id = models.CharField(max_length=200)
       
       def __str__(self):
           return self.name
           
-class CompletedWaiver(models.Model):
+class WaiverStatus(ComputedFieldsModel):
     """
-    A CompletedWaiver is an object representing a waiver that has been completed by a user who is competing in a combat event (meaning they are a owner of a robot which associated with that event).
+    A WaiverStatus is an object tracking whether a "competitor" (someone who is a owner of a robot which is associated with an event) has signed a given waiver associated with that event. 
+    
+    A waiver is signed if:
+    
+    - a file is uploaded
+    - documenso_id is not null (TODO: documenso id for a waiver status could exist but the waiver may not actually be completed yet. need to track this separately i think)
+    - an officer has verified that a user has signed a waiver (fallback for many use-cases, like completing a physical waiver in person, so the completed waiver is not tracked in Documenso or available as a PDF. an internal note should be added to the waiver status to track this)
     """
   
     waiver = models.ForeignKey(Waiver, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='waiver_statuses')
     timestamp = models.DateTimeField(default=timezone.now)
+
+    internal_notes = models.TextField(null=True, blank=True)
+
+    signature_verified_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, validators=[validate_staff], related_name='signature_verifications')
+    documenso_id = models.CharField(max_length=200, null=True, blank=True)
+    signed_file = models.FileField(null=True, blank=True)
     
-    # TODO: how to model a completed waiver? completed waiver could be from documenso, or a paper waiver, or a PDF?
-    # to simplify, maybe we scan in paper waivers so we either have a documenso id or a path to a PDF (in an S3 bucket?? or on local disk??? idk django had some nice stuff for this that colin or mason played with)
+
+    @computed(models.BooleanField(), depends=[('self', ['signed_file', 'documenso_id', 'signature_verified_by'])])
+    def is_signed(self):
+        return self.signed_file is not None or self.documenso_id is not None or self.signature_verified_by is not None
+    
     
     def __str__(self):
         return str(self.waiver) + ' - ' + str(self.user)
