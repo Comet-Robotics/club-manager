@@ -331,7 +331,9 @@ type Step = {
     ]
   
     const getCurrentStep = () => {
-      return steps[currentStepIndex]
+      const step = steps[currentStepIndex]
+      if (!step) throw new Error(`Step ${currentStepIndex} not found`)
+      return step
     }
   
     const handleNext = () => {
