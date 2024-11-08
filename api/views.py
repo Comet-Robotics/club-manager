@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.models import Group, User
 from payments.models import Product
-from .serializers import UserSerializer, ProductSerializer
+from .serializers import UserSerializer, ProductSerializer, CombatTeamSerializer, CombatRobotSerializer, CombatEventSerializer, EventSerializer
 from rest_framework import permissions, viewsets, status, serializers
 from .permissions import IsOwnerOrStaff, DeleteNotAllowed, ReadOnlyView
 import json
@@ -17,6 +17,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import permission_classes
 from drf_spectacular.utils import extend_schema
 
+from events.models import Event, CombatTeam, CombatRobot, CombatEvent
 
 # Create your views here.
 class UserViewSet(viewsets.ModelViewSet):
@@ -28,7 +29,26 @@ class ProductViewSet(viewsets.ModelViewSet):
     permission_classes = [ReadOnlyView]
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
+    
+class CombatTeamViewSet(viewsets.ModelViewSet):
+    permission_classes = [ReadOnlyView]
+    serializer_class = CombatTeamSerializer
+    queryset = CombatTeam.objects.all()
 
+class CombatRobotViewSet(viewsets.ModelViewSet):
+    permission_classes = [ReadOnlyView]
+    serializer_class = CombatRobotSerializer
+    queryset = CombatRobot.objects.all()
+
+class CombatEventViewSet(viewsets.ModelViewSet):
+    permission_classes = [ReadOnlyView]
+    serializer_class = CombatEventSerializer
+    queryset = CombatEvent.objects.all()
+
+class EventViewSet(viewsets.ModelViewSet):
+    permission_classes = [ReadOnlyView]
+    serializer_class = EventSerializer
+    queryset = Event.objects.all()
 
 def get_csrf(request):
     response = JsonResponse({'detail': 'CSRF cookie set'})
@@ -143,3 +163,45 @@ class WhoAmIView(APIView):
             return Response({'isAuthenticated': False}, status=status.HTTP_403_FORBIDDEN)
 
         return Response({'username': request.user.username, 'id': request.user.id, 'isAuthenticated': True})
+        
+        
+        
+class RobotsInTeamView(APIView):
+    @extend_schema(
+        responses={
+            200: CombatRobotSerializer,
+            403: CombatRobotSerializer,
+        },
+        description='Get robots belonging to a team'
+    )
+    def get(self, request, combatteam_id):
+        team = CombatTeam.objects.get(pk=combatteam_id)
+        
+        if not team:
+            return Response({'detail': 'Team not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        robots = CombatRobot.objects.filter(combat_team=team)
+        serializer = CombatRobotSerializer(robots, many=True, context={'request': request})
+        return Response(serializer.data)
+        
+
+# view to get teams in event
+class TeamsInEventView(APIView):
+    @extend_schema(
+        responses={
+            200: CombatTeamSerializer,
+            403: CombatTeamSerializer
+        },
+        description='Get teams in an event'
+    )
+    def get(self, request, combatevent_id):
+        event = CombatEvent.objects.get(pk=combatevent_id)
+        
+        if not event:
+            return Response({'detail': 'Event not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        robots = CombatRobot.objects.filter(events__id=combatevent_id)
+        # get distinct teams from the robots
+        teams = CombatTeam.objects.filter(pk__in=robots.values('combat_team_id'))
+        serializer = CombatTeamSerializer(teams, many=True, context={'request': request})
+        return Response(serializer.data)

@@ -72,6 +72,168 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/combatevents/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["combatevents_list"];
+        put?: never;
+        post: operations["combatevents_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/combatevents/{combatevent_id}/teams/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get teams in an event */
+        get: operations["combatevents_teams_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/combatevents/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["combatevents_retrieve"];
+        put: operations["combatevents_update"];
+        post?: never;
+        delete: operations["combatevents_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["combatevents_partial_update"];
+        trace?: never;
+    };
+    "/api/combatrobots/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["combatrobots_list"];
+        put?: never;
+        post: operations["combatrobots_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/combatrobots/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["combatrobots_retrieve"];
+        put: operations["combatrobots_update"];
+        post?: never;
+        delete: operations["combatrobots_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["combatrobots_partial_update"];
+        trace?: never;
+    };
+    "/api/combatteams/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["combatteams_list"];
+        put?: never;
+        post: operations["combatteams_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/combatteams/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["combatteams_retrieve"];
+        put: operations["combatteams_update"];
+        post?: never;
+        delete: operations["combatteams_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["combatteams_partial_update"];
+        trace?: never;
+    };
+    "/api/combatteams/{team_id}/robots/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get robots belonging to a team */
+        get: operations["combatteams_robots_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["events_list"];
+        put?: never;
+        post: operations["events_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["events_retrieve"];
+        put: operations["events_update"];
+        post?: never;
+        delete: operations["events_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["events_partial_update"];
+        trace?: never;
+    };
     "/api/products/": {
         parameters: {
             query?: never;
@@ -160,6 +322,35 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        CombatEvent: {
+            readonly id: number;
+            /** Format: uri */
+            event: string;
+            robot_combat_events_event_id: string;
+            /** Format: uri */
+            product_id: string;
+        };
+        CombatRobot: {
+            readonly id: number;
+            name: string;
+            owners: string[];
+            /** Format: uri */
+            combat_team: string;
+        };
+        CombatTeam: {
+            readonly id: number;
+            name: string;
+            managers: string[];
+        };
+        Event: {
+            readonly id: number;
+            event_name: string;
+            /** Format: date-time */
+            event_date: string;
+            url?: string;
+            /** Format: uri */
+            combat_event: string;
+        };
         LoginRequest: {
             username: string;
             password: string;
@@ -169,6 +360,35 @@ export interface components {
         };
         LogoutResponse: {
             detail: string;
+        };
+        PatchedCombatEvent: {
+            readonly id?: number;
+            /** Format: uri */
+            event?: string;
+            robot_combat_events_event_id?: string;
+            /** Format: uri */
+            product_id?: string;
+        };
+        PatchedCombatRobot: {
+            readonly id?: number;
+            name?: string;
+            owners?: string[];
+            /** Format: uri */
+            combat_team?: string;
+        };
+        PatchedCombatTeam: {
+            readonly id?: number;
+            name?: string;
+            managers?: string[];
+        };
+        PatchedEvent: {
+            readonly id?: number;
+            event_name?: string;
+            /** Format: date-time */
+            event_date?: string;
+            url?: string;
+            /** Format: uri */
+            combat_event?: string;
         };
         PatchedProduct: {
             readonly id?: number;
@@ -338,6 +558,636 @@ export interface operations {
                         /** @enum {boolean} */
                         isAuthenticated: false;
                     };
+                };
+            };
+        };
+    };
+    combatevents_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatEvent"][];
+                };
+            };
+        };
+    };
+    combatevents_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CombatEvent"];
+                "application/x-www-form-urlencoded": components["schemas"]["CombatEvent"];
+                "multipart/form-data": components["schemas"]["CombatEvent"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatEvent"];
+                };
+            };
+        };
+    };
+    combatevents_teams_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                combatevent_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatTeam"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatTeam"];
+                };
+            };
+        };
+    };
+    combatevents_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this combat event. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatEvent"];
+                };
+            };
+        };
+    };
+    combatevents_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this combat event. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CombatEvent"];
+                "application/x-www-form-urlencoded": components["schemas"]["CombatEvent"];
+                "multipart/form-data": components["schemas"]["CombatEvent"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatEvent"];
+                };
+            };
+        };
+    };
+    combatevents_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this combat event. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    combatevents_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this combat event. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCombatEvent"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedCombatEvent"];
+                "multipart/form-data": components["schemas"]["PatchedCombatEvent"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatEvent"];
+                };
+            };
+        };
+    };
+    combatrobots_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatRobot"][];
+                };
+            };
+        };
+    };
+    combatrobots_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CombatRobot"];
+                "application/x-www-form-urlencoded": components["schemas"]["CombatRobot"];
+                "multipart/form-data": components["schemas"]["CombatRobot"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatRobot"];
+                };
+            };
+        };
+    };
+    combatrobots_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this combat robot. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatRobot"];
+                };
+            };
+        };
+    };
+    combatrobots_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this combat robot. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CombatRobot"];
+                "application/x-www-form-urlencoded": components["schemas"]["CombatRobot"];
+                "multipart/form-data": components["schemas"]["CombatRobot"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatRobot"];
+                };
+            };
+        };
+    };
+    combatrobots_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this combat robot. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    combatrobots_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this combat robot. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCombatRobot"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedCombatRobot"];
+                "multipart/form-data": components["schemas"]["PatchedCombatRobot"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatRobot"];
+                };
+            };
+        };
+    };
+    combatteams_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatTeam"][];
+                };
+            };
+        };
+    };
+    combatteams_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CombatTeam"];
+                "application/x-www-form-urlencoded": components["schemas"]["CombatTeam"];
+                "multipart/form-data": components["schemas"]["CombatTeam"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatTeam"];
+                };
+            };
+        };
+    };
+    combatteams_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this combat team. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatTeam"];
+                };
+            };
+        };
+    };
+    combatteams_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this combat team. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CombatTeam"];
+                "application/x-www-form-urlencoded": components["schemas"]["CombatTeam"];
+                "multipart/form-data": components["schemas"]["CombatTeam"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatTeam"];
+                };
+            };
+        };
+    };
+    combatteams_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this combat team. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    combatteams_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this combat team. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCombatTeam"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedCombatTeam"];
+                "multipart/form-data": components["schemas"]["PatchedCombatTeam"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatTeam"];
+                };
+            };
+        };
+    };
+    combatteams_robots_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                team_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatRobot"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatRobot"];
+                };
+            };
+        };
+    };
+    events_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"][];
+                };
+            };
+        };
+    };
+    events_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Event"];
+                "application/x-www-form-urlencoded": components["schemas"]["Event"];
+                "multipart/form-data": components["schemas"]["Event"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+        };
+    };
+    events_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this event. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+        };
+    };
+    events_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this event. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Event"];
+                "application/x-www-form-urlencoded": components["schemas"]["Event"];
+                "multipart/form-data": components["schemas"]["Event"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+        };
+    };
+    events_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this event. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    events_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this event. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEvent"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedEvent"];
+                "multipart/form-data": components["schemas"]["PatchedEvent"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
                 };
             };
         };
