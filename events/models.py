@@ -22,6 +22,10 @@ class Attendance(models.Model):
 
 
 class CombatEvent(models.Model):
+    """
+    A CombatEvent is an object representing a combat event. This is used to track robot payments and competitor waivers for each event.
+    """
+    
     event = models.OneToOneField(Event, on_delete=models.CASCADE, related_name='combat_event')
     
     # Documenso is an open source DocuSign clone that we use to store the waivers for minors and adults. It sends an email with a link to the document that they can e-sign (or we can optionally embed that same flow into our project via a React component).
@@ -35,6 +39,10 @@ class CombatEvent(models.Model):
         
         
 class Waiver(models.Model):
+      """
+      A Waiver is an object representing a waiver that can be signed by a user. 
+      """
+    
       event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='waivers')
       name = models.CharField(max_length=200)
       internal_description = models.CharField(max_length=200)
@@ -46,6 +54,10 @@ class Waiver(models.Model):
           return self.name
           
 class CompletedWaiver(models.Model):
+    """
+    A CompletedWaiver is an object representing a waiver that has been completed by a user who is competing in a combat event (meaning they are a owner of a robot which associated with that event).
+    """
+  
     waiver = models.ForeignKey(Waiver, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(default=timezone.now)
@@ -68,7 +80,9 @@ class CombatTeam(models.Model):
 class CombatRobot(models.Model):
   robot_combat_events_robot_id = models.CharField()
   combat_team = models.ForeignKey(CombatTeam, on_delete=models.CASCADE)
-  purchased_product = models.ForeignKey(PurchasedProduct, on_delete=models.CASCADE)
+  purchased_products = models.ManyToManyField(PurchasedProduct, related_name='combat_robots')
+  events = models.ManyToManyField(CombatEvent, related_name='combat_robots')
+  owners = models.ManyToManyField(User, related_name='combat_robots')
   
   def __str__(self):
       return self.name
