@@ -83,6 +83,7 @@ class CombatRobot(models.Model):
   purchased_products = models.ManyToManyField(PurchasedProduct, related_name='combat_robots')
   events = models.ManyToManyField(CombatEvent, related_name='combat_robots')
   owners = models.ManyToManyField(User, related_name='combat_robots')
+  name = models.CharField(max_length=200)
   
   def __str__(self):
       return self.name
