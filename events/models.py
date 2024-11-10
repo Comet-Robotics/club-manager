@@ -11,6 +11,10 @@ class Event(models.Model):
     event_name = models.CharField(max_length=200)
     event_date = models.DateTimeField("event date")
     url = models.CharField(max_length=200, default="https://cometrobotics.org")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
     def __str__(self):
         return self.event_name
     
@@ -36,6 +40,9 @@ class CombatEvent(models.Model):
     robot_combat_events_event_id = models.CharField()
     product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
     
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
     def __str__(self):
         return str(self.event)
         
@@ -51,6 +58,9 @@ class Waiver(models.Model):
       alternate_for_waiver_id = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
       is_alternate_waiver_for_minors =  models.BooleanField(default=False)
       documenso_id = models.CharField(max_length=200)
+      
+      created_at = models.DateTimeField(auto_now_add=True)
+      updated_at = models.DateTimeField(auto_now=True)
       
       def __str__(self):
           return self.name
@@ -76,6 +86,9 @@ class WaiverStatus(ComputedFieldsModel):
     documenso_id = models.CharField(max_length=200, null=True, blank=True)
     signed_file = models.FileField(null=True, blank=True)
     
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
 
     @computed(models.BooleanField(), depends=[('self', ['signed_file', 'documenso_id', 'signature_verified_by'])])
     def is_signed(self):
@@ -91,6 +104,9 @@ class CombatTeam(models.Model):
   managers = models.ManyToManyField(User, related_name='managed_teams')
   name = models.CharField(max_length=200)
   
+  created_at = models.DateTimeField(auto_now_add=True)
+  updated_at = models.DateTimeField(auto_now=True)
+  
   def __str__(self):
       return self.name
       
@@ -101,6 +117,9 @@ class CombatRobot(models.Model):
   events = models.ManyToManyField(CombatEvent, related_name='combat_robots')
   owners = models.ManyToManyField(User, related_name='combat_robots')
   name = models.CharField(max_length=200)
+  
+  created_at = models.DateTimeField(auto_now_add=True)
+  updated_at = models.DateTimeField(auto_now=True)
   
   def __str__(self):
       return self.name

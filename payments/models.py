@@ -96,6 +96,9 @@ class PurchasedProduct(models.Model):
     quantity = models.IntegerField(default=1, validators=[MinValueValidator(1)], null=False)
     payment: Payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name='purchased_products', null=False)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     def __str__(self):
         return f"{self.product.name} ({self.quantity}), payment {self.payment.id}, user {self.payment.user}"
         
