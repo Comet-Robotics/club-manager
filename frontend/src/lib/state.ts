@@ -6,6 +6,11 @@ import type { paths } from "./api-schema";
 import createClient from "openapi-fetch";
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud'
 
+import { enableReactTracking } from "@legendapp/state/config/enableReactTracking"
+enableReactTracking({
+    warnUnobserved: true,
+})
+
 export const apiClient = createClient<paths>({ baseUrl: "/" })
 
 export const products$ = observable(syncedCrud({
@@ -29,7 +34,6 @@ export const cart$ = observable({
     cart$.quantities.assign({ [productId]: 1 })
   },
   updateQuantity: (productId: number, delta: number) => {
-    
     const prev = cart$.quantities[productId]?.get()
     if (!prev) return
     const newState = prev + delta
@@ -39,7 +43,6 @@ export const cart$ = observable({
     } else {
       cart$.quantities.assign({ [productId]: newState })
     }
-
   },
   cartItems: () => {
     return Object.entries(cart$.quantities.get()).reduce((acc, [productId, quantity]) => {
@@ -48,16 +51,14 @@ export const cart$ = observable({
       return [...acc, {...item, quantity}]
     }, [] as (Product & {quantity: number})[])
   }
-
 })
 
-type AuthStore = {
-  user: User | null
-  login: (username: string, password: string) => Promise<User | null>
-}
-
-export const authStore$ = observable<AuthStore>({
-  user: null,
+export const authStore$ = observable({
+  user: null as User | null,
+  fullName: () => {
+    const user = authStore$.user.get()
+    return user ? user.first_name + ' ' + user.last_name : undefined
+  },
   login: async (username: string, password: string) => {
     const loginRes = await apiClient.POST("/api/auth/login/", {
       body: {
@@ -82,12 +83,16 @@ export const authStore$ = observable<AuthStore>({
     const user = userRes.data
     authStore$.user.set(user)
     return user
-  }
+  },
+  
 })
 
+// TODO: this is bad. this isn't linked to whether a user actually has an active session so we should fetch the user from the server on every mount
 syncObservable(authStore$, {
   persist: {
     name: 'authStore',
     plugin: ObservablePersistLocalStorage
   }
 })
+
+

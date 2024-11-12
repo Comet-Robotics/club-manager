@@ -6,7 +6,7 @@ from events.models import Event, CombatTeam, CombatRobot, CombatEvent, Waiver
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
-        fields = ['url','id', 'username', 'email', 'groups']
+        fields = ['url','id', 'username', 'email', 'groups', 'first_name', 'last_name']
         
 class ProductSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:

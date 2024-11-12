@@ -446,6 +446,8 @@ export interface components {
             email?: string;
             /** @description The groups this user belongs to. A user will get all permissions granted to each of their groups. */
             groups?: string[];
+            first_name?: string;
+            last_name?: string;
         };
         PatchedWaiver: {
             readonly id?: number;
@@ -482,6 +484,8 @@ export interface components {
             email?: string;
             /** @description The groups this user belongs to. A user will get all permissions granted to each of their groups. */
             groups?: string[];
+            first_name?: string;
+            last_name?: string;
         };
         Waiver: {
             readonly id: number;
