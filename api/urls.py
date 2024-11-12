@@ -27,5 +27,5 @@ urlpatterns = [
     path('schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path('combatteams/<int:combatteam_id>/robots/', views.RobotsInTeamView.as_view(), name='robots-in-team'),
-    path('combatevents/<int:combatevent_id>/teams/', views.TeamsInEventView.as_view(), name='teams-in-event'),
+    path('combatevents/<int:combatevent_id>/robots/', views.RobotsInEventView.as_view(), name='robots-in-event'),
 ]

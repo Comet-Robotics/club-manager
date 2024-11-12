@@ -88,15 +88,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/combatevents/{combatevent_id}/teams/": {
+    "/api/combatevents/{combatevent_id}/robots/": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Get teams in an event */
-        get: operations["combatevents_teams_retrieve"];
+        /** @description Get teams in a combat event */
+        get: operations["combatevents_robots_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -356,8 +356,7 @@ export interface components {
     schemas: {
         CombatEvent: {
             readonly id: number;
-            /** Format: uri */
-            event: string;
+            readonly event_id: number;
             robot_combat_events_event_id: string;
             /** Format: uri */
             product_id: string;
@@ -396,8 +395,7 @@ export interface components {
         };
         PatchedCombatEvent: {
             readonly id?: number;
-            /** Format: uri */
-            event?: string;
+            readonly event_id?: number;
             robot_combat_events_event_id?: string;
             /** Format: uri */
             product_id?: string;
@@ -664,7 +662,7 @@ export interface operations {
             };
         };
     };
-    combatevents_teams_retrieve: {
+    combatevents_robots_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -680,7 +678,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CombatTeam"];
+                    "application/json": components["schemas"]["CombatRobot"];
                 };
             };
             403: {
@@ -688,7 +686,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CombatTeam"];
+                    "application/json": components["schemas"]["CombatRobot"];
                 };
             };
         };

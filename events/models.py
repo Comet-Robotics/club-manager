@@ -121,7 +121,7 @@ class CombatRobot(models.Model):
   robot_combat_events_robot_id = models.CharField()
   combat_team = models.ForeignKey(CombatTeam, on_delete=models.CASCADE)
   purchased_products = models.ManyToManyField(PurchasedProduct, related_name='combat_robots', blank=True)
-  events = models.ManyToManyField(CombatEvent, related_name='combat_robots')
+  combat_events = models.ManyToManyField(CombatEvent, related_name='combat_robots')
   owners = models.ManyToManyField(User, related_name='combat_robots')
   name = models.CharField(max_length=200)
   weight_class = models.CharField(choices=WeightClass.choices)

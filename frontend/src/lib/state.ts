@@ -26,6 +26,26 @@ export const products$ = observable(syncedCrud({
 
 export const productMeta$ = syncState(products$) 
 
+export const combatEvent$ = observable(syncedCrud({
+  list: async () => {
+    const res = await apiClient.GET("/api/combatevents/")
+    if (res.error || !res.data) return []
+    return res.data
+  }
+}))
+
+export const combatEventMeta$ = syncState(combatEvent$)
+
+export const events$ = observable(syncedCrud({
+  list: async () => {
+    const res = await apiClient.GET("/api/events/")
+    if (res.error || !res.data) return []
+    return res.data
+  }
+}))
+
+export const eventsMeta$ = syncState(events$)
+
 
 export const cart$ = observable({
   quantities: {} as { [key: string]: number },
@@ -60,7 +80,12 @@ export const authStore$ = observable({
   user: null as User | null,
   fullName: () => {
     const user = authStore$.user.get()
-    return user ? user.first_name + ' ' + user.last_name : undefined
+    if (!user) return undefined
+    if (user.first_name && user.last_name) {
+      return user.first_name + ' ' + user.last_name
+    } else {
+      return user.first_name ?? user.last_name ?? user.username
+    }
   },
   login: async (username: string, password: string) => {
     const loginRes = await apiClient.POST("/api/auth/login/", {

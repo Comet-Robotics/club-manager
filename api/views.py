@@ -170,6 +170,7 @@ class WhoAmIView(APIView):
 class RobotsInTeamView(APIView):
     @extend_schema(
         responses={
+          # TODO: fix this so the return type is a list
             200: CombatRobotSerializer,
             403: CombatRobotSerializer,
         },
@@ -187,22 +188,22 @@ class RobotsInTeamView(APIView):
         
 
 # view to get teams in event
-class TeamsInEventView(APIView):
+class RobotsInEventView(APIView):
     @extend_schema(
         responses={
-            200: CombatTeamSerializer,
-            403: CombatTeamSerializer
+          # TODO: fix this so the return type is a list
+            200: CombatRobotSerializer,
+            403: CombatRobotSerializer
         },
-        description='Get teams in an event'
+        description='Get teams in a combat event'
     )
     def get(self, request, combatevent_id):
-        event = CombatEvent.objects.get(pk=combatevent_id)
+        combat_event = CombatEvent.objects.get(pk=combatevent_id)
         
-        if not event:
-            return Response({'detail': 'Event not found.'}, status=status.HTTP_404_NOT_FOUND)
+        if not combat_event:
+            return Response({'detail': 'CombatEvent not found.'}, status=status.HTTP_404_NOT_FOUND)
         
-        robots = CombatRobot.objects.filter(events__id=combatevent_id)
-        # get distinct teams from the robots
-        teams = CombatTeam.objects.filter(pk__in=robots.values('combat_team_id'))
-        serializer = CombatTeamSerializer(teams, many=True, context={'request': request})
+        robots = CombatRobot.objects.filter(combat_events__id=combatevent_id)
+        serializer = CombatRobotSerializer(robots, many=True, context={'request': request}) 
+        
         return Response(serializer.data)

@@ -48,6 +48,6 @@ class WaiverSerializer(serializers.HyperlinkedModelSerializer):
 class CombatEventSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = CombatEvent
-        fields = ['id', 'event', 'robot_combat_events_event_id', 'product_id', 'waivers']
+        fields = ['id', 'event_id', 'robot_combat_events_event_id', 'product_id', 'waivers']
 
     waivers = WaiverSerializer(many=True, read_only=True)
