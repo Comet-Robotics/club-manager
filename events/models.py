@@ -4,6 +4,7 @@ from django.utils import timezone
 from payments.models import Product, PurchasedProduct
 from common.utils import validate_staff
 from computedfields.models import ComputedFieldsModel, computed
+from django.utils.translation import gettext_lazy as _
 
 
 # Create your models here.
@@ -109,14 +110,21 @@ class CombatTeam(models.Model):
   
   def __str__(self):
       return self.name
+    
       
 class CombatRobot(models.Model):
+  class WeightClass(models.TextChoices):
+    PLANT = 'plant', _('Plastic Ant (1lb)')
+    ANT = 'ant', _('Antweight (3lb)')
+    BEETLE = 'beetle', _('Beetleweight (1lb)')
+    
   robot_combat_events_robot_id = models.CharField()
   combat_team = models.ForeignKey(CombatTeam, on_delete=models.CASCADE)
   purchased_products = models.ManyToManyField(PurchasedProduct, related_name='combat_robots', blank=True)
   events = models.ManyToManyField(CombatEvent, related_name='combat_robots')
   owners = models.ManyToManyField(User, related_name='combat_robots')
   name = models.CharField(max_length=200)
+  weight_class = models.CharField(choices=WeightClass.choices)
   
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
