@@ -13,11 +13,11 @@ import { createFileRoute } from '@tanstack/react-router'
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as CombatEventsEventIdImport } from './routes/combat-events/$eventId'
 
 // Create Virtual Routes
 
 const StoreLazyImport = createFileRoute('/store')()
-const RoboteventLazyImport = createFileRoute('/robot_event')()
 const LoginLazyImport = createFileRoute('/login')()
 const CheckoutLazyImport = createFileRoute('/checkout')()
 const AuthLazyImport = createFileRoute('/auth')()
@@ -28,11 +28,6 @@ const StoreLazyRoute = StoreLazyImport.update({
   path: '/store',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/store.lazy').then((d) => d.Route))
-
-const RoboteventLazyRoute = RoboteventLazyImport.update({
-  path: '/robot_event',
-  getParentRoute: () => rootRoute,
-} as any).lazy(() => import('./routes/robot_event.lazy').then((d) => d.Route))
 
 const LoginLazyRoute = LoginLazyImport.update({
   path: '/login',
@@ -48,6 +43,11 @@ const AuthLazyRoute = AuthLazyImport.update({
   path: '/auth',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/auth.lazy').then((d) => d.Route))
+
+const CombatEventsEventIdRoute = CombatEventsEventIdImport.update({
+  path: '/combat-events/$eventId',
+  getParentRoute: () => rootRoute,
+} as any)
 
 // Populate the FileRoutesByPath interface
 
@@ -74,18 +74,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginLazyImport
       parentRoute: typeof rootRoute
     }
-    '/robot_event': {
-      id: '/robot_event'
-      path: '/robot_event'
-      fullPath: '/robot_event'
-      preLoaderRoute: typeof RoboteventLazyImport
-      parentRoute: typeof rootRoute
-    }
     '/store': {
       id: '/store'
       path: '/store'
       fullPath: '/store'
       preLoaderRoute: typeof StoreLazyImport
+      parentRoute: typeof rootRoute
+    }
+    '/combat-events/$eventId': {
+      id: '/combat-events/$eventId'
+      path: '/combat-events/$eventId'
+      fullPath: '/combat-events/$eventId'
+      preLoaderRoute: typeof CombatEventsEventIdImport
       parentRoute: typeof rootRoute
     }
   }
@@ -97,16 +97,16 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthLazyRoute
   '/checkout': typeof CheckoutLazyRoute
   '/login': typeof LoginLazyRoute
-  '/robot_event': typeof RoboteventLazyRoute
   '/store': typeof StoreLazyRoute
+  '/combat-events/$eventId': typeof CombatEventsEventIdRoute
 }
 
 export interface FileRoutesByTo {
   '/auth': typeof AuthLazyRoute
   '/checkout': typeof CheckoutLazyRoute
   '/login': typeof LoginLazyRoute
-  '/robot_event': typeof RoboteventLazyRoute
   '/store': typeof StoreLazyRoute
+  '/combat-events/$eventId': typeof CombatEventsEventIdRoute
 }
 
 export interface FileRoutesById {
@@ -114,16 +114,27 @@ export interface FileRoutesById {
   '/auth': typeof AuthLazyRoute
   '/checkout': typeof CheckoutLazyRoute
   '/login': typeof LoginLazyRoute
-  '/robot_event': typeof RoboteventLazyRoute
   '/store': typeof StoreLazyRoute
+  '/combat-events/$eventId': typeof CombatEventsEventIdRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/auth' | '/checkout' | '/login' | '/robot_event' | '/store'
+  fullPaths:
+    | '/auth'
+    | '/checkout'
+    | '/login'
+    | '/store'
+    | '/combat-events/$eventId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/checkout' | '/login' | '/robot_event' | '/store'
-  id: '__root__' | '/auth' | '/checkout' | '/login' | '/robot_event' | '/store'
+  to: '/auth' | '/checkout' | '/login' | '/store' | '/combat-events/$eventId'
+  id:
+    | '__root__'
+    | '/auth'
+    | '/checkout'
+    | '/login'
+    | '/store'
+    | '/combat-events/$eventId'
   fileRoutesById: FileRoutesById
 }
 
@@ -131,16 +142,16 @@ export interface RootRouteChildren {
   AuthLazyRoute: typeof AuthLazyRoute
   CheckoutLazyRoute: typeof CheckoutLazyRoute
   LoginLazyRoute: typeof LoginLazyRoute
-  RoboteventLazyRoute: typeof RoboteventLazyRoute
   StoreLazyRoute: typeof StoreLazyRoute
+  CombatEventsEventIdRoute: typeof CombatEventsEventIdRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   AuthLazyRoute: AuthLazyRoute,
   CheckoutLazyRoute: CheckoutLazyRoute,
   LoginLazyRoute: LoginLazyRoute,
-  RoboteventLazyRoute: RoboteventLazyRoute,
   StoreLazyRoute: StoreLazyRoute,
+  CombatEventsEventIdRoute: CombatEventsEventIdRoute,
 }
 
 export const routeTree = rootRoute
@@ -158,8 +169,8 @@ export const routeTree = rootRoute
         "/auth",
         "/checkout",
         "/login",
-        "/robot_event",
-        "/store"
+        "/store",
+        "/combat-events/$eventId"
       ]
     },
     "/auth": {
@@ -171,11 +182,11 @@ export const routeTree = rootRoute
     "/login": {
       "filePath": "login.lazy.tsx"
     },
-    "/robot_event": {
-      "filePath": "robot_event.lazy.tsx"
-    },
     "/store": {
       "filePath": "store.lazy.tsx"
+    },
+    "/combat-events/$eventId": {
+      "filePath": "combat-events/$eventId.tsx"
     }
   }
 }
