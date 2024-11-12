@@ -10,8 +10,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Progress } from "@/components/ui/progress"
 import { observer } from "@legendapp/state/react"
 
+import { EmbedDirectTemplate } from '@documenso/embed-react';
+import { authStore$, documensoHost } from '@/lib/state'
+import './documenso-sign.css'
 
-export default observer(RobotEventRegister)
+
 
 type Step = {
     id: string;
@@ -31,7 +34,9 @@ type Step = {
     const [isCompeting, setIsCompeting] = useState<boolean | null>(null)
     const [isUserPaying, setIsUserPaying] = useState<boolean | null>(null)
 
-  
+    const user = authStore$.user.get()
+    const fullName = authStore$.fullName.get()
+    
     const addRobot = () => {
       setRobots([...robots, { name: '', weight: '' }])
     }
@@ -163,14 +168,21 @@ type Step = {
     },
     {
         id: 'sign-waiver',
-        title: 'SIGN HERE',
-        description: 'GIVE US UR SOUL',
+        title: 'Waiver E-Signature',
+        description: 'Complete your waiver to compete at the event.',
         component: (
             <Card>
                 <CardHeader>
-                <CardTitle>SIGN HERE</CardTitle>
-                <CardDescription>GIVE US UR SOUL</CardDescription>
+                <CardTitle>Waiver E-Signature</CardTitle>
+                <CardDescription>Click the highlighted fields below to sign your waiver.</CardDescription>
                 </CardHeader>
+                <CardContent>
+                  {/* TODO: pull documenso token from api */}
+                  {/* TODO: minor waivers need to be signed by the parent, need to use documenso api to email parent with waiver + track status via webhooks? */}
+              {user ? (!user.email ? <p>Please link your email to your Comet Robotics account to sign your waiver.</p> :
+                <EmbedDirectTemplate className='documenso-sign' token="wwgoYUAUxbpWb4ka8ztHG" host={documensoHost} email={user.email} name={fullName} lockName lockEmail externalId={`{"event:${"TODO"}-waiver:${"TODO"}-user:${user.id}`} />
+                  ) : <p>Well this is a little embarassing.</p>}
+                </CardContent>
             </Card>
         )
     },
@@ -373,8 +385,10 @@ type Step = {
   
     const handlePrevious = () => {
       if (currentStepIndex > 0) {
-        setCompletedSteps(completedSteps.slice(0, -1))
-        setCurrentStepIndex(currentStepIndex - 1)
+        setCompletedSteps((cs) => cs.slice(0, -1))
+        const thing = completedSteps[completedSteps.length - 1]
+        if (!thing) return
+        setCurrentStepIndex(steps.findIndex((s) => s.id === thing.id))
       }
     }
   
@@ -463,3 +477,5 @@ type Step = {
       </div>
     )
   }
+  
+export default observer(RobotEventRegister)

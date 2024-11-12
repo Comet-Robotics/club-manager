@@ -13,6 +13,9 @@ enableReactTracking({
 
 export const apiClient = createClient<paths>({ baseUrl: "/" })
 
+// TODO: move this to an env var?
+export const documensoHost = 'https://sign.cometrobotics.org'
+
 export const products$ = observable(syncedCrud({
   list: async () => {
     const res = await apiClient.GET("/api/products/")
