@@ -41,7 +41,6 @@ export function RobotEventRegister({ combatEventId, eventId, robotsInEvent }: Pr
   const [isCompeting, setIsCompeting] = useState<boolean | null>(null)
   const [isUserPaying, setIsUserPaying] = useState<boolean | null>(null)
     
-  const combatEvent = combatEvent$.get()[combatEventId]!
   const event = events$.get()[eventId]!
   const user = authStore$.user.get()
   const fullName = authStore$.fullName.get()
