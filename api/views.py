@@ -37,6 +37,7 @@ class CombatTeamViewSet(viewsets.ModelViewSet):
     serializer_class = CombatTeamSerializer
     queryset = CombatTeam.objects.all()
 
+
 class CombatRobotViewSet(viewsets.ModelViewSet):
     permission_classes = [ReadOnlyView]
     serializer_class = CombatRobotSerializer
@@ -118,10 +119,13 @@ class CombatEventViewSet(viewsets.ModelViewSet):
           update_fields=['status']
       )
 
-    # TODO: fix serializers
+    # TODO: fix openapi schema. also, this shouldn't be a GET
     @action(detail=True, methods=['get'], permission_classes=[IsAdminUser], url_path='sync-with-rce')
     def sync_event_with_robot_combat_events(self, request, pk):
         combat_event = self.get_object()
+        
+        if not combat_event:
+            return Response({'detail': 'CombatEvent not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         rce_event = get_robot_combat_event(combat_event.robot_combat_events_event_id)
 
@@ -135,6 +139,32 @@ class CombatEventViewSet(viewsets.ModelViewSet):
         ).exclude(combat_robot__in=upserted_robots).delete()
 
         return Response(status=status.HTTP_200_OK)
+        
+    # TODO: fix openapi schema
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='teams')
+    def get_teams_in_event(self, request, pk):
+        combat_event = self.get_object()
+        
+        if not combat_event:
+            return Response({'detail': 'CombatEvent not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        registrations = CombatEventRegistration.objects.filter(combat_event=combat_event)
+        team_ids = registrations.values('combat_robot__combat_team').distinct()
+        teams = CombatTeam.objects.filter(pk__in=team_ids)
+        
+        serializer = CombatTeamSerializer(teams, many=True, context={'request': request})
+        
+        
+        return Response(serializer.data)
+        
+# TODO: action for user to become a team manager (allows them to pay for the team's robots)
+# 
+# TODO: action for user to become a robot owner. may need some refactoring, since
+# I want to associate registration to an owner instead of owners to robots. 
+# this way, Robot X can go to competion A with persons 1 and 2, but at comp B
+# they can compete with persons 2 and 3, a different set of owners.
+# 
+# TODO: endpoints for payments
 
 
 class EventViewSet(viewsets.ModelViewSet):
