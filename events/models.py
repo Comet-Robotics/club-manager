@@ -127,7 +127,7 @@ class CombatRobot(models.Model):
   robot_combat_events_robot_id = models.CharField()
   combat_team = models.ForeignKey(CombatTeam, on_delete=models.CASCADE)
   purchased_products = models.ManyToManyField(PurchasedProduct, related_name='combat_robots', blank=True)
-  combat_events = models.ManyToManyField(CombatEvent, related_name='combat_robots')
+  combat_events = models.ManyToManyField(CombatEvent, related_name='combat_robots', through='CombatEventRegistration')
   owners = models.ManyToManyField(User, related_name='combat_robots')
   name = models.CharField(max_length=200)
   weight_class = models.CharField(choices=WeightClass.choices)
@@ -143,6 +143,23 @@ class CombatRobot(models.Model):
   def __str__(self):
       return self.name
   
+
+class CombatEventRegistration(models.Model):
+  class Status(models.TextChoices):
+    COMPETING = 'competing', _('Competing')
+    ON_WAITLIST = 'on_waitlist', _('On Waitlist')
+    
+  combat_event = models.ForeignKey(CombatEvent, on_delete=models.CASCADE, related_name='combat_event_registrations')
+  combat_robot = models.ForeignKey(CombatRobot, on_delete=models.CASCADE, related_name='combat_event_registrations')
+  status = models.CharField(choices=Status.choices, default=Status.COMPETING)
+  
+  class Meta:
+    constraints = [
+        models.UniqueConstraint(fields=['combat_event', 'combat_robot'], name='combat_event_registrations_combat_event_combat_robot_unique')
+    ]
+  
+  created_at = models.DateTimeField(auto_now_add=True)
+  updated_at = models.DateTimeField(auto_now=True)
 
 class UserIdentification(models.Model):
     # TODO: we should combine the UserProfile and UserIdentification models. this model is redundant since it only has one field

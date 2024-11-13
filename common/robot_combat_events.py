@@ -5,27 +5,30 @@ import bs4
 from typing import NamedTuple
 
 @dataclass
-class Robot:
+class RCERobot:
     name: str
     status: str
     img_url: str
     rce_resource_id: str
     rce_team_id: str
+    weight_class: str
     
 
-class Team(NamedTuple):
+class RCETeam(NamedTuple):
     name: str
     rce_team_id: str
 
 @dataclass
-class Event:
+class RCEEvent:
     event_title: str
     event_description: str
     event_details: Dict[str, str]
-    robots_by_weight_class: Dict[str, List[Robot]]
-    teams: List[Team]
+    
+    robots_by_weight_class: Dict[str, List[RCERobot]]
+    robots: List[RCERobot]
+    teams: List[RCETeam]
 
-def get_robot_combat_event(rce_event_id: str) -> Event:
+def get_robot_combat_event(rce_event_id: str) -> RCEEvent:
     r = requests.get(f"https://www.robotcombatevents.com/events/{rce_event_id}")
     soup = bs4.BeautifulSoup(r.text, 'html.parser')
     
@@ -60,8 +63,9 @@ def get_robot_combat_event(rce_event_id: str) -> Event:
     }
     
     # Get robots for each weight class
-    robots_by_weight_class: Dict[str, List[Robot]] = {}
-    teams: set[Team] = set()
+    robots_by_weight_class: Dict[str, List[RCERobot]] = {}
+    robots: List[RCERobot] = []
+    teams: set[RCETeam] = set()
     for weight_class, url in weight_class_urls.items():
         robots_by_weight_class[weight_class] = []
         r = requests.get(url)
@@ -78,26 +82,29 @@ def get_robot_combat_event(rce_event_id: str) -> Event:
         for row in registration_panel_table_rows[1:]:
             cols = [list(col)[0] for col in row.find_all("td")]
             
-            robot = Robot(
+            robot = RCERobot(
                 img_url=row.find("img")["src"],
                 name=cols[1].text.strip(),
                 rce_team_id=cols[2].attrs["href"].split("/")[-1],
                 status=cols[3].text.strip(),
                 rce_resource_id=cols[1].attrs["href"].split("/")[-1],
+                weight_class=weight_class
             )
             
-            teams.add(Team(
+            teams.add(RCETeam(
                 name=cols[2].text.strip(),
                 rce_team_id=cols[2].attrs["href"].split("/")[-1]
             ))
             
             robots_by_weight_class[weight_class].append(robot)
+            robots.append(robot)
     
-    return Event(
+    return RCEEvent(
         event_title=event_title,
         event_description=event_description,
         event_details=event_details,
         robots_by_weight_class=robots_by_weight_class,
-        teams=list(teams)
+        teams=list(teams),
+        robots=robots
     )
   

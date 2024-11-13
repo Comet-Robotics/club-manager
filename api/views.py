@@ -1,6 +1,6 @@
 from discord.components import ActionRow
 from django.contrib.auth.models import User
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from payments.models import Product
 from .serializers import UserSerializer, ProductSerializer, CombatTeamSerializer, CombatRobotSerializer, CombatEventSerializer, EventSerializer, WaiverSerializer
 from rest_framework import viewsets, status, serializers
@@ -15,10 +15,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import action
-from common.robot_combat_events import get_robot_combat_event
+from common.robot_combat_events import RCETeam, get_robot_combat_event, RCERobot
+from django.db.models import Q
 
 
-from events.models import Event, CombatTeam, CombatRobot, CombatEvent, Waiver
+from events.models import CombatEventRegistration, Event, CombatTeam, CombatRobot, CombatEvent, Waiver
 
 # Create your views here.
 class UserViewSet(viewsets.ModelViewSet):
@@ -30,7 +31,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     permission_classes = [ReadOnlyView]
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
-    
+
 class CombatTeamViewSet(viewsets.ModelViewSet):
     permission_classes = [ReadOnlyView]
     serializer_class = CombatTeamSerializer
@@ -45,54 +46,96 @@ class CombatEventViewSet(viewsets.ModelViewSet):
     permission_classes = [ReadOnlyView]
     serializer_class = CombatEventSerializer
     queryset = CombatEvent.objects.all()
+
+    def _upsert_teams_with_rce_data(self, rce_teams: list[RCETeam]) -> dict[str, CombatTeam]:
+      """
+      Upserts the given list of teams from Robot Combat Events into the database. Returns a dictionary mapping the Robot Combat Events team IDs to the upserted teams.
+      
+      Parameters:
+      - rce_teams (list[RCETeam]): The list of teams to upsert.
+      """
+      combat_teams = [CombatTeam(name=team.name, robot_combat_events_team_id=team.rce_team_id) for team in rce_teams]
+      CombatTeam.objects.bulk_create(combat_teams, update_conflicts=True, unique_fields=['robot_combat_events_team_id'], update_fields=['name'])
+
+      upserted_teams = {team.robot_combat_events_team_id: team for team in CombatTeam.objects.filter(
+          robot_combat_events_team_id__in=[team.rce_team_id for team in rce_teams]
+      )}
+      return upserted_teams
+
+    def _upsert_robots_with_rce_data(self, rce_robots: list[RCERobot], combat_teams: dict[str, CombatTeam]) -> list[CombatRobot]:
+      """
+      Upserts the given list of robots from Robot Combat Events into the database. Returns a list of CombatRobot objects that were created or updated.
+      
+      Parameters:
+      - rce_robots: A list of RCERobot objects to upsert.
+      - combat_teams: A dictionary mapping RCE team IDs to CombatTeam objects.
+      """
     
-    # TODO: figure out permissions for this action, fix serializers
-    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='sync-with-rce')
+      RCE_WEIGHT_CLASS_LABEL_TO_COMBAT_ROBOT_WEIGHT_CLASS = {
+          'Plastic Antweights': CombatRobot.WeightClass.PLANT,
+          'Antweights': CombatRobot.WeightClass.ANT,
+          'Beetleweights': CombatRobot.WeightClass.BEETLE
+      }
+    
+      all_robots = [
+        CombatRobot(
+          name=rce_robot.name, 
+          weight_class=RCE_WEIGHT_CLASS_LABEL_TO_COMBAT_ROBOT_WEIGHT_CLASS[rce_robot.weight_class], 
+          robot_combat_events_robot_id=rce_robot.rce_resource_id, 
+          combat_team=combat_teams[rce_robot.rce_team_id]
+        ) for rce_robot in rce_robots
+      ]
+      CombatRobot.objects.bulk_create(
+        all_robots, 
+        update_conflicts=True, 
+        unique_fields=['robot_combat_events_robot_id'], 
+        update_fields=['name', 'weight_class', 'combat_team']
+      )
+      return all_robots
+
+    def _associate_robots_with_event(self, combat_robots: list[CombatRobot], combat_event: CombatEvent, rce_robots: list[RCERobot]):
+      RCE_STATUS_LABELS_TO_REG_STATUS = {
+        'Competing': CombatEventRegistration.Status.COMPETING,
+        'On Waitlist': CombatEventRegistration.Status.ON_WAITLIST
+      }
+      
+      rce_robot_id_to_combat_robot_map: dict[str, CombatRobot] = {robot.robot_combat_events_robot_id: robot for robot in combat_robots}
+      
+      reg_objs = []
+      for rce_robot in rce_robots:
+          if rce_robot.rce_resource_id in rce_robot_id_to_combat_robot_map:
+              reg_objs.append(
+                  CombatEventRegistration(
+                      combat_event=combat_event,
+                      combat_robot=rce_robot_id_to_combat_robot_map[rce_robot.rce_resource_id],
+                      status=RCE_STATUS_LABELS_TO_REG_STATUS[rce_robot.status]
+                  )
+              )
+      CombatEventRegistration.objects.bulk_create(
+          reg_objs, 
+          update_conflicts=True,
+          unique_fields=['combat_event', 'combat_robot'],
+          update_fields=['status']
+      )
+
+    # TODO: fix serializers
+    @action(detail=True, methods=['get'], permission_classes=[IsAdminUser], url_path='sync-with-rce')
     def sync_event_with_robot_combat_events(self, request, pk):
         combat_event = self.get_object()
+
+        rce_event = get_robot_combat_event(combat_event.robot_combat_events_event_id)
+
+        upserted_teams = self._upsert_teams_with_rce_data(rce_event.teams)  
+        upserted_robots = self._upsert_robots_with_rce_data(rce_event.robots, upserted_teams)
+        self._associate_robots_with_event(upserted_robots, combat_event, rce_event.robots)
         
-        rce_details = get_robot_combat_event(combat_event.robot_combat_events_event_id)
-        
-        team_objs = [CombatTeam(name=team.name, robot_combat_events_team_id=team.rce_team_id) for team in rce_details.teams]
-        CombatTeam.objects.bulk_create(team_objs, update_conflicts=True, unique_fields=['robot_combat_events_team_id'], update_fields=['name'])
-        
-        teams = {team.robot_combat_events_team_id: team for team in CombatTeam.objects.filter(
-                robot_combat_events_team_id__in=[team.rce_team_id for team in rce_details.teams]
-            )}
-        
-        rce_plant_label = 'Plastic Antweights'
-        rce_ant_label = 'Antweights'
-        rce_beetle_label = 'Beetleweights'
-        
-        plants = [CombatRobot(name=robot.name, weight_class=CombatRobot.WeightClass.PLANT, robot_combat_events_robot_id=robot.rce_resource_id, combat_team=teams[robot.rce_team_id]) for robot in rce_details.robots_by_weight_class[rce_plant_label]]
-        ants = [CombatRobot(name=robot.name, weight_class=CombatRobot.WeightClass.ANT, robot_combat_events_robot_id=robot.rce_resource_id, combat_team=teams[robot.rce_team_id]) for robot in rce_details.robots_by_weight_class[rce_ant_label]]
-        beetles = [CombatRobot(name=robot.name, weight_class=CombatRobot.WeightClass.BEETLE, robot_combat_events_robot_id=robot.rce_resource_id, combat_team=teams[robot.rce_team_id]) for robot in rce_details.robots_by_weight_class[rce_beetle_label]]
-        
-        all_robots = plants + ants + beetles
-        CombatRobot.objects.bulk_create(all_robots, update_conflicts=True, unique_fields=['robot_combat_events_robot_id'], update_fields=['name', 'weight_class', 'combat_team'])
-        
-        # Get all robot IDs from the RCE data
-        current_robot_ids = [robot.robot_combat_events_robot_id for robot in all_robots]
-        
-        # Get the robot objects that were just created/updated
-        robots_to_add = CombatRobot.objects.filter(robot_combat_events_robot_id__in=current_robot_ids)
-        
-        # Add the combat event to each robot that should be in the event
-        for robot in robots_to_add:
-            robot.combat_events.add(combat_event)
-            
-        # Remove event association from robots no longer in the event
-        robots_to_remove = CombatRobot.objects.filter(
-            combat_events=combat_event
-        ).exclude(
-            robot_combat_events_robot_id__in=current_robot_ids
-        )
-        
-        for robot in robots_to_remove:
-            robot.combat_events.remove(combat_event)
-        
+        # purging registrations for robots not returned by RCE
+        CombatEventRegistration.objects.filter(
+          combat_event=combat_event
+        ).exclude(combat_robot__in=upserted_robots).delete()
+
         return Response(status=status.HTTP_200_OK)
-          
+
 
 class EventViewSet(viewsets.ModelViewSet):
     permission_classes = [ReadOnlyView]
@@ -117,7 +160,7 @@ class LoginRequestSerializer(serializers.Serializer):
 
 class LoginResponseSerializer(serializers.Serializer):
     detail = serializers.CharField()
-    
+
 
 class LoginView(APIView):
     @extend_schema(
@@ -165,14 +208,14 @@ class LogoutView(APIView):
 
 class SessionResponseSerializer(serializers.Serializer):
     isAuthenticated = serializers.BooleanField()
-    
-    
+
+
 class SessionView(APIView):
     @extend_schema(
         responses={200: SessionResponseSerializer},
         description='Check if user is authenticated'
     )
-    @ensure_csrf_cookie 
+    @ensure_csrf_cookie
     def get(self, request):
         if not request.user.is_authenticated:
             return Response({'isAuthenticated': False})
@@ -192,7 +235,7 @@ class WhoAmIView(APIView):
                 }
             },
             "required": ["isAuthenticated"]
-          }, 
+          },
           200: {
               "type": "object",
               "properties": {
@@ -217,9 +260,9 @@ class WhoAmIView(APIView):
             return Response({'isAuthenticated': False}, status=status.HTTP_403_FORBIDDEN)
 
         return Response({'username': request.user.username, 'id': request.user.id, 'isAuthenticated': True})
-        
-        
-        
+
+
+
 class RobotsInTeamView(APIView):
     @extend_schema(
         responses={
@@ -231,14 +274,14 @@ class RobotsInTeamView(APIView):
     )
     def get(self, request, combatteam_id):
         team = CombatTeam.objects.get(pk=combatteam_id)
-        
+
         if not team:
             return Response({'detail': 'Team not found.'}, status=status.HTTP_404_NOT_FOUND)
-        
+
         robots = CombatRobot.objects.filter(combat_team=team)
         serializer = CombatRobotSerializer(robots, many=True, context={'request': request})
         return Response(serializer.data)
-        
+
 
 # view to get teams in event
 class RobotsInEventView(APIView):
@@ -252,11 +295,11 @@ class RobotsInEventView(APIView):
     )
     def get(self, request, combatevent_id):
         combat_event = CombatEvent.objects.get(pk=combatevent_id)
-        
+
         if not combat_event:
             return Response({'detail': 'CombatEvent not found.'}, status=status.HTTP_404_NOT_FOUND)
-        
+
         robots = CombatRobot.objects.filter(combat_events__id=combatevent_id)
-        serializer = CombatRobotSerializer(robots, many=True, context={'request': request}) 
-        
+        serializer = CombatRobotSerializer(robots, many=True, context={'request': request})
+
         return Response(serializer.data)
