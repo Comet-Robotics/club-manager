@@ -111,8 +111,7 @@ class CombatTeam(models.Model):
   
   class Meta:
     constraints = [
-        models.UniqueConstraint(fields=['robot_combat_events_team_id'], name='robot_combat_events_team_id_unique_when_not_null',
-                                condition=Q(robot_combat_events_team_id__isnull=False))
+        models.UniqueConstraint(fields=['robot_combat_events_team_id'], name='robot_combat_events_team_id_unique_nulls_not_distinct', nulls_distinct=False)
     ]
   
   def __str__(self):
@@ -138,8 +137,7 @@ class CombatRobot(models.Model):
   
   class Meta:
     constraints = [
-        models.UniqueConstraint(fields=['robot_combat_events_robot_id'], name='robot_combat_events_robot_id_unique_when_not_null',
-          condition=Q(robot_combat_events_robot_id__isnull=False))
+        models.UniqueConstraint(fields=['robot_combat_events_robot_id'], name='robot_combat_events_robot_id_unique_nulls_not_distinct', nulls_distinct=False)
     ]
   
   def __str__(self):

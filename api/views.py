@@ -1,4 +1,6 @@
+from discord.components import ActionRow
 from django.contrib.auth.models import User
+from rest_framework.permissions import IsAuthenticated
 from payments.models import Product
 from .serializers import UserSerializer, ProductSerializer, CombatTeamSerializer, CombatRobotSerializer, CombatEventSerializer, EventSerializer, WaiverSerializer
 from rest_framework import viewsets, status, serializers
@@ -12,6 +14,9 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
+from rest_framework.decorators import action
+from common.robot_combat_events import get_robot_combat_event
+
 
 from events.models import Event, CombatTeam, CombatRobot, CombatEvent, Waiver
 
@@ -40,6 +45,54 @@ class CombatEventViewSet(viewsets.ModelViewSet):
     permission_classes = [ReadOnlyView]
     serializer_class = CombatEventSerializer
     queryset = CombatEvent.objects.all()
+    
+    # TODO: figure out permissions for this action, fix serializers
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='sync-with-rce')
+    def sync_event_with_robot_combat_events(self, request, pk):
+        combat_event = self.get_object()
+        
+        rce_details = get_robot_combat_event(combat_event.robot_combat_events_event_id)
+        
+        team_objs = [CombatTeam(name=team.name, robot_combat_events_team_id=team.rce_team_id) for team in rce_details.teams]
+        CombatTeam.objects.bulk_create(team_objs, update_conflicts=True, unique_fields=['robot_combat_events_team_id'], update_fields=['name'])
+        
+        teams = {team.robot_combat_events_team_id: team for team in CombatTeam.objects.filter(
+                robot_combat_events_team_id__in=[team.rce_team_id for team in rce_details.teams]
+            )}
+        
+        rce_plant_label = 'Plastic Antweights'
+        rce_ant_label = 'Antweights'
+        rce_beetle_label = 'Beetleweights'
+        
+        plants = [CombatRobot(name=robot.name, weight_class=CombatRobot.WeightClass.PLANT, robot_combat_events_robot_id=robot.rce_resource_id, combat_team=teams[robot.rce_team_id]) for robot in rce_details.robots_by_weight_class[rce_plant_label]]
+        ants = [CombatRobot(name=robot.name, weight_class=CombatRobot.WeightClass.ANT, robot_combat_events_robot_id=robot.rce_resource_id, combat_team=teams[robot.rce_team_id]) for robot in rce_details.robots_by_weight_class[rce_ant_label]]
+        beetles = [CombatRobot(name=robot.name, weight_class=CombatRobot.WeightClass.BEETLE, robot_combat_events_robot_id=robot.rce_resource_id, combat_team=teams[robot.rce_team_id]) for robot in rce_details.robots_by_weight_class[rce_beetle_label]]
+        
+        all_robots = plants + ants + beetles
+        CombatRobot.objects.bulk_create(all_robots, update_conflicts=True, unique_fields=['robot_combat_events_robot_id'], update_fields=['name', 'weight_class', 'combat_team'])
+        
+        # Get all robot IDs from the RCE data
+        current_robot_ids = [robot.robot_combat_events_robot_id for robot in all_robots]
+        
+        # Get the robot objects that were just created/updated
+        robots_to_add = CombatRobot.objects.filter(robot_combat_events_robot_id__in=current_robot_ids)
+        
+        # Add the combat event to each robot that should be in the event
+        for robot in robots_to_add:
+            robot.combat_events.add(combat_event)
+            
+        # Remove event association from robots no longer in the event
+        robots_to_remove = CombatRobot.objects.filter(
+            combat_events=combat_event
+        ).exclude(
+            robot_combat_events_robot_id__in=current_robot_ids
+        )
+        
+        for robot in robots_to_remove:
+            robot.combat_events.remove(combat_event)
+        
+        return Response(status=status.HTTP_200_OK)
+          
 
 class EventViewSet(viewsets.ModelViewSet):
     permission_classes = [ReadOnlyView]
