@@ -5,6 +5,7 @@ from payments.models import Product, PurchasedProduct
 from common.utils import validate_staff
 from computedfields.models import ComputedFieldsModel, computed
 from django.utils.translation import gettext_lazy as _
+from django.db.models import Q
 
 
 # Create your models here.
@@ -108,6 +109,12 @@ class CombatTeam(models.Model):
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
   
+  class Meta:
+    constraints = [
+        models.UniqueConstraint(fields=['robot_combat_events_team_id'], name='robot_combat_events_team_id_unique_when_not_null',
+                                condition=Q(robot_combat_events_team_id__isnull=False))
+    ]
+  
   def __str__(self):
       return self.name
     
@@ -128,6 +135,12 @@ class CombatRobot(models.Model):
   
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
+  
+  class Meta:
+    constraints = [
+        models.UniqueConstraint(fields=['robot_combat_events_robot_id'], name='robot_combat_events_robot_id_unique_when_not_null',
+          condition=Q(robot_combat_events_robot_id__isnull=False))
+    ]
   
   def __str__(self):
       return self.name
