@@ -96,7 +96,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Get teams in a combat event */
-        get: operations["combatevents_robots_retrieve"];
+        get: operations["combatevents_robots_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -119,6 +119,40 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["combatevents_partial_update"];
+        trace?: never;
+    };
+    "/api/combatevents/{id}/sync-with-rce/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Synchronize a combat event with RCE */
+        get: operations["combatevents_sync_with_rce_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/combatevents/{id}/teams/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get teams in a combat event */
+        get: operations["combatevents_teams_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/combatrobots/": {
@@ -177,7 +211,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Get robots belonging to a team */
-        get: operations["combatteams_robots_retrieve"];
+        get: operations["combatteams_robots_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -200,6 +234,23 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["combatteams_partial_update"];
+        trace?: never;
+    };
+    "/api/combatteams/{id}/add-manager/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Add a manager to a team */
+        post: operations["combatteams_add_manager_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/events/": {
@@ -662,7 +713,7 @@ export interface operations {
             };
         };
     };
-    combatevents_robots_retrieve: {
+    combatevents_robots_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -678,7 +729,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CombatRobot"];
+                    "application/json": components["schemas"]["CombatRobot"][];
                 };
             };
             403: {
@@ -786,6 +837,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CombatEvent"];
+                };
+            };
+        };
+    };
+    combatevents_sync_with_rce_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this combat event. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": "";
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        detail: "CombatEvent not found.";
+                    };
+                };
+            };
+        };
+    };
+    combatevents_teams_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this combat event. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatTeam"][];
                 };
             };
         };
@@ -977,7 +1083,7 @@ export interface operations {
             };
         };
     };
-    combatteams_robots_retrieve: {
+    combatteams_robots_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -993,7 +1099,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CombatRobot"];
+                    "application/json": components["schemas"]["CombatRobot"][];
                 };
             };
             403: {
@@ -1101,6 +1207,45 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CombatTeam"];
+                };
+            };
+        };
+    };
+    combatteams_add_manager_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this combat team. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CombatTeam"];
+                "application/x-www-form-urlencoded": components["schemas"]["CombatTeam"];
+                "multipart/form-data": components["schemas"]["CombatTeam"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": "";
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        detail: "You are already a manager for this team.";
+                    };
                 };
             };
         };

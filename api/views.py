@@ -36,6 +36,45 @@ class CombatTeamViewSet(viewsets.ModelViewSet):
     permission_classes = [ReadOnlyView]
     serializer_class = CombatTeamSerializer
     queryset = CombatTeam.objects.all()
+    
+    # TODO: only one user should be able to add themselves as a manager. after that, that manager or an admin has to add any subsequent managers
+    @extend_schema(
+        responses={
+            200: {
+                "type": "enum",
+                "enum": [
+                    ""
+                ]
+            },
+            400: {
+                "type": "object",
+                "properties": {
+                    "detail": {
+                        "type": "string",
+                        "enum": [
+                            "You are already a manager for this team."
+                        ]
+                    }
+                },
+                "required": [
+                    "detail"
+                ]
+            }
+        },
+        description='Add a manager to a team'
+    )
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='add-manager')
+    def add_manager(self, request, pk):
+        team = self.get_object()
+        manager = request.user
+        
+        if team.managers.filter(pk=manager.pk).exists():
+            return Response({'detail': 'You are already a manager for this team.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        team.managers.add(manager)
+        team.save()
+        
+        return Response(status=status.HTTP_200_OK)
 
 
 class CombatRobotViewSet(viewsets.ModelViewSet):
@@ -119,7 +158,32 @@ class CombatEventViewSet(viewsets.ModelViewSet):
           update_fields=['status']
       )
 
-    # TODO: fix openapi schema. also, this shouldn't be a GET
+    @extend_schema(
+        responses={
+            200: {
+                "type": "enum",
+                "enum": [
+                    ""
+                ],
+            },
+            404: {
+                "type": "object",
+                "properties": {
+                    "detail": {
+                        "type": "string",
+                        "enum": [
+                            "CombatEvent not found."
+                        ]
+                    }
+                },
+                "required": [
+                    "detail"
+                ]
+            }
+        },
+        description='Synchronize a combat event with RCE'
+    )
+    # TODO: this shouldn't be a GET btu i need to figure out how to make it not require a request body
     @action(detail=True, methods=['get'], permission_classes=[IsAdminUser], url_path='sync-with-rce')
     def sync_event_with_robot_combat_events(self, request, pk):
         combat_event = self.get_object()
@@ -138,9 +202,14 @@ class CombatEventViewSet(viewsets.ModelViewSet):
           combat_event=combat_event
         ).exclude(combat_robot__in=upserted_robots).delete()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response("", status=status.HTTP_200_OK)
         
-    # TODO: fix openapi schema
+    @extend_schema(
+        responses={
+            200: CombatTeamSerializer(many=True),
+        },
+        description='Get teams in a combat event'
+    )
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='teams')
     def get_teams_in_event(self, request, pk):
         combat_event = self.get_object()
@@ -157,14 +226,18 @@ class CombatEventViewSet(viewsets.ModelViewSet):
         
         return Response(serializer.data)
         
-# TODO: action for user to become a team manager (allows them to pay for the team's robots)
-# 
+
 # TODO: action for user to become a robot owner. may need some refactoring, since
 # I want to associate registration to an owner instead of owners to robots. 
 # this way, Robot X can go to competion A with persons 1 and 2, but at comp B
 # they can compete with persons 2 and 3, a different set of owners.
 # 
 # TODO: endpoints for payments
+# 
+# TODO: page for us to check robots/people in
+# TODO: frontend polish
+# QUESTION: what is the contingency plan for when a person hasn't filled a waiver online and/or paid robot fees online? 
+# 
 
 
 class EventViewSet(viewsets.ModelViewSet):
@@ -296,9 +369,8 @@ class WhoAmIView(APIView):
 class RobotsInTeamView(APIView):
     @extend_schema(
         responses={
-          # TODO: fix this so the return type is a list
-            200: CombatRobotSerializer,
-            403: CombatRobotSerializer,
+            200: CombatRobotSerializer(many=True),
+            403: CombatRobotSerializer(many=True),
         },
         description='Get robots belonging to a team'
     )
@@ -317,9 +389,8 @@ class RobotsInTeamView(APIView):
 class RobotsInEventView(APIView):
     @extend_schema(
         responses={
-          # TODO: fix this so the return type is a list
-            200: CombatRobotSerializer,
-            403: CombatRobotSerializer
+            200: CombatRobotSerializer(many=True),
+            403: CombatRobotSerializer(many=True)
         },
         description='Get teams in a combat event'
     )
