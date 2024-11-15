@@ -1,7 +1,9 @@
+from typing import TypedDict,NamedTuple
 from discord.components import ActionRow
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
-from payments.models import Product
+from payments.models import Product, PurchasedProduct
+from payments.views import CostWithFee, cost_with_square_fee
 from .serializers import UserSerializer, ProductSerializer, CombatTeamSerializer, CombatRobotSerializer, CombatEventSerializer, EventSerializer, WaiverSerializer
 from rest_framework import viewsets, status, serializers
 from .permissions import IsOwnerOrStaff, DeleteNotAllowed, ReadOnlyView
@@ -17,6 +19,8 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import action
 from common.robot_combat_events import RCETeam, get_robot_combat_event, RCERobot
 from django.db.models import Q
+# TODO: that fn + some other logic i'm building here should probably move to payments app
+from payments.views import can_purchase_product
 
 
 from events.models import CombatEventRegistration, Event, CombatTeam, CombatRobot, CombatEvent, Waiver
@@ -429,3 +433,128 @@ class RobotsInEventView(APIView):
         serializer = CombatRobotSerializer(robots, many=True, context={'request': request})
 
         return Response(serializer.data)
+
+import hashlib
+
+class CartItemSerializer(serializers.Serializer):
+  product_id = serializers.IntegerField()
+  quantity = serializers.IntegerField()
+
+class CartItem(NamedTuple):
+  product_id: int
+  quantity: int
+
+class CartSerializer(serializers.Serializer):
+  cart = CartItemSerializer(many=True)
+  hash = serializers.CharField()
+  subtotal_cents = serializers.IntegerField()
+  total_cents_with_fee = serializers.IntegerField()
+  
+
+class Cart(TypedDict):
+  cart: list[CartItem]
+  hash: str
+  subtotal_cents: int
+  process_fee_cents: int
+  total_cents_with_fee: int
+
+import json
+def build_cart(cart: list[CartItem], user: User, using_square: bool) -> Cart:
+  """
+  Creates a Cart from a list of CartItems.
+  
+  The goal of the cart key is to ensure that what the user sees in the cart preview is the same as what they end up paying for. It is worth checking this because:
+  - Square fee is calculated server-side and then reported to the user, so we want to make sure that the user has seen their full total cost with Square fees before they pay.
+  - Product price may be edited between the time the user views the cart and the time they pay for it, which would be a problem since we just calculate cost based on the quantity of each product in the cart.
+  """
+  
+  products_list = Product.objects.get(pk__in=[item.product_id for item in cart])
+  products_map = {product.id: product for product in products_list}
+  
+  subtotal = 0
+  
+  for item in cart:
+    product = products_map[item.product_id]
+    assert can_purchase_product(product, user) is None
+    subtotal += item.quantity * product.amount_cents
+  
+  final_cost_calculation = cost_with_square_fee(subtotal) if using_square else CostWithFee(product_amount_cents=subtotal, square_fee_cents=0, total_payment_amount_cents=subtotal)
+  
+  cart_key_contents = f"{json.dumps(cart)}|{final_cost_calculation['total_payment_amount_cents']}"
+  cart_key = hashlib.sha256(cart_key_contents.encode('utf-8')).hexdigest()
+  
+  return {
+    'cart': cart,
+    'hash': cart_key,
+    'subtotal_cents': final_cost_calculation['product_amount_cents'],
+    'process_fee_cents': final_cost_calculation['square_fee_cents'],
+    'total_cents_with_fee': final_cost_calculation['total_payment_amount_cents']
+  }
+
+# TODO: in both of these views, build_cart could throw so we need to handle those errors. also just finish the impl
+
+class CartView(APIView):
+  permission_classes = [IsAuthenticated]
+
+  @extend_schema(
+    responses={
+      200: CartSerializer
+    },
+    description='Generates a subtotal and total cost for a user\'s cart'
+  )
+  def post(self, request):
+    user = request.user
+
+    if not user.is_authenticated:
+      return Response({'detail': 'You\'re not logged in.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    # TODO: im 99% sure there is a way to make DRF do this for us
+    cart_items = request.data.get('cart', [])
+    cart_serializer = CartItemSerializer(data=cart_items, many=True)
+
+    if not cart_serializer.is_valid():
+      return Response(cart_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    cart_items_as_tuples = [CartItem(product_id=item['product_id'], quantity=item['quantity']) for item in cart_serializer.validated_data]
+
+    # TODO: include payment method here
+    cart = build_cart(cart_items_as_tuples, user, True)
+    response_serializer = CartSerializer(data=cart)
+
+    if not response_serializer.is_valid():
+      return Response(response_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response(response_serializer.data)
+    
+
+class PayView(APIView):
+  # TODO: finish impl lol
+  permission_classes = [IsAuthenticated]
+
+  @extend_schema(
+    responses={
+      200: CartSerializer
+    },
+    description='Allows a user to pay for their cart'
+  )
+  def post(self, request):
+    user = request.user
+
+    if not user.is_authenticated:
+      return Response({'detail': 'You\'re not logged in.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    # TODO: im 99% sure there is a way to make DRF do this for us
+    cart = request.data.get('cart')
+    
+    cart_serializer = CartSerializer(data=cart)
+
+    if not cart_serializer.is_valid():
+      return Response(cart_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+      
+    provided_cart = cart_serializer.validated_data['cart']
+    cart_items_as_tuples = [CartItem(product_id=item['product_id'], quantity=item['quantity']) for item in provided_cart]
+
+    # TODO: include payment method here
+    control_cart = build_cart(cart_items_as_tuples, user, False)
+    
+    assert control_cart["hash"] == cart_serializer.validated_data["hash"]

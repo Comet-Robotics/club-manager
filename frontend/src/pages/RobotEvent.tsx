@@ -12,7 +12,7 @@ import { observer } from "@legendapp/state/react"
 import { EmbedDirectTemplate } from '@documenso/embed-react';
 import { authStore$, combatEvent$, documensoHost, events$ } from '@/lib/state'
 import './documenso-sign.css'
-import type { Robot as CombatRobot } from '@/lib/types'
+import type { CombatRobot } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 
@@ -34,7 +34,7 @@ type Step = {
 export function RobotEventRegister({ combatEventId, eventId, robotsInEvent }: Props) {
   const [completedSteps, setCompletedSteps] = useState<Step[]>([])
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
-  const [robots, setRobots] = useState([{ name: '', weight: '' }])
+  const [selectedRobots, setSelectedRobots] = useState<CombatRobot['id'][]>([])
   const [isPaid, setIsPaid] = useState(false)
   const [isPaperworkComplete, setIsPaperworkComplete] = useState(false)
   const [isTeam, setIsTeam] = useState<boolean | null>(null)
@@ -44,20 +44,10 @@ export function RobotEventRegister({ combatEventId, eventId, robotsInEvent }: Pr
     
   const event = events$.get()[eventId]!
   const user = authStore$.user.get()
-  const fullName = authStore$.fullName.get()
-    
-  const addRobot = () => {
-    setRobots([...robots, { name: '', weight: '' }])
-  }
+  const fullName = authStore$.fullName()
 
   const removeRobot = (index: number) => {
-    setRobots(robots.filter((_, i) => i !== index))
-  }
-
-  const updateRobot = (index: number, field: 'name' | 'weight', value: string) => {
-    const updatedRobots = [...robots]
-    updatedRobots[index][field] = value
-    setRobots(updatedRobots)
+    setSelectedRobots(selectedRobots.filter((_, i) => i !== index))
   }
 
   const steps: Step[] = [
@@ -294,7 +284,7 @@ export function RobotEventRegister({ combatEventId, eventId, robotsInEvent }: Pr
             <CardDescription>Complete payment to proceed with registration</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="mb-4">Total due: ${robots.length * 50}</p>
+            <p className="mb-4">Total due: ${selectedRobots.length * 50}</p>
             <Button onClick={() => setIsPaid(true)} disabled={isPaid}>
               <CreditCard className="mr-2 h-4 w-4" /> Pay Now
             </Button>
@@ -396,8 +386,6 @@ export function RobotEventRegister({ combatEventId, eventId, robotsInEvent }: Pr
           return isUserPaying !== null
       case 'is-manager-competing':
           return isCompeting !== null
-      case 'create-robots':
-        return robots.length > 0 && robots.every(robot => robot.name && robot.weight)
       case 'team-question':
         return isTeam !== null
       case 'team-details':
