@@ -8,6 +8,9 @@ from clubManager import settings
 from common.major import get_majors, get_major_from_netid
 from payments.models import Payment, PurchasedProduct, Term
 import discord
+from django.utils import timezone
+from datetime import timedelta
+
 
 # Create your models here.
 class UserProfile(models.Model):
@@ -22,6 +25,10 @@ class UserProfile(models.Model):
     major = models.CharField(choices=list(get_majors().items())+[("unknown", "Unknown")], null=True, blank=True, default=None)  # NULL indicates major needs to be fetched
     is_utd_affiliate = models.BooleanField(null=False, blank=False, default=True) # TODO: get rid of default=True and fix UserProfile creation with null field
     date_of_birth = models.DateField(null=True, blank=True)
+    
+    def is_minor(self):
+        assert self.date_of_birth is not None
+        return self.date_of_birth < timezone.now().date() - timedelta(weeks=52 * 18)
 
     def __str__(self):
         return self.user.first_name + '_' + self.user.last_name

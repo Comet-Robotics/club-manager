@@ -3,6 +3,7 @@ from typing import Dict, List
 import requests
 import bs4
 from typing import NamedTuple
+from urllib.parse import urlparse, urljoin
 
 @dataclass
 class RCERobot:
@@ -82,8 +83,13 @@ def get_robot_combat_event(rce_event_id: str) -> RCEEvent:
         for row in registration_panel_table_rows[1:]:
             cols = [list(col)[0] for col in row.find_all("td")]
             
+            img_url: str = row.find("img")["src"]
+            img_url_is_relative = urlparse(img_url).scheme == ""
+            if img_url_is_relative:
+                img_url = urljoin("https://www.robotcombatevents.com", img_url)
+            
             robot = RCERobot(
-                img_url=row.find("img")["src"],
+                img_url=img_url,
                 name=cols[1].text.strip(),
                 rce_team_id=cols[2].attrs["href"].split("/")[-1],
                 status=cols[3].text.strip(),

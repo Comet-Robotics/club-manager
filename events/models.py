@@ -57,8 +57,8 @@ class Waiver(models.Model):
       combat_event = models.ForeignKey(CombatEvent, on_delete=models.CASCADE, related_name='waivers')
       name = models.CharField(max_length=200)
       internal_description = models.CharField(max_length=200)
-      alternate_for_waiver_id = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
-      is_alternate_waiver_for_minors =  models.BooleanField(default=False)
+      alternate_for_waiver_id = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='alternate_waivers')
+      is_alternate_waiver_for_minors = models.BooleanField(default=False)
       documenso_id = models.CharField(max_length=200)
       
       created_at = models.DateTimeField(auto_now_add=True)
@@ -131,6 +131,7 @@ class CombatRobot(models.Model):
   owners = models.ManyToManyField(User, related_name='combat_robots')
   name = models.CharField(max_length=200)
   weight_class = models.CharField(choices=WeightClass.choices)
+  image_url = models.URLField(null=True, blank=True)
   
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)

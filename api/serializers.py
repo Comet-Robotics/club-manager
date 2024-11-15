@@ -30,7 +30,7 @@ class PurchasedProductSerializer(serializers.HyperlinkedModelSerializer):
 class CombatRobotSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = CombatRobot
-        fields = ['id', 'name', 'owners', 'combat_team']
+        fields = ['id', 'name', 'owners', 'combat_team', 'image_url', 'weight_class']
 
 class EventSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:

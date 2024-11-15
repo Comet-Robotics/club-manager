@@ -13,6 +13,7 @@ import { EmbedDirectTemplate } from '@documenso/embed-react';
 import { authStore$, combatEvent$, documensoHost, events$ } from '@/lib/state'
 import './documenso-sign.css'
 import type { Robot as CombatRobot } from '@/lib/types'
+import { cn } from '@/lib/utils'
 
 
 type Step = {
@@ -98,13 +99,16 @@ export function RobotEventRegister({ combatEventId, eventId, robotsInEvent }: Pr
               <CardContent>
               {robotsInEvent.map(robot => (
                 <div key={robot.id} className="flex items-center justify-between py-4">
+                  <div className="flex items-center space-x-2 w-36 h-24 rounded-sm bg-gray-200 overflow-hidden">
+                    {robot.image_url && <img src={robot.image_url} alt={robot.name} className="w-full h-full object-cover" />}
+                  </div>
+                    
                   <div className="flex items-center space-x-4">
                     <div>
                       <h3 className="font-semibold">{robot.name}</h3>
                       {/* TODO: make this show the actual team name */}
-                      {/* TODO: we can pull team images from RCE. they even have placeholder images for teams/robots that don't have one */}
-                      {/* TODO: show weight classs */}
                       <p className="text-gray-600 mb-4">{robot.combat_team}</p>
+                      <p className={cn("px-2 py-1 rounded-sm text-xs bg-gray-100 w-max", {'bg-green-100': robot.weight_class === 'plant', 'bg-blue-100': robot.weight_class === 'ant', 'bg-red-100': robot.weight_class === 'beetle'})}>{robot.weight_class}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">

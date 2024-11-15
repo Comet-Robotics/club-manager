@@ -86,6 +86,29 @@ class CombatEventViewSet(viewsets.ModelViewSet):
     permission_classes = [ReadOnlyView]
     serializer_class = CombatEventSerializer
     queryset = CombatEvent.objects.all()
+    
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='my-waivers')
+    def get_my_waivers(self, request, pk):
+        user = request.user
+        
+        if not user.is_authenticated:
+            return Response({'detail': 'You\'re not logged in.'}, status=status.HTTP_401_UNAUTHORIZED)
+            
+        if user.userprofile.date_of_birth is None:
+            return Response({'detail': 'You have no DOB on file. DOB required to determine applicable waivers'}, status=status.HTTP_428_PRECONDITION_REQUIRED)
+            
+        user_is_minor = user.userprofile.is_minor()
+        
+        combat_event = self.get_object()
+        
+        if not combat_event:
+            return Response({'detail': 'CombatEvent not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        waivers = Waiver.objects.filter(user=user, combat_event=combat_event)
+        # TODO: revisit the mofel
+        
+        serializer = WaiverSerializer(waivers, many=True, context={'request': request})
+        return Response(serializer.data)
 
     def _upsert_teams_with_rce_data(self, rce_teams: list[RCETeam]) -> dict[str, CombatTeam]:
       """
@@ -122,14 +145,15 @@ class CombatEventViewSet(viewsets.ModelViewSet):
           name=rce_robot.name, 
           weight_class=RCE_WEIGHT_CLASS_LABEL_TO_COMBAT_ROBOT_WEIGHT_CLASS[rce_robot.weight_class], 
           robot_combat_events_robot_id=rce_robot.rce_resource_id, 
-          combat_team=combat_teams[rce_robot.rce_team_id]
+          combat_team=combat_teams[rce_robot.rce_team_id],
+          image_url=rce_robot.img_url
         ) for rce_robot in rce_robots
       ]
       CombatRobot.objects.bulk_create(
         all_robots, 
         update_conflicts=True, 
         unique_fields=['robot_combat_events_robot_id'], 
-        update_fields=['name', 'weight_class', 'combat_team']
+        update_fields=['name', 'weight_class', 'combat_team', 'image_url']
       )
       return all_robots
 
@@ -233,6 +257,7 @@ class CombatEventViewSet(viewsets.ModelViewSet):
 # they can compete with persons 2 and 3, a different set of owners.
 # 
 # TODO: endpoints for payments
+# TODO: signing flow
 # 
 # TODO: page for us to check robots/people in
 # TODO: frontend polish

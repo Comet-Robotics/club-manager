@@ -121,6 +121,22 @@ export interface paths {
         patch: operations["combatevents_partial_update"];
         trace?: never;
     };
+    "/api/combatevents/{id}/my-waivers/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["combatevents_my_waivers_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/combatevents/{id}/sync-with-rce/": {
         parameters: {
             query?: never;
@@ -419,6 +435,9 @@ export interface components {
             owners: string[];
             /** Format: uri */
             combat_team: string;
+            /** Format: uri */
+            image_url?: string | null;
+            weight_class: components["schemas"]["WeightClassEnum"];
         };
         CombatTeam: {
             readonly id: number;
@@ -458,6 +477,9 @@ export interface components {
             owners?: string[];
             /** Format: uri */
             combat_team?: string;
+            /** Format: uri */
+            image_url?: string | null;
+            weight_class?: components["schemas"]["WeightClassEnum"];
         };
         PatchedCombatTeam: {
             readonly id?: number;
@@ -546,6 +568,13 @@ export interface components {
             /** Format: uri */
             combat_event: string;
         };
+        /**
+         * @description * `plant` - Plastic Ant (1lb)
+         *     * `ant` - Antweight (3lb)
+         *     * `beetle` - Beetleweight (1lb)
+         * @enum {string}
+         */
+        WeightClassEnum: "plant" | "ant" | "beetle";
     };
     responses: never;
     parameters: never;
@@ -830,6 +859,28 @@ export interface operations {
                 "multipart/form-data": components["schemas"]["PatchedCombatEvent"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CombatEvent"];
+                };
+            };
+        };
+    };
+    combatevents_my_waivers_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this combat event. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {
