@@ -72,22 +72,20 @@ class CostWithFee(TypedDict):
     total_payment_amount_cents: int
 
 
-# TODO: rename this arg to something more descriptive
-def cost_with_square_fee(product_amount_cents: int) -> CostWithFee:
+def calculate_cost_with_square_fee(amount_cents: int) -> CostWithFee:
   """
-  Returns the cost of the product with the Square fee applied. See https://developer.squareup.com/docs/payments-pricing#online-and-in-app-payments for reference.
-  """
-  # Square's fee per transaction is 30 cents, plus 2.9% of the transaction amount.
-  # square_fee = 30 + ceil(product.amount_cents * 0.029)
-  # 
-  # TODO: explain why we have to do this weird / not intuitive calculation:
-  # (amount_we_want + fixed_cost) / (1 - variable_cost)
+  Calculate the total amount in cents required to cover Square's transaction fees, ensuring the specified `amount_cents` is earned as net revenue without losses to Square fees.
   
-  total_payment_amount_cents = ceil((product_amount_cents + 30) / (1 - 0.029))
-  square_fee_cents = total_payment_amount_cents - product_amount_cents
+  This function takes an input amount in cents and returns the total amount in cents needed to account for Square's fees. Square charges a fee of 30 cents plus 2.9% of the transaction amount. To ensure the full desired amount is received as revenue, the calculation involves adjusting the input amount using the formula: `(desired_amount + fixed_fee) / (1 - variable_fee)`. This approach accounts for the fixed 30-cent fee and the 2.9% variable fee. 
+  
+  For more details, refer to [Square's pricing documentation](https://developer.squareup.com/docs/payments-pricing#online-and-in-app-payments).
+  """
+  
+  total_payment_amount_cents = ceil((amount_cents + 30) / (1 - 0.029))
+  square_fee_cents = total_payment_amount_cents - amount_cents
   
   return CostWithFee(
-        product_amount_cents=product_amount_cents,
+        product_amount_cents=amount_cents,
         square_fee_cents=square_fee_cents,
         total_payment_amount_cents=total_payment_amount_cents
   )
@@ -138,7 +136,7 @@ class ChooseUserView(View):
 
 def product_payment(request, product_id, user_id):
     product = get_object_or_404(Product, id=product_id)
-    fees = cost_with_square_fee(product.amount_cents)
+    fees = calculate_cost_with_square_fee(product.amount_cents)
     
     process_fee = fees["square_fee_cents"]
     total_cost = fees["total_payment_amount_cents"]
@@ -161,7 +159,7 @@ def process_square_payment(request, product_id, user_id):
         if message:
           return JsonResponse({'square_res': {'errors': [{'detail': message}]}}, safe=False)
         
-        fees = cost_with_square_fee(product.amount_cents)
+        fees = calculate_cost_with_square_fee(product.amount_cents)
         
         with transaction.atomic():
           payment = Payment(method=Payment.Method.square_api, user=user, amount_cents=fees["total_payment_amount_cents"])

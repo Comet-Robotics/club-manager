@@ -3,7 +3,7 @@ from discord.components import ActionRow
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from payments.models import Product, PurchasedProduct
-from payments.views import CostWithFee, cost_with_square_fee
+from payments.views import CostWithFee, calculate_cost_with_square_fee
 from .serializers import UserSerializer, ProductSerializer, CombatTeamSerializer, CombatRobotSerializer, CombatEventSerializer, EventSerializer, WaiverSerializer
 from rest_framework import viewsets, status, serializers
 from .permissions import IsOwnerOrStaff, DeleteNotAllowed, ReadOnlyView
@@ -19,9 +19,11 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import action
 from common.robot_combat_events import RCETeam, get_robot_combat_event, RCERobot
 from django.db.models import Q
+import json
+import hashlib
 # TODO: that fn + some other logic i'm building here should probably move to payments app
 from payments.views import can_purchase_product
-
+from payments.models import Payment
 
 from events.models import CombatEventRegistration, Event, CombatTeam, CombatRobot, CombatEvent, Waiver
 
@@ -399,7 +401,6 @@ class RobotsInTeamView(APIView):
     @extend_schema(
         responses={
             200: CombatRobotSerializer(many=True),
-            403: CombatRobotSerializer(many=True),
         },
         description='Get robots belonging to a team'
     )
@@ -434,8 +435,6 @@ class RobotsInEventView(APIView):
 
         return Response(serializer.data)
 
-import hashlib
-
 class CartItemSerializer(serializers.Serializer):
   product_id = serializers.IntegerField()
   quantity = serializers.IntegerField()
@@ -458,10 +457,9 @@ class Cart(TypedDict):
   process_fee_cents: int
   total_cents_with_fee: int
 
-import json
-def build_cart(cart: list[CartItem], user: User, using_square: bool) -> Cart:
+def build_cart(cart: list[CartItem], user: User, method: Payment.Method) -> tuple[Cart, dict[int, Product]]:
   """
-  Creates a Cart from a list of CartItems.
+  Creates a Cart from a list of CartItems. 
   
   The goal of the cart key is to ensure that what the user sees in the cart preview is the same as what they end up paying for. It is worth checking this because:
   - Square fee is calculated server-side and then reported to the user, so we want to make sure that the user has seen their full total cost with Square fees before they pay.
@@ -478,7 +476,8 @@ def build_cart(cart: list[CartItem], user: User, using_square: bool) -> Cart:
     assert can_purchase_product(product, user) is None
     subtotal += item.quantity * product.amount_cents
   
-  final_cost_calculation = cost_with_square_fee(subtotal) if using_square else CostWithFee(product_amount_cents=subtotal, square_fee_cents=0, total_payment_amount_cents=subtotal)
+  using_square = method == Payment.Method.square_api
+  final_cost_calculation = calculate_cost_with_square_fee(subtotal) if using_square else CostWithFee(product_amount_cents=subtotal, square_fee_cents=0, total_payment_amount_cents=subtotal)
   
   cart_key_contents = f"{json.dumps(cart)}|{final_cost_calculation['total_payment_amount_cents']}"
   cart_key = hashlib.sha256(cart_key_contents.encode('utf-8')).hexdigest()
@@ -489,7 +488,10 @@ def build_cart(cart: list[CartItem], user: User, using_square: bool) -> Cart:
     'subtotal_cents': final_cost_calculation['product_amount_cents'],
     'process_fee_cents': final_cost_calculation['square_fee_cents'],
     'total_cents_with_fee': final_cost_calculation['total_payment_amount_cents']
-  }
+  }, products_map
+
+class PaymentChoiceSerializer(serializers.Serializer):
+  payment_choice = serializers.ChoiceField(choices=Payment.Method.choices)
 
 # TODO: in both of these views, build_cart could throw so we need to handle those errors. also just finish the impl
 
@@ -500,7 +502,7 @@ class CartView(APIView):
     responses={
       200: CartSerializer
     },
-    description='Generates a subtotal and total cost for a user\'s cart'
+    description='Generates subtotal and total cost for a user\'s cart'
   )
   def post(self, request):
     user = request.user
@@ -508,17 +510,18 @@ class CartView(APIView):
     if not user.is_authenticated:
       return Response({'detail': 'You\'re not logged in.'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    # TODO: im 99% sure there is a way to make DRF do this for us
-    cart_items = request.data.get('cart', [])
-    cart_serializer = CartItemSerializer(data=cart_items, many=True)
-
+    # TODO: im 99% sure there is a way to make DRF do this request body validation for us in a cleaner way
+    payment_method_serializer = PaymentChoiceSerializer(data=request.data.get('payment_choice'))
+    if not payment_method_serializer.is_valid():
+      return Response(payment_method_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+      
+    cart_serializer = CartItemSerializer(data=request.data.get('cart', []), many=True)
     if not cart_serializer.is_valid():
       return Response(cart_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     cart_items_as_tuples = [CartItem(product_id=item['product_id'], quantity=item['quantity']) for item in cart_serializer.validated_data]
-
-    # TODO: include payment method here
-    cart = build_cart(cart_items_as_tuples, user, True)
+    cart, products = build_cart(cart_items_as_tuples, user, Payment.Method(payment_method_serializer.validated_data['payment_choice']))
+    
     response_serializer = CartSerializer(data=cart)
 
     if not response_serializer.is_valid():
@@ -531,30 +534,63 @@ class PayView(APIView):
   # TODO: finish impl lol
   permission_classes = [IsAuthenticated]
 
-  @extend_schema(
-    responses={
-      200: CartSerializer
-    },
-    description='Allows a user to pay for their cart'
-  )
+  # @extend_schema(
+  #   responses={
+  #     200: PaymentSerializer
+  #   },
+  #   description='Allows a user to pay for their cart'
+  # )
   def post(self, request):
     user = request.user
 
     if not user.is_authenticated:
       return Response({'detail': 'You\'re not logged in.'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    # TODO: im 99% sure there is a way to make DRF do this for us
-    cart = request.data.get('cart')
+    # TODO: im 99% sure there is a way to make DRF do request body validation for us
+    payment_method_serializer = PaymentChoiceSerializer(data=request.data.get('payment_choice'))
+    if not payment_method_serializer.is_valid():
+      return Response(payment_method_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    cart_serializer = CartSerializer(data=cart)
-
+    cart_serializer = CartSerializer(data=request.data.get('cart'))
     if not cart_serializer.is_valid():
       return Response(cart_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-      
+    
     provided_cart = cart_serializer.validated_data['cart']
     cart_items_as_tuples = [CartItem(product_id=item['product_id'], quantity=item['quantity']) for item in provided_cart]
 
-    # TODO: include payment method here
-    control_cart = build_cart(cart_items_as_tuples, user, False)
-    
+    method = Payment.Method(payment_method_serializer.validated_data['payment_choice'])
+    control_cart, product_map = build_cart(cart_items_as_tuples, user, method)
     assert control_cart["hash"] == cart_serializer.validated_data["hash"]
+    
+    with transaction.atomic():
+      payment = Payment(method=method, user=user, amount_cents=control_cart['total_cents_with_fee'])
+      payment.save()
+      PurchasedProduct.objects.bulk_create([PurchasedProduct(product=product_map[product_id], quantity=quantity, payment=payment) for product_id, quantity in cart_items_as_tuples])
+      
+    create_payment_response = client.payments.create_payment(
+      body={
+        "source_id": token,
+        "idempotency_key": idempotency_key,
+        "amount_money": {
+            "amount": payment.amount_cents,
+            "currency": ACCOUNT_CURRENCY,
+        },
+        "reference_id": str(payment.pk),
+        "note": str(payment),
+      }
+    )
+    
+    payment.metadata = {"square_response_body": create_payment_response.body}
+    payment.save()
+    
+    if create_payment_response.is_success():
+        payment.completed_at = timezone.now()
+        payment.save()
+        # TODO: some success response
+        return 
+    elif create_payment_response.is_error():
+        # TODO: some error response
+        return 
+    
+    return Response(cart_serializer.validated_data, status=status.HTTP_200_OK)
+    
