@@ -11,7 +11,7 @@ obtain the config.ini from Jason or Mason for Square, place at root of project
 ### first time setup
 you'll need to install python 3.11 (preferably via [pyenv](http://github.com/pyenv/pyenv?tab=readme-ov-file)), [pipenv](https://pipenv.pypa.io/en/latest/#install-pipenv-today), nginx, and postgresql before continuing. this assumes you are deploying on some debian-based system.
 
-for a production deployment, you'll need to install pipenv globally as opposed to just for the current user which is recommended in pipenv docs: `sudo pip install pipenv`
+for a production deployment, you'll need to install pipenv globally as opposed to just for the current user which is recommended in pipenv docs: `sudo apt install pipenv`. this is so that the pipenv binary is accessible in the systemd services.
 
 once pipenv is installed, run `./deploy/init.sh` (sets up systemd services, does not start them).
 
