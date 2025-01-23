@@ -4,7 +4,7 @@ Requires=gunicorn.socket
 After=network.target
 
 [Service]
-User=comet
+User=root
 WorkingDirectory=/root/clubManager
 ExecStart=pipenv --python /usr/bin/python3.11 run gunicorn --bind unix:/run/gunicorn.sock clubManager.wsgi --access-logfile - --workers 3
 
