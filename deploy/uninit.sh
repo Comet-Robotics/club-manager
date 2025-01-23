@@ -1,0 +1,1 @@
+rm /etc/systemd/system/gunicorn.service /etc/systemd/system/gunicorn.socket /etc/systemd/system/discord_bot.service /etc/nginx/sites-available/clubManager
