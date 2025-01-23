@@ -2,8 +2,8 @@
 Description=Discord bot for Comet Robotics
 
 [Service]
-User=comet
-WorkingDirectory=/home/comet/clubManager/clubManager
+User=root
+WorkingDirectory=/root/clubManager
 ExecStart=pipenv --python /usr/bin/python3.11 run python discord_bot.py
 
 [Install]
