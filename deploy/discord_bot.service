@@ -4,7 +4,7 @@ Description=Discord bot for Comet Robotics
 [Service]
 User=root
 WorkingDirectory=/root/clubManager
-ExecStart=pipenv --python /usr/bin/python3.11 run python discord_bot.py
+ExecStart=pipenv --python /root/.pyenv/shims/python run python discord_bot.py
 
 [Install]
 WantedBy=multi-user.target
