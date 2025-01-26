@@ -34,6 +34,7 @@ LIST = [
     "Madina Halal Grill",
     "Zenna Thai & Japanese",
     "Zio Al's Pizza & Pasta",
+    "Fat ni BBQ",
     "Cafe Brazil",
     "Biryaniify",
     "Bulldog Katsu",
