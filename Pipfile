@@ -26,5 +26,6 @@ django-vite = "*"
 django-storages = "*"
 pillow = "*"
 boto3 = "*"
+async-timeout = "*"
 
 [dev-packages]
