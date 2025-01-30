@@ -164,7 +164,7 @@ def process_square_payment(request, product_id, user_id):
         fees = cost_with_square_fee(product.amount_cents)
         
         with transaction.atomic():
-          payment = Payment(method=Payment.Method.square_api, product=product, user=user, amount_cents=fees["total_payment_amount_cents"])
+          payment = Payment(method=Payment.Method.square_api, user=user, amount_cents=fees["total_payment_amount_cents"])
           payment.save()
           purchased_product = PurchasedProduct(product=product, payment=payment)
           purchased_product.save()
