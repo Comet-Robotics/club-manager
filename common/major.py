@@ -38,9 +38,13 @@ def get_major_from_netid(netid: str) -> str | None:
     Returns:
         str | None: The major short code if successful, otherwise None.
     """
-    r = requests.get(
-        f"https://websvcs.utdallas.edu/directory/includes/directories.class.php?dirType=displayname&dirSearch={netid}&dirAffil=All&dirDept=All&dirMajor=All&dirSchool=All"
-    )
+    try:
+        r = requests.get(
+            f"https://websvcs.utdallas.edu/directory/includes/directories.class.php?dirType=displayname&dirSearch={netid}&dirAffil=All&dirDept=All&dirMajor=All&dirSchool=All"
+        )
+    except Exception as e:
+        print(f"WARNING: major_from_netid request failed: ", e)
+        return None
     soup = bs4.BeautifulSoup(r.text, 'html.parser')
     for p in soup.find_all('p'):
         if p.contents[0].string == 'Major':
