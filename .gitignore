@@ -92,4 +92,4 @@ config.ini
 cert.pem
 key.pem
 
-./static/
+/static/
