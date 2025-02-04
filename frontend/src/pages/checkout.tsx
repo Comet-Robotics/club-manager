@@ -83,30 +83,31 @@ function Component() {
               <CardDescription>Enter your payment information</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-            <PaymentForm
-        applicationId="sandbox-sq0idb-2FWA0_G2AlLk3IrjzXvNfg"
-        cardTokenizeResponseReceived={(token, verifiedBuyer) => {
-          console.log('token:', token);
-          console.log('verifiedBuyer:', verifiedBuyer);
-        }}
-        createPaymentRequest={() => ({
-            countryCode: "US",
-            currencyCode: "USD",
-            total: {
-              amount: "1.00",
-              label: "Total",
-            },
-          })}
-        locationId='L0Z6ER7EWTR67'
-      >
-          <CreditCard />
-          <ApplePay />
-          <GooglePay />
-      </PaymentForm>
+              <PaymentForm
+                applicationId="sandbox-sq0idb-2FWA0_G2AlLk3IrjzXvNfg"
+                cardTokenizeResponseReceived={(token, verifiedBuyer) => {
+                  console.log('token:', token);
+                  console.log('verifiedBuyer:', verifiedBuyer);
+                  // TODO send token to backend
+                }}
+                createPaymentRequest={() => ({
+                    countryCode: "US",
+                    currencyCode: "USD",
+                    total: {
+                      amount: "1.00",
+                      label: "Total",
+                    },
+                  })}
+                locationId='L0Z6ER7EWTR67'
+              >
+                  <CreditCard />
+                  <ApplePay />
+                  <GooglePay />
+              </PaymentForm>
             </CardContent>
-            <CardFooter>
+            {/* <CardFooter>
               <Button className="w-full">Pay ${total.toFixed(2)}</Button>
-            </CardFooter>
+            </CardFooter> */}
           </Card>
         </div>
       </div>
