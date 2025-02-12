@@ -1,0 +1,13 @@
+on:
+  push:
+    branches: [ main ]
+    
+jobs:
+  deploy-prod:
+    runs-on: self-hosted
+    steps:
+      - run: cd .. && cd .. && cd clubManager
+      - run: git pull
+      - run: ./deploy/run.sh
+    
+    
