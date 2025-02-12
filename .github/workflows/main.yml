@@ -1,14 +1,19 @@
 on:
   push:
-    branches: [ main ]
-    
+    branches: [main]
+
 jobs:
   deploy-prod:
     runs-on: self-hosted
     steps:
-      - working-directory: /root/clubManager
-      - run: pwd
-      - run: git pull
-      - run: ./deploy/run.sh
-    
-    
+      - name: Check current directory
+        run: pwd
+        working-directory: /root/clubManager
+
+      - name: Pull latest changes
+        run: git pull
+        working-directory: /root/clubManager
+
+      - name: Run deployment script
+        run: ./deploy/run.sh
+        working-directory: /root/clubManager
