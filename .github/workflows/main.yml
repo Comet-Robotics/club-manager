@@ -7,6 +7,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - run: cd /root/clubManager
+      - run: pwd
       - run: git pull
       - run: ./deploy/run.sh
     
