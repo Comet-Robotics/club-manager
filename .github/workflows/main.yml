@@ -6,7 +6,7 @@ jobs:
   deploy-prod:
     runs-on: self-hosted
     steps:
-      - run: cd .. && cd .. && cd clubManager
+      - run: cd /root/clubManager
       - run: git pull
       - run: ./deploy/run.sh
     
