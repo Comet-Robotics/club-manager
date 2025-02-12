@@ -7,6 +7,7 @@ first, install deps and create virtualenv: `pipenv install`
 obtain the config.ini from Jason or Mason for Square, place at root of project
 
 ## deployment
+im adding this temporarily to test the github action and make sure it works!
 
 ### first time setup
 you'll need to install python 3.11 (preferably via [pyenv](http://github.com/pyenv/pyenv?tab=readme-ov-file)), [pipenv](https://pipenv.pypa.io/en/latest/#install-pipenv-today), [nodejs](https://nodejs.org/en) (preferably via [nvm](http://github.com/nvm-sh/nvm?tab=readme-ov-file)), nginx, and postgresql before continuing. this assumes you are deploying on some debian-based system.
@@ -28,3 +29,4 @@ to \[re-\]deploy: `./deploy/run.sh` (does not include pulling from git)
 - `journalctl -e -u gunicorn.service`
 - `journalctl -e -u gunicorn.socket`
 - `journalctl -e -u discord_bot.service`
+
