@@ -31,7 +31,9 @@ class UserProfile(models.Model):
                 ('B', _('Black or African American')),
                 ('A', _('Asian')),
                 ('N', _('American Indian or Alaska Native')),
-                ('P', _('Native Hawaiian or Other Pacific Islander')))
+                ('P', _('Native Hawaiian or Other Pacific Islander')),
+                ('M', _('Middle Eastern')),
+                ('O', _('Other')))
     
     DIETARY_CHOICES = (('S', _('Shellfish Allergy')),
                 ('N', _('Nut Allergy')),
