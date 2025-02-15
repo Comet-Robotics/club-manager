@@ -29,7 +29,8 @@ class UserProfile(models.Model):
     
     RACE_CHOICES = (('W', _('White')),
                 ('B', _('Black or African American')),
-                ('A', _('Asian')),
+                ('E', _('East Asian')),
+                ('S', _('South Asian')),
                 ('N', _('American Indian or Alaska Native')),
                 ('P', _('Native Hawaiian or Other Pacific Islander')),
                 ('M', _('Middle Eastern')),
