@@ -39,6 +39,7 @@ CSRF_TRUSTED_ORIGINS = ['https://portal.cometrobotics.org', 'http://127.0.0.1', 
 # Application definition
 
 INSTALLED_APPS = [
+    
     "core.apps.CoreConfig",
     "posters.apps.PostersConfig",
     "events.apps.EventsConfig",
@@ -49,6 +50,10 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.github',
     "django.contrib.staticfiles",
     "django_tables2",
     "django_rename_app",
@@ -59,6 +64,13 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'django_vite',
 ]
+
+ACCOUNT_ADAPTER = "accounts.adapters.NoSocialLoginAccountAdapter"
+SOCIALACCOUNT_ADAPTER = "accounts.adapters.NoSocialLoginSocialAccountAdapter"
+
+AUTHENTICATION_BACKENDS = (
+    "django.contrib.auth.backends.ModelBackend",
+)
 
 
 DJANGO_VITE = {
@@ -94,6 +106,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = 'clubManager.urls'
@@ -109,6 +122,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.request',
             ],
         },
     },
@@ -130,7 +144,6 @@ DATABASES = {
         'PORT': str(os.getenv('DB_PORT')), # default PostgreSQL port
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -187,6 +200,19 @@ STORAGES = {
     'staticfiles': {
         'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'
     },
+}
+
+SOCIALACCOUNT_PROVIDERS = {
+    'github': {
+        # For each OAuth based provider, either add a ``SocialApp``
+        # (``socialaccount`` app) containing the required client
+        # credentials, or list them here:
+        'APP': {
+            'client_id': 'Iv23liklljnDKHcHwc7a',
+            'secret': 'f9202d9ad94232177923ece49bc591cbfc39ee31',
+            'key': ''
+        }
+    }
 }
 
 # Default primary key field type

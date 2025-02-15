@@ -27,5 +27,6 @@ django-storages = "*"
 pillow = "*"
 boto3 = "*"
 async-timeout = "*"
+django-allauth = "*"
 
 [dev-packages]

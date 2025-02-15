@@ -7,6 +7,9 @@
   {% if user.is_authenticated %}
     <p>Name: {{ user.first_name }}</p>
     <p>Student ID: {{ user.useridentification.student_id }}</p>
+    <a href="{% url 'socialaccount_connections' %}" class="btn btn-primary">
+      Link GitHub Account
+  </a>
   {% else %}
     <p>No user is currently signed in.</p>
   {% endif %}
