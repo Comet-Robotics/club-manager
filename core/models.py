@@ -3,6 +3,7 @@ from django.db.models.signals import post_save
 from django.contrib.auth.models import User
 from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
+from multiselectfield import MultiSelectField
 
 from clubManager import settings
 from common.major import get_majors, get_major_from_netid
@@ -12,12 +13,43 @@ import discord
 # Create your models here.
 class UserProfile(models.Model):
     class GenderChoice(models.TextChoices):
-        MALE = 'M', _('Male')
-        FEMALE = 'F', _('Female')
+        MALE = 'M', _('Man')
+        FEMALE = 'F', _('Woman')
+        NONBINARY = 'N', _('Non-Binary')
         OTHER = 'O', _('Other')
+    
+    class ShirtSize(models.TextChoices):
+        XSMALL = 'XS', _('XS')
+        SMALL = 'S', _('Small')
+        MEDIUM = 'M', _('Medium')
+        LARGE = 'L', _('Large')
+        XLARGE = 'XL', _('XL')
+        XXLARGE = 'XXL', _('2XL')
+        XXXLARGE = 'XXXL', _('3XL')
+    
+    RACE_CHOICES = (('W', _('White')),
+                ('B', _('Black or African American')),
+                ('A', _('Asian')),
+                ('N', _('American Indian or Alaska Native')),
+                ('P', _('Native Hawaiian or Other Pacific Islander')))
+    
+    DIETARY_CHOICES = (('S', _('Shellfish Allergy')),
+                ('N', _('Nut Allergy')),
+                ('VT', _('Vegetarian')),
+                ('VN', _('Vegan')),
+                ('P', _('Pescatarian')),
+                ('H', _('Halal')),
+                ('K', _('Kosher')),
+                ('L', _('Lactose Intolerant')),
+                ('G', _('Gluten Free')))
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     gender = models.CharField(max_length=1, choices=GenderChoice.choices, null=True, blank=True)
+    race = MultiSelectField(choices=RACE_CHOICES, blank=True, null=True)
+    diet = MultiSelectField(choices=DIETARY_CHOICES, blank=True, null=True)
+    shirt = models.CharField(max_length=4, choices=ShirtSize.choices, null=True, blank=True)
+    is_lgbt = models.BooleanField(null=True, blank=True, default=None)
+    is_hispanic = models.BooleanField(null=True, blank=True, default=None)
     discord_id = models.CharField(max_length=200, null=True, blank=True, unique=True)
     major = models.CharField(choices=list(get_majors().items())+[("unknown", "Unknown")], null=True, blank=True, default=None)  # NULL indicates major needs to be fetched
     is_utd_affiliate = models.BooleanField(null=False, blank=False, default=True) # TODO: get rid of default=True and fix UserProfile creation with null field
