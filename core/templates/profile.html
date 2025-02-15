@@ -1,13 +1,169 @@
-{% extends "base.html" %}
+{%load static%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization Portal</title>
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@0.475.0"></script>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo-container">
+                    <img src="/placeholder.svg?height=32&width=32" alt="Logo" class="logo">
+                </div>
+                <div class="header-separator"></div>
+                <h1>Your Organization | Portal</h1>
+            </div>
+            <div class="user-menu">
+                <button class="user-button">
+                    <div class="avatar">
+                        <img src="/placeholder.svg?height=32&width=32" alt="User avatar">
+                    </div>
+                    <span>{{user.first_name}} {{user.last_name}}</span>
+                    <i data-lucide="chevron-down"></i>
+                </button>
+            </div>
+        </header>
 
-{% block title %}My Profile{% endblock %}
+        <div class="main-container">
+            <!-- Sidebar -->
+            <nav class="sidebar">
+                <div class="sidebar-content">
+                    <div class="nav-section">
+                        <a href="#" class="nav-link">
+                            Profile
+                            <i data-lucide="chevron-right"></i>
+                        </a>
+                    </div>
 
-{% block content %}
-  <h2>User Profile</h2>
-  {% if user.is_authenticated %}
-    <p>Name: {{ user.first_name }}</p>
-    <p>Student ID: {{ user.useridentification.student_id }}</p>
-  {% else %}
-    <p>No user is currently signed in.</p>
-  {% endif %}
-{% endblock %}
+                    <div class="nav-section">
+                        <h2 class="section-title">Solis Rover Project</h2>
+                        <div class="sub-nav">
+                            <a href="#" class="nav-link">Overview</a>
+                            <a href="#" class="nav-link">Events</a>
+                            <a href="#" class="nav-link">Members</a>
+                        </div>
+                    </div>
+
+                    <div class="nav-section">
+                        <a href="#" class="nav-link">Server Settings</a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- ID Card -->
+                <div class="id-card">
+                    <div class="term-badges">
+                        <span class="badge">F22</span>
+                        <span class="badge">S24</span>
+                        <span class="badge">F23</span>
+                        <span class="badge">S24</span>
+                        <span class="badge">F24</span>
+                    </div>
+                    <div class="vertical-text">IDENTIFICATION CARD</div>
+                    <div class="card-content">
+                        <h3 class="card-name">{{user.first_name|upper}} {{user.last_name|upper}}</h3>
+                        <div class="card-role">MEMBER</div>
+                        <div class="card-id">#{{user.id|stringformat:"04d"}}</div>
+                        <div class="card-org">COMET ROBOTICS</div>
+                    </div>
+                </div>
+
+                <!-- Linked Accounts -->
+                <section class="section">
+                    <h2 class="section-title">Linked Accounts</h2>
+                    <div class="accounts-grid">
+                        <div class="account-card">
+                            <div class="card-header">
+                                <h3>Discord</h3>
+                                <p class="card-description">Connect your Discord account</p>
+                            </div>
+                            <div class="card-content">
+                                <button class="button button-primary">LINK ACCOUNT</button>
+                            </div>
+                        </div>
+                        <div class="account-card">
+                            <div class="card-header">
+                                <h3>GitHub</h3>
+                                <div class="user-info">
+                                    <div class="avatar small">
+                                        <img src="/placeholder.svg?height=20&width=20" alt="GitHub avatar">
+                                    </div>
+                                    <span>jasonappah</span>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <button class="button button-outline">
+                                    <i data-lucide="github"></i>
+                                    UNLINK
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Projects -->
+                <section class="section">
+                    <h2 class="section-title">Projects</h2>
+                    <div class="projects-grid">
+                        <div class="project-card">
+                            <div class="project-header">
+                                <div class="project-info">
+                                    <div class="avatar">
+                                        <span>SR</span>
+                                    </div>
+                                    <div>
+                                        <h3>Solis Rover Project</h3>
+                                        <p>Project Manager</p>
+                                    </div>
+                                </div>
+                                <button class="icon-button">
+                                    <i data-lucide="external-link"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </section>
+
+                <!-- Attendances -->
+                <section id="attendance-list" class="section">
+                </section>      
+                <script>
+                loadAttendanceList(1)
+                function loadAttendanceList(page) {
+                  fetch("{% url 'attendance_list' %}?page=" + page)
+                      .then(response => response.text())
+                      .then(html => {
+                          const list = document.getElementById("attendance-list")
+                          list.innerHTML = html;
+                          const prev = document.querySelector(".prev-page")
+                          const next = document.querySelector(".next-page")
+                          const fn = (evt) => {
+                              const btn = evt.target;
+                              if (btn.disabled) return
+                              loadAttendanceList(btn.dataset.page)
+                          }
+                          prev.addEventListener("click", fn);
+                          next.addEventListener("click", fn);
+                      });
+                }
+                </script>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
