@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'django_vite',
     'multiselectfield',
+    'colorfield',
 ]
 
 

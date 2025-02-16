@@ -4,11 +4,13 @@ from django.views.decorators.http import require_GET
 from django.conf import settings
 from events.models import Attendance
 from django.views.generic import ListView
+from core.models import ServerSettings
 
 # Create your views here.
 def profile_view(request):
     user = request.user
-    return render(request, 'profile.html', {'user': user})
+    settings = ServerSettings.objects.get()
+    return render(request, 'profile.html', {'user': user, 'settings': settings})
 
 class AttendanceListView(ListView):
     model = Attendance

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d1591abb0df380c0189ff9965b928a6b2baaaebc3e1a87629f003c62cf1f80c3"
+            "sha256": "51693cbe6a28aa3a73d41147d6355aa372762e3dc4c492f7613754b0ac3637e8"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -336,6 +336,14 @@
             "index": "pypi",
             "version": "==1.0.3"
         },
+        "django-colorfield": {
+            "hashes": [
+                "sha256:9fbace0e3bf7126acab33daa52a5ae2fe0b339aeee30233f52bf911b685c0c71",
+                "sha256:ceb9a312e01773a0d609847eb308e3b81ac18c33874d17b2c7135a8d1b2ec86d"
+            ],
+            "index": "pypi",
+            "version": "==0.12.0"
+        },
         "django-computedfields": {
             "hashes": [
                 "sha256:20d208116c2ae2c2c8a190299d280b51167656d2c26b6df3b1bfa2a98adcb02d"
@@ -384,12 +392,12 @@
         },
         "django-storages": {
             "hashes": [
-                "sha256:69aca94d26e6714d14ad63f33d13619e697508ee33ede184e462ed766dc2a73f",
-                "sha256:d61930acb4a25e3aebebc6addaf946a3b1df31c803a6bf1af2f31c9047febaa3"
+                "sha256:5ce9c69426f24f379821fd688442314e4aa03de87ae43183c4e16915f4c165d4",
+                "sha256:ace80dbee311258453e30cd5cfd91096b834180ccf09bc1f4d2cb6d38d68571a"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.7'",
-            "version": "==1.14.4"
+            "version": "==1.14.5"
         },
         "django-tables2": {
             "hashes": [
@@ -1019,7 +1027,7 @@
                 "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3",
                 "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"
             ],
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2'",
             "version": "==2.9.0.post0"
         },
         "python-dotenv": {
@@ -1237,7 +1245,7 @@
                 "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274",
                 "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81"
             ],
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2'",
             "version": "==1.17.0"
         },
         "soupsieve": {

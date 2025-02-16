@@ -11,6 +11,15 @@ from payments.models import Payment, PurchasedProduct, Term
 import discord
 from django.utils import timezone
 from datetime import timedelta
+from colorfield.fields import ColorField
+
+
+class ServerSettings(models.Model):
+  # only allows one instance of this model to exist: https://stackoverflow.com/a/69790968
+  _singleton = models.BooleanField(default=True, editable=False, unique=True)
+  organization_name = models.CharField(default="Your Organization")
+  accent_color_hex = ColorField(default='#4BC0FF')
+  
 
 
 # Create your models here.
