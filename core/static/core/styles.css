@@ -336,3 +336,81 @@ img {
         padding: 0.25rem 0.5rem;
     }
 }
+
+/* Dropdown Menu */
+.user-menu {
+    position: relative;
+}
+
+.dropdown-icon {
+    transition: transform 0.2s;
+}
+
+.user-button[aria-expanded="true"] .dropdown-icon {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    width: 14rem;
+    background-color: var(--white);
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s;
+}
+
+.dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-header {
+    padding: 0.75rem 1rem;
+    color: var(--gray-500);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background-color: var(--gray-200);
+    margin: 0.25rem 0;
+}
+
+.dropdown-item {
+  background: none;
+  border: none;  
+  display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    color: var(--gray-700);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: background-color 0.15s;
+}
+
+.dropdown-item:hover {
+    background-color: var(--gray-50);
+}
+
+.dropdown-item.text-red {
+    color: var(--primary);
+}
+
+.dropdown-item.text-red:hover {
+    background-color: var(--gray-50);
+}
+
+/* Add this at the end of your CSS file */
+@media (max-width: 768px) {
+    .dropdown-menu {
+        width: 12rem;
+    }
+}

@@ -13,6 +13,7 @@
         {% block head %}{% endblock %}
     </head>
     <body>
+      
         <header class="header">
             <div class="header-left">
                 <div class="logo-container">
@@ -22,7 +23,7 @@
                 <h1>{{settings.organization_name}} | Portal</h1>
             </div>
             <div class="user-menu">
-                <button class="user-button">
+                <button class="user-button" onclick="toggleDropdown()">
                     <div class="avatar">
                         <img src="/placeholder.svg?height=32&width=32" alt="User avatar">
                     </div>
@@ -30,6 +31,19 @@
                     <i data-lucide="chevron-down"></i>
                 </button>
             </div>
+            <div class="dropdown-menu" id="userDropdown">
+                  <div class="dropdown-header">
+                      My Account
+                  </div>
+                  <div class="dropdown-divider"></div>
+                  <form method="post" action="{% url 'logout' %}">
+                      {% csrf_token %}
+                      <button href="#" class="dropdown-item text-red" type="submit">
+                          <i data-lucide="log-out" class="w-4 h-4"></i>
+                          Log out
+                      </button>
+                  </form>
+              </div>
         </header>
         <div class="app">
             <div class="main-container">
@@ -67,6 +81,32 @@
         <script>
             // Initialize Lucide icons
             lucide.createIcons();
+            
+            // Add this JavaScript to handle the dropdown functionality
+            function toggleDropdown() {
+                const button = document.querySelector('.user-button');
+                const dropdown = document.getElementById('userDropdown');
+                const isExpanded = button.getAttribute('aria-expanded') === 'true';
+                
+                button.setAttribute('aria-expanded', !isExpanded);
+                dropdown.classList.toggle('show');
+            
+                // Close dropdown when clicking outside
+                if (!isExpanded) {
+                    document.addEventListener('click', closeDropdown);
+                }
+            }
+            
+            function closeDropdown(e) {
+                const button = document.querySelector('.user-button');
+                const dropdown = document.getElementById('userDropdown');
+                
+                if (!button.contains(e.target)) {
+                    button.setAttribute('aria-expanded', 'false');
+                    dropdown.classList.remove('show');
+                    document.removeEventListener('click', closeDropdown);
+                }
+            }
         </script>
     </body>
 
