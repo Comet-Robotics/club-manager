@@ -8,6 +8,9 @@
                 --primary: {{settings.accent_color_hex}};
             }
         </style>
+        <!-- Lucide Icons -->
+        <script src="https://unpkg.com/lucide@0.475.0"></script>
+        {% block head %}{% endblock %}
     </head>
     <body>
         <header class="header">
@@ -61,7 +64,10 @@
     
             </div>
         </div>
-    
+        <script>
+            // Initialize Lucide icons
+            lucide.createIcons();
+        </script>
     </body>
 
 </html>

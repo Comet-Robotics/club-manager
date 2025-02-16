@@ -1,11 +1,11 @@
-{% extends "newBase.html" %} {% block title %}My Profile{{event.event_name}}{% endblock %}
+{% extends "newBase.html" %}
+{% load static %}
+{% block title %}My Profile{% endblock %}
+{%block head%}
+  <link rel="stylesheet" href="{% static 'core/profile.css' %}">
+{%endblock%}
 {% block content %}
-{%load static%}
-<head>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@0.475.0"></script>
-</head>
-<body>
+
             <main class="main-content">
                 <!-- ID Card -->
                 <div class="id-card">
@@ -93,8 +93,8 @@
                       .then(html => {
                           const list = document.getElementById("attendance-list")
                           list.innerHTML = html;
-                          const prev = document.querySelector(".prev-page")
-                          const next = document.querySelector(".next-page")
+                          const prev = list.querySelector(".prev-page")
+                          const next = list.querySelector(".next-page")
                           const fn = (evt) => {
                               const btn = evt.target;
                               if (btn.disabled) return
@@ -106,9 +106,5 @@
                 }
                 </script>
             </main>
-    <script>
-        // Initialize Lucide icons
-        lucide.createIcons();
-    </script>
-</body>
+    
 {% endblock %}
