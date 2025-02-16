@@ -1,63 +1,11 @@
+{% extends "newBase.html" %} {% block title %}My Profile{{event.event_name}}{% endblock %}
+{% block content %}
 {%load static%}
-<!DOCTYPE html>
-<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organization Portal</title>
-    <link rel="stylesheet" href="{% static 'core/styles.css' %}">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@0.475.0"></script>
 </head>
 <body>
-    <div class="app">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-left">
-                <div class="logo-container">
-                    <img src="/placeholder.svg?height=32&width=32" alt="Logo" class="logo">
-                </div>
-                <div class="header-separator"></div>
-                <h1>Your Organization | Portal</h1>
-            </div>
-            <div class="user-menu">
-                <button class="user-button">
-                    <div class="avatar">
-                        <img src="/placeholder.svg?height=32&width=32" alt="User avatar">
-                    </div>
-                    <span>{{user.first_name}} {{user.last_name}}</span>
-                    <i data-lucide="chevron-down"></i>
-                </button>
-            </div>
-        </header>
-
-        <div class="main-container">
-            <!-- Sidebar -->
-            <nav class="sidebar">
-                <div class="sidebar-content">
-                    <div class="nav-section">
-                        <a href="#" class="nav-link">
-                            Profile
-                            <i data-lucide="chevron-right"></i>
-                        </a>
-                    </div>
-
-                    <div class="nav-section">
-                        <h2 class="section-title">Solis Rover Project</h2>
-                        <div class="sub-nav">
-                            <a href="#" class="nav-link">Overview</a>
-                            <a href="#" class="nav-link">Events</a>
-                            <a href="#" class="nav-link">Members</a>
-                        </div>
-                    </div>
-
-                    <div class="nav-section">
-                        <a href="#" class="nav-link">Server Settings</a>
-                    </div>
-                </div>
-            </nav>
-
-            <!-- Main Content -->
             <main class="main-content">
                 <!-- ID Card -->
                 <div class="id-card">
@@ -158,12 +106,9 @@
                 }
                 </script>
             </main>
-        </div>
-    </div>
-
     <script>
         // Initialize Lucide icons
         lucide.createIcons();
     </script>
 </body>
-</html>
+{% endblock %}
