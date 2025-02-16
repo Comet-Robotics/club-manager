@@ -59,6 +59,8 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'django_vite',
     'multiselectfield',
+    "phonenumber_field",
+
 ]
 
 

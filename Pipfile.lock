@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d1591abb0df380c0189ff9965b928a6b2baaaebc3e1a87629f003c62cf1f80c3"
+            "sha256": "83a75452049e3ccdba22041cc53a5b7229044d5f3a7ce3d3143089b2d20eb686"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -373,6 +373,17 @@
             ],
             "index": "pypi",
             "version": "==0.1.13"
+        },
+        "django-phonenumber-field": {
+            "extras": [
+                "phonenumbers"
+            ],
+            "hashes": [
+                "sha256:196c917b70c01a98e327f482eb8a4a4a55a29891db551f99078585397370b3ba",
+                "sha256:8a560fe1b01b94c9de8cde22bc373b695f023cc6df4baba00264cb079da9f631"
+            ],
+            "markers": "python_version >= '3.8'",
+            "version": "==8.0.0"
         },
         "django-rename-app": {
             "hashes": [
@@ -763,6 +774,13 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==24.2"
+        },
+        "phonenumbers": {
+            "hashes": [
+                "sha256:25feaf46135f0fb1e61b69513dc97c477285ba98a69204bf5a8cf241a844a718",
+                "sha256:57c989dda3eabab1b5a9e3d24438a39ebd032fa0172bf68bfd90ab70b3d5e08b"
+            ],
+            "version": "==8.13.55"
         },
         "pillow": {
             "hashes": [
@@ -1280,6 +1298,14 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==4.12.2"
+        },
+        "tzdata": {
+            "hashes": [
+                "sha256:24894909e88cdb28bd1636c6887801df64cb485bd593f2fd83ef29075a81d694",
+                "sha256:7e127113816800496f027041c570f50bcd464a020098a3b6b199517772303639"
+            ],
+            "markers": "python_version >= '2'",
+            "version": "==2025.1"
         },
         "uritemplate": {
             "hashes": [
