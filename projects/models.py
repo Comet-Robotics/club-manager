@@ -26,8 +26,8 @@ class Project(models.Model):
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    default_team = models.ForeignKey('SubTeam', on_delete=models.CASCADE)
-    managers = models.ManyToManyField('User', related_name='projects_managed')
+    default_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='default_team_for_project', null=True, blank=True)
+    managers = models.ManyToManyField(User, related_name='projects_managed')
 
     def __str__(self):
         return self.name
@@ -104,7 +104,7 @@ class TeamMember(models.Model):
       LEAD = "LEAD", _("Team Lead")
       MEMBER = "MEMBER", _("Team Member")
   
-    user = models.ForeignKey('User', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     role = models.CharField(choices=Role.choices, default=Role.MEMBER)
