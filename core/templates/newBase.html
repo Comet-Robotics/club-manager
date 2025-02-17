@@ -32,9 +32,12 @@
                 </button>
             </div>
             <div class="dropdown-menu" id="userDropdown">
-                  <div class="dropdown-header">
-                      My Account
-                  </div>
+                <a href="{% url 'account' %}">
+                    <div class="dropdown-header">
+                        My Account
+                    </div>
+                </a>
+                 
                   <div class="dropdown-divider"></div>
                   <form method="post" action="{% url 'logout' %}">
                       {% csrf_token %}
@@ -51,7 +54,8 @@
                     <div class="sidebar-content">
                         <div class="nav-section">
                             <a href="/profile" class="nav-link">
-                                Profile
+                                <i data-lucide="house"></i>
+                                Home
                                 <i data-lucide="chevron-right"></i>
                             </a>
                         </div>

@@ -12,6 +12,11 @@ def profile_view(request):
     settings = ServerSettings.objects.get()
     return render(request, 'profile.html', {'user': user, 'settings': settings})
 
+def account_view(request):
+    user = request.user
+    settings = ServerSettings.objects.get()
+    return render(request, 'account.html', {'user': user, 'settings': settings})
+
 class AttendanceListView(ListView):
     model = Attendance
     template_name = 'profile_fragments/attendance_list.html'
