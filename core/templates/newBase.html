@@ -68,7 +68,7 @@
                                 <a href="#" class="nav-link">Members</a>
                             </div>
                         </div>
-    
+                        {%if request.user.is_superuser%}
                         <div class="nav-section">
                             <h2 class="section-title">Administration</h2>
                             <div class="sub-nav">
@@ -76,6 +76,7 @@
                             <a href="/admin" class="nav-link">Django Admin</a>
                             </div>
                         </div>
+                        {% endif %}
                     </div>
                 </nav>
                 {% block content %}{% endblock %}
