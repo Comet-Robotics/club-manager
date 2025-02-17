@@ -1,5 +1,8 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.models import User
+
+# TODO: NEED TO TEST ALL THE METHODS ON THESE MODELS - PLEASE DO NOT LET ME MERGE UNTIL I DO
 
 """
 The goal of this app is to allow a project manager to easily view retention from meeting to meeting on their project, as well as being able to programmatically grant members access to project resources like GitHub repositories based on team membership. To do this, we need to be able to mark a user as being a 'member' to a project and/or team(s) within that project.
@@ -24,6 +27,7 @@ class Project(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     default_team = models.ForeignKey('SubTeam', on_delete=models.CASCADE)
+    managers = models.ManyToManyField('User', related_name='projects_managed')
 
     def __str__(self):
         return self.name
@@ -35,9 +39,9 @@ class Project(models.Model):
       return Team.objects.filter(project=self)
       
     @staticmethod
-    def user_can_manage_project(user, project):
-      # or user is project manager
-      return user.is_superuser
+    def user_can_manage_project(user: User, project: "Project"):
+      # Users can manage projects they are a manager of, or if they are a superuser (only club officers should be superusers)
+      return user.is_superuser or user in project.managers.all()
 
 class Team(models.Model):
     name = models.CharField(max_length=100)
@@ -71,10 +75,29 @@ class Team(models.Model):
         members.extend(team.all_members())
       return members
       
+    def direct_team_leads(self):
+      return TeamMember.objects.filter(team=self, role=TeamMember.Role.LEAD)
+      
     @staticmethod
-    def user_can_manage_team(user, team):
-      # TODO: or user is team lead
-      return user.is_superuser
+    def user_can_manage_team(user: User, team: "Team"):
+      """
+      Users can manage teams if any one of the following conditions is true:
+      - they are able to manage the project that the team is in
+      - if they are a lead on that specific team
+      - if they are a lead on any of this team's parent teams
+      """
+      if Project.user_can_manage_project(user, team.project):
+        return True
+      
+      team_to_check = team
+      while team_to_check:
+        is_lead = TeamMember.objects.filter(team=team_to_check, user=user, role=TeamMember.Role.LEAD).exists()
+        if is_lead:
+          return True
+        else:
+          team_to_check = team_to_check.parent_team
+        
+      return False
 
 class TeamMember(models.Model):
     class Role(models.TextChoices):
