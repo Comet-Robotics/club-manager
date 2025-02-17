@@ -1,6 +1,6 @@
 from django.contrib import admin
-from .models import Project, Subteam, TeamMember
+from .models import Project, Team, TeamMember
 
 admin.site.register(Project)
-admin.site.register(Subteam)
+admin.site.register(Team)
 admin.site.register(TeamMember)

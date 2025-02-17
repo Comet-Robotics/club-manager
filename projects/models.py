@@ -2,18 +2,18 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 """
-The goal of this app is to allow a project manager to easily view retention from meeting to meeting on their project, as well as being able to programmatically grant members access to project resources like GitHub repositories based on team membership. To do this, we need to be able to mark a user as being a 'member' to a project and/or subteam(s) within that project.
+The goal of this app is to allow a project manager to easily view retention from meeting to meeting on their project, as well as being able to programmatically grant members access to project resources like GitHub repositories based on team membership. To do this, we need to be able to mark a user as being a 'member' to a project and/or team(s) within that project.
 
-Projects are the top level organizational unit. A project can have multiple subteams. Each subteam can have multiple team members. A user can be a member of multiple subteams. This allows us to create a tree-like structure, like the one below.
+Projects are the top level organizational unit. A project can have multiple teams. Users are a member of a project through their membership of a team - projects have no direct associations with a user. Each team can have multiple team members. A user can be a member of multiple teams. This allows us to create a tree-like structure, like the one below.
 
 Project: Solis Rover Project
-  - Subteam: Mechanical
+  - Team: Mechanical
     - Team Member: John Doe
     - Team Member: Jane Doe
-    - Subteam: Arm
+    - Team: Arm
       - Team Member: John Doe
       - Team Member: Megan Doe
-  - Subteam: Embedded
+  - Team: Embedded
     - Team Member: Emily Doe
     - Team Member: Michael Doe
 """
@@ -23,48 +23,58 @@ class Project(models.Model):
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    default_subteam = models.ForeignKey('SubTeam', on_delete=models.CASCADE)
+    default_team = models.ForeignKey('SubTeam', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
         
     def all_team_members(self):
-      return TeamMember.objects.filter(subteam__project=self)
+      return TeamMember.objects.filter(team__project=self)
       
-    def direct_subteams(self):
-      return Subteam.objects.filter(project=self)
+    def direct_teams(self):
+      return Team.objects.filter(project=self)
+      
+    @staticmethod
+    def user_can_manage_project(user, project):
+      # or user is project manager
+      return user.is_superuser
 
-class Subteam(models.Model):
+class Team(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    parent_subteam = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
+    parent_team = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
-      if self.parent_subteam:
-        return self.parent_subteam.name + " > " + self.name
+      if self.parent_team:
+        return self.parent_team.name + " > " + self.name
       else:
         return self.project.name + " | " + self.name
 
     def direct_team_members(self):
-      return TeamMember.objects.filter(subteam=self)
+      return TeamMember.objects.filter(team=self)
       
-    def direct_subteams(self):
-      return Subteam.objects.filter(parent_subteam=self)
+    def direct_teams(self):
+      return Team.objects.filter(parent_team=self)
       
-    def all_subteams(self):
-      subteams = self.direct_subteams()
-      for subteam in subteams:
-        subteams.extend(subteam.all_subteams())
-      return subteams
+    def all_teams(self):
+      teams = self.direct_teams()
+      for team in teams:
+        teams.extend(team.all_teams())
+      return teams
       
     def all_team_members(self):
       members = self.direct_team_members()
-      for subteam in self.all_subteams():
-        members.extend(subteam.all_members())
+      for team in self.all_teams():
+        members.extend(team.all_members())
       return members
+      
+    @staticmethod
+    def user_can_manage_team(user, team):
+      # TODO: or user is team lead
+      return user.is_superuser
 
 class TeamMember(models.Model):
     class Role(models.TextChoices):
@@ -72,14 +82,14 @@ class TeamMember(models.Model):
       MEMBER = "MEMBER", _("Team Member")
   
     user = models.ForeignKey('User', on_delete=models.CASCADE)
-    subteam = models.ForeignKey(Subteam, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     role = models.CharField(choices=Role.choices, default=Role.MEMBER)
     
     class Meta:
       constraints = [
-          models.UniqueConstraint(fields=['user', 'subteam'], name='unique_user_subteam')
+          models.UniqueConstraint(fields=['user', 'team'], name='unique_user_team')
       ]
 
     def __str__(self):
-        return f"{self.role}: {str(self.user)} - {str(self.subteam)}"        
+        return f"{self.role}: {str(self.user)} - {str(self.team)}"        
