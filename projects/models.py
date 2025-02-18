@@ -5,9 +5,10 @@ from django.contrib.auth.models import User
 """
 The goal of this app is to allow a project manager to easily view retention from meeting to meeting on their project, as well as being able to programmatically grant members access to project resources like GitHub repositories based on team membership. To do this, we need to be able to mark a user as being a 'member' to a project and/or team(s) within that project.
 
-Projects are the top level organizational unit. A project can have multiple teams. Users are a member of a project through their membership of a team - projects have no direct associations with a user. Each team can have multiple team members. A user can be a member of multiple teams. This allows us to create a tree-like structure, like the one below.
+Projects are the top level organizational unit. A project can have multiple teams. Users are a member of a project through their membership of a team - projects have no direct associations with team members. Certain users can be marked as 'managers' of a team. Each team can have multiple team members. A user can be a member of multiple teams. This allows us to create a tree-like structure, like the one below.
 
-Project: Solis Rover Project
+Project: Solis Rover Project -
+  - Managers: Dylan Doe, Gabriel Doe
   - Team: Mechanical
     - Team Member: John Doe
     - Team Member: Jane Doe
