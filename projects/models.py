@@ -25,13 +25,14 @@ class Project(models.Model):
     description = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    managers = models.ManyToManyField(User, related_name='projects_managed')
+    managers = models.ManyToManyField(User, related_name='projects_managing')
 
     def __str__(self):
         return self.name
         
     def all_team_members(self):
-      return TeamMember.objects.filter(team__project=self)
+      # TODO: test
+      return User.objects.filter(teams_in=self.all_teams())
       
     def all_teams(self):
       return Team.objects.filter(project=self)
@@ -51,27 +52,24 @@ class Team(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     parent_team = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
+    members = models.ManyToManyField(User, related_name='teams_in')
+    leads = models.ManyToManyField(User, related_name='teams_leading')
 
     def __str__(self):
       if self.parent_team:
         return str(self.parent_team) + " > " + self.name
       else:
         return self.project.name + " | " + self.name
-
-    def direct_team_members(self):
-      return TeamMember.objects.filter(team=self)
       
     def direct_teams(self):
       return Team.objects.filter(parent_team=self)
       
     def all_team_members(self):
-      members = list(self.direct_team_members())
-      for team in self.all_teams():
-        members.extend(list(team.all_members()))
+      members = list(self.members)
+      for team in self.direct_teams():
+        members.extend(list(team.all_team_members()))
       return members
-      
-    def direct_team_leads(self):
-      return TeamMember.objects.filter(team=self, role=TeamMember.Role.LEAD)
+
       
     @staticmethod
     def user_can_manage_team(user: User, team: "Team"):
@@ -86,7 +84,8 @@ class Team(models.Model):
       
       team_to_check = team
       while team_to_check:
-        is_lead = TeamMember.objects.filter(team=team_to_check, user=user, role=TeamMember.Role.LEAD).exists()
+        # TODO: test this
+        is_lead = Team.objects.filter(leads=user).exists()
         if is_lead:
           return True
         else:
@@ -94,20 +93,3 @@ class Team(models.Model):
         
       return False
 
-class TeamMember(models.Model):
-    class Role(models.TextChoices):
-      LEAD = "LEAD", _("Team Lead")
-      MEMBER = "MEMBER", _("Team Member")
-  
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    team = models.ForeignKey(Team, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-    role = models.CharField(choices=Role.choices, default=Role.MEMBER)
-    
-    class Meta:
-      constraints = [
-          models.UniqueConstraint(fields=['user', 'team'], name='unique_user_team')
-      ]
-
-    def __str__(self):
-        return f"{self.role}: {str(self.user)} - {str(self.team)}"        
