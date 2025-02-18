@@ -1,6 +1,8 @@
+from typing import Literal, TypedDict
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User
+from django.db.models import Q
 
 """
 The goal of this app is to allow a project manager to easily view retention from meeting to meeting on their project, as well as being able to programmatically grant members access to project resources like GitHub repositories based on team membership. To do this, we need to be able to mark a user as being a 'member' to a project and/or team(s) within that project.
@@ -31,8 +33,7 @@ class Project(models.Model):
         return self.name
         
     def all_team_members(self):
-      # TODO: test
-      return User.objects.filter(teams_in=self.all_teams())
+      return User.objects.filter(Q(projects_managing=self) | Q(teams_in__project=self) |  Q(teams_leading__project=self)).distinct('id')
       
     def all_teams(self):
       return Team.objects.filter(project=self)
@@ -65,9 +66,9 @@ class Team(models.Model):
       return Team.objects.filter(parent_team=self)
       
     def all_team_members(self):
-      members = list(self.members)
+      members = [TeamMember(user=i, team=self, role='member') for i in list(self.members.all())] + [TeamMember(user=i, team=self, role='lead') for i in list(self.leads.all())]
       for team in self.direct_teams():
-        members.extend(list(team.all_team_members()))
+        members.extend(team.all_team_members())
       return members
 
       
@@ -84,12 +85,15 @@ class Team(models.Model):
       
       team_to_check = team
       while team_to_check:
-        # TODO: test this
-        is_lead = Team.objects.filter(leads=user).exists()
-        if is_lead:
+        if user in team_to_check.leads.all():
           return True
-        else:
-          team_to_check = team_to_check.parent_team
+        team_to_check = team_to_check.parent_team
         
       return False
 
+
+class TeamMember(TypedDict):
+  user: User
+  team: Team
+  role: Literal["lead"] | Literal["member"]
+  
