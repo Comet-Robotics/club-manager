@@ -2,8 +2,6 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User
 
-# TODO: NEED TO TEST ALL THE METHODS ON THESE MODELS - PLEASE DO NOT LET ME MERGE UNTIL I DO
-
 """
 The goal of this app is to allow a project manager to easily view retention from meeting to meeting on their project, as well as being able to programmatically grant members access to project resources like GitHub repositories based on team membership. To do this, we need to be able to mark a user as being a 'member' to a project and/or team(s) within that project.
 
@@ -23,10 +21,9 @@ Project: Solis Rover Project
 
 class Project(models.Model):
     name = models.CharField(max_length=100)
-    description = models.TextField()
+    description = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    default_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='default_team_for_project', null=True, blank=True)
     managers = models.ManyToManyField(User, related_name='projects_managed')
 
     def __str__(self):
@@ -35,8 +32,11 @@ class Project(models.Model):
     def all_team_members(self):
       return TeamMember.objects.filter(team__project=self)
       
-    def direct_teams(self):
+    def all_teams(self):
       return Team.objects.filter(project=self)
+    
+    def direct_teams(self):
+      return Team.objects.filter(project=self, parent_team=None)
       
     @staticmethod
     def user_can_manage_project(user: User, project: "Project"):
@@ -45,7 +45,7 @@ class Project(models.Model):
 
 class Team(models.Model):
     name = models.CharField(max_length=100)
-    description = models.TextField()
+    description = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
@@ -53,7 +53,7 @@ class Team(models.Model):
 
     def __str__(self):
       if self.parent_team:
-        return self.parent_team.name + " > " + self.name
+        return str(self.parent_team) + " > " + self.name
       else:
         return self.project.name + " | " + self.name
 
@@ -63,16 +63,10 @@ class Team(models.Model):
     def direct_teams(self):
       return Team.objects.filter(parent_team=self)
       
-    def all_teams(self):
-      teams = self.direct_teams()
-      for team in teams:
-        teams.extend(team.all_teams())
-      return teams
-      
     def all_team_members(self):
-      members = self.direct_team_members()
+      members = list(self.direct_team_members())
       for team in self.all_teams():
-        members.extend(team.all_members())
+        members.extend(list(team.all_members()))
       return members
       
     def direct_team_leads(self):
