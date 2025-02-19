@@ -5,17 +5,26 @@ from django.conf import settings
 from events.models import Attendance
 from django.views.generic import ListView
 from core.models import ServerSettings
+from core.forms import ServerSettingsForm
 
 # Create your views here.
 def profile_view(request):
-    user = request.user
     settings = ServerSettings.objects.get()
-    return render(request, 'profile.html', {'user': user, 'settings': settings})
+    return render(request, 'profile.html', {'user': request.user, 'settings': settings})
 
 def account_view(request):
-    user = request.user
     settings = ServerSettings.objects.get()
-    return render(request, 'account.html', {'user': user, 'settings': settings})
+    return render(request, 'account.html', {'user': request.user, 'settings': settings})
+
+def server_settings_view(request):
+    settings = ServerSettings.objects.get()
+    if request.method == 'POST':
+        form = ServerSettingsForm(request.POST, instance=settings)
+        if form.is_valid():
+            form.save()
+    else:
+        form = ServerSettingsForm(instance=settings)
+    return render(request, 'server_settings.html', {'form': form, 'settings': settings})
 
 class AttendanceListView(ListView):
     model = Attendance

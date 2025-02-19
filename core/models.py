@@ -7,7 +7,7 @@ from multiselectfield import MultiSelectField
 
 from clubManager import settings
 from common.major import get_majors, get_major_from_netid
-from payments.models import Payment, PurchasedProduct, Term
+from payments.models import PurchasedProduct, Term
 import discord
 from django.utils import timezone
 from datetime import timedelta
@@ -19,6 +19,7 @@ class ServerSettings(models.Model):
   _singleton = models.BooleanField(default=True, editable=False, unique=True)
   organization_name = models.CharField(default="Your Organization")
   accent_color_hex = ColorField(default='#4BC0FF')
+  logo = models.ImageField(upload_to="logos")
   
 
 
