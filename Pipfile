@@ -28,5 +28,6 @@ pillow = "*"
 boto3 = "*"
 async-timeout = "*"
 django-multiselectfield = "*"
+django-colorfield = "*"
 
 [dev-packages]

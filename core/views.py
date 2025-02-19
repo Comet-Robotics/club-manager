@@ -2,11 +2,38 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponsePermanentRedirect
 from django.views.decorators.http import require_GET
 from django.conf import settings
+from events.models import Attendance
+from django.views.generic import ListView
+from core.models import ServerSettings
+from core.forms import ServerSettingsForm
 
 # Create your views here.
 def profile_view(request):
-    user = request.user
-    return render(request, 'profile.html', {'user': user})
+    settings = ServerSettings.objects.get()
+    return render(request, 'profile.html', {'user': request.user, 'settings': settings})
+
+def account_view(request):
+    settings = ServerSettings.objects.get()
+    return render(request, 'account.html', {'user': request.user, 'settings': settings})
+
+def server_settings_view(request):
+    settings = ServerSettings.objects.get()
+    if request.method == 'POST':
+        form = ServerSettingsForm(request.POST, instance=settings)
+        if form.is_valid():
+            form.save()
+    else:
+        form = ServerSettingsForm(instance=settings)
+    return render(request, 'server_settings.html', {'form': form, 'settings': settings})
+
+class AttendanceListView(ListView):
+    model = Attendance
+    template_name = 'profile_fragments/attendance_list.html'
+    paginate_by = 5
+    context_object_name = 'attendances'
+    
+    def get_queryset(self):
+        return Attendance.objects.order_by('-timestamp').filter(user=self.request.user)
 
 def spa_view(request):
     return render(request, 'spa.html', {'DEBUG': settings.DEBUG})
