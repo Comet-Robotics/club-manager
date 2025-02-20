@@ -7,4 +7,4 @@ class PhoneNumberForm(forms.Form):
 class ContactInfoForm(forms.Form):
     first_name = forms.CharField(label='First Name', max_length=100)
     last_name = forms.CharField(label='Last Name', max_length=100)
-    Contact = PhoneNumberForm(label='Phone Number')
+    # Contact = PhoneNumberForm(label='Phone Number')

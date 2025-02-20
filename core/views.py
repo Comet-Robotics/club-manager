@@ -4,11 +4,24 @@ from django.views.decorators.http import require_GET
 from django.conf import settings
 from events.models import Attendance
 from django.views.generic import ListView
+from django.http import HttpResponseRedirect
+
+
+from .forms import ContactInfoForm
 
 # Create your views here.
 def profile_view(request):
     user = request.user
-    return render(request, 'profile.html', {'user': user})
+    
+    if request.method == "POST":
+        form = ContactInfoForm(request.POST)
+        if form.is_valid():
+            return HttpResponseRedirect("/profile")
+
+    else:
+        form = ContactInfoForm()
+    
+    return render(request, 'profile.html', {'user': user, "form": form})
 
 class AttendanceListView(ListView):
     model = Attendance
