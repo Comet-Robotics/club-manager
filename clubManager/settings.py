@@ -196,7 +196,9 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOGIN_REDIRECT_URL='/posters/'
+LOGIN_REDIRECT_URL = '/posters/'
+
+SQUARE_APPLE_MERCHANT_ID = str(os.getenv('SQUARE_APPLE_MERCHANT_ID'))
 
 # Email Settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -206,6 +208,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = str(os.getenv('SMTP_USER'))
 EMAIL_HOST_PASSWORD = str(os.getenv('SMTP_PASS'))
 
+# Discord Integration settings
 DISCORD_TOKEN = str(os.getenv('DISCORD_TOKEN'))
 DISCORD_SERVER_ID = int(str(os.getenv("DISCORD_SERVER_ID")))
 DISCORD_OFFICER_ROLE_ID = int(str(os.getenv("DISCORD_OFFICER_ROLE_ID")))
