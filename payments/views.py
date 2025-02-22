@@ -13,6 +13,12 @@ from payments.models import Payment, Product, PurchasedProduct
 from math import ceil
 from typing import TypedDict
 from django.db import transaction
+from pathlib import Path
+
+
+config_path = Path("config.ini")
+if not config_path.exists():
+    raise FileNotFoundError(f"Missing Square config.ini file! Looking in folder: {Path().resolve()}")
 
 
 config = configparser.ConfigParser()
