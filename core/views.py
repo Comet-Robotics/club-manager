@@ -37,9 +37,9 @@ def get_layout_data(request: HttpRequest) -> LayoutData:
     user = request.user
     if not isinstance(user, (AnonymousUser, User)):
         raise Exception("User must be an instance of User or AnonymousUser")
-    settings = ServerSettings.objects.get()
-    accessible_projects = Project.get_projects_user_can_manage(user) if user and isinstance(user, User) else []
-    return LayoutData(user=user, settings=settings, accessible_projects=accessible_projects)
+    # NOTE: temporarily hiding these sidebar links in production until the corresponding pages are implemented
+    accessible_projects = Project.get_projects_user_can_manage(user) if user and isinstance(user, User) and settings.DEBUG else []
+    return LayoutData(user=user, settings=ServerSettings.objects.get(), accessible_projects=accessible_projects)
 
 @login_required
 def profile_view(request):
