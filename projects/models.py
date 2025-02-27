@@ -9,7 +9,7 @@ The goal of this app is to allow a project manager to easily view retention from
 
 Projects are the top level organizational unit. A project can have multiple teams. Users are a member of a project through their membership of a team - projects have no direct associations with team members. Certain users can be marked as 'managers' of a team. Each team can have multiple team members. A user can be a member of multiple teams. This allows us to create a tree-like structure, like the one below.
 
-Project: Solis Rover Project -
+Project: Solis Rover Project
   - Managers: Dylan Doe, Gabriel Doe
   - Team: Mechanical
     - Team Member: John Doe
@@ -45,6 +45,10 @@ class Project(models.Model):
     def user_can_manage_project(user: User, project: "Project"):
       # Users can manage projects they are a manager of, or if they are a superuser (only club officers should be superusers)
       return user.is_superuser or user in project.managers.all()
+      
+    @staticmethod
+    def get_projects_user_can_manage(user: User):
+      return Project.objects.all() if user.is_superuser else Project.objects.filter(managers=user)
 
 class Team(models.Model):
     name = models.CharField(max_length=100)
@@ -55,6 +59,7 @@ class Team(models.Model):
     parent_team = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
     members = models.ManyToManyField(User, related_name='teams_in')
     leads = models.ManyToManyField(User, related_name='teams_leading')
+    emoji = models.CharField(max_length=3, null=True, blank=True)
 
     def __str__(self):
       if self.parent_team:
@@ -90,10 +95,22 @@ class Team(models.Model):
         team_to_check = team_to_check.parent_team
         
       return False
-
+      
+    @staticmethod
+    def get_teams_associated_with_user(user: User):
+      teams: list[TeamMember] = []
+      
+      for team in user.teams_leading.all():
+        teams.append(TeamMember(user=user, team=team, role='lead'))
+      
+      for team in user.teams_in.all():
+        teams.append(TeamMember(user=user, team=team, role='member'))  
+      
+      return teams
 
 class TeamMember(TypedDict):
   user: User
   team: Team
   role: Literal["lead"] | Literal["member"]
+  
   

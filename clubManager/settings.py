@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'django_vite',
     'multiselectfield',
+    'colorfield',
 ]
 
 
@@ -196,8 +197,7 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOGIN_REDIRECT_URL = '/posters/'
-
+LOGIN_REDIRECT_URL='/profile/'
 SQUARE_APPLE_MERCHANT_ID = str(os.getenv('SQUARE_APPLE_MERCHANT_ID'))
 
 # Email Settings
