@@ -78,6 +78,19 @@ class UserProfile(models.Model):
     def __str__(self):
         return self.user.first_name + '_' + self.user.last_name
     
+    def get_membership_terms(self) -> list[tuple[Term, PurchasedProduct]]:
+        """
+        Returns a list of tuples containing (Term, PurchasedProduct) for all terms where the user was a member.
+        The list is sorted by term start date in descending order (most recent first).
+        """
+        purchased_products = PurchasedProduct.objects.filter(
+            payment__user=self.user,
+            payment__is_successful=True,
+            product__term__isnull=False
+        ).select_related('product__term').order_by('-product__term__start_date')
+        
+        return [(product.product.term, product) for product in purchased_products]
+
     def is_member(self, for_term: Term | None = None) -> tuple[Term, PurchasedProduct | None]:
         """
         Returns a tuple with the Term and PurchasedProduct object for the current member if the user is a member for the given term, or a tuple with the given Term and None if they are not a member.

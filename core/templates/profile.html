@@ -2,7 +2,7 @@
 {% load static %}
 {% block title %}My Profile{% endblock %}
 {%block head%}
-  <link rel="stylesheet" href="{% static 'core/profile.css' %}">
+<link rel="stylesheet" href="{% static 'core/profile.css' %}">
 {%endblock%}
 {% block content %}
 
@@ -10,11 +10,11 @@
                 <!-- ID Card -->
                 <div class="id-card">
                     <div class="term-badges">
-                        <span class="badge">F22</span>
-                        <span class="badge">S24</span>
-                        <span class="badge">F23</span>
-                        <span class="badge">S24</span>
-                        <span class="badge">F24</span>
+                        {% for term in terms %}
+                          <span class="badge">{{term}}</span>
+                          {%empty%}
+                          <span class="badge">BECOME A MEMBER</span>
+                        {% endfor %}
                     </div>
                     <div class="vertical-text">IDENTIFICATION CARD</div>
                     <div class="card-content">
@@ -27,24 +27,35 @@
 
                 <!-- Projects -->
                 <section class="section">
-                    <h2 class="section-title">Projects</h2>
+                    <h2 class="section-title">My Teams</h2>
                     <div class="projects-grid">
-                        <div class="project-card">
+                      {% for tm in teams %}
+                        <div class="project-card {% if tm.role == 'lead' %}lead-project-card{% endif %}">
                             <div class="project-header">
                                 <div class="project-info">
                                     <div class="avatar">
-                                        <span>SR</span>
+                                        <span>{{tm.team.emoji|default:"-"|upper}}</span>
                                     </div>
-                                    <div>
-                                        <h3>Solis Rover Project</h3>
-                                        <p>Project Manager</p>
+                                    <div >
+                                        <h3>{{tm.team.name}}</h3>
+                                        <p>{{tm.team.project.name}}</p>
+                                      <span class="badge team-role-badge {% if tm.role == 'lead' %}lead-badge{% endif %}">
+                                          {% if tm.role == 'lead' %}
+                                          Team Lead
+                                          {% elif tm.role == 'member' %}
+                                          Team Member
+                                          {% endif %}
+                                        </span>
                                     </div>
                                 </div>
+                                          {% if tm.role == 'lead' %}
                                 <button class="icon-button">
                                     <i data-lucide="external-link"></i>
                                 </button>
+                                          {% endif %}
                             </div>
                         </div>
+                        {%endfor%}
                         
                     </div>
                 </section>

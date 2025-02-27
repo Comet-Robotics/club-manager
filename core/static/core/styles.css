@@ -1,7 +1,8 @@
 /* Reset and Base Styles */
 :root {
     --primary: #bf1e2e;
-    --primary-dark: #a51927;
+    /* credit to https://stuffandnonsense.co.uk/blog/new-relative-colour-functions-in-css */
+    --primary-dark: color-mix(in hsl, var(--primary) 75%, black);
     --white: #ffffff;
     --gray-50: #f9fafb;
     --gray-100: #f3f4f6;

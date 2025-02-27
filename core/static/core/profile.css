@@ -114,12 +114,11 @@
 }
 
 /* Project Cards */
-.project-card {
+.lead-project-card {
     transition: all 0.15s;
-    cursor: pointer;
 }
 
-.project-card:hover {
+.lead-project-card:hover {
     transform: scale(1.02);
     box-shadow: var(--shadow-md);
 }
@@ -147,6 +146,7 @@
 .project-info p {
     color: var(--gray-500);
     font-size: 0.875rem;
+    margin-bottom: 0.25rem;
 }
 
 /* Attendance List */
@@ -195,4 +195,16 @@
   .projects-grid {
       grid-template-columns: 1fr;
   }
+}
+
+.team-role-badge {
+  background-color: var(--primary);
+  color: white;
+  border: 1px solid var(--primary);
+}
+
+.lead-badge {
+  background-color: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
 }
