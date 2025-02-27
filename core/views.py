@@ -51,6 +51,9 @@ def profile_view(request):
 
 @login_required
 def account_view(request):
+    # NOTE: temporarily restricting page access in production until the corresponding page is implemented
+    if not settings.DEBUG:
+        return HttpResponse("This page is under construction - only available in DEBUG mode.")
     layout_data = get_layout_data(request)
     return render(request, 'account.html', {**layout_data})
 
