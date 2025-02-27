@@ -1,5 +1,5 @@
 from django import forms
-from .models import UserProfile
+from .models import UserProfile, User
 from phonenumber_field.formfields import PhoneNumberField
 
 class PhoneNumberForm(forms.Form):
@@ -14,4 +14,18 @@ class ContactInfoForm(forms.Form):
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['gender', 'race', 'diet', 'shirt', 'is_lgbt', 'is_hispanic', 'date_of_birth']
+        fields = ['gender',  'date_of_birth', 'race', 'is_hispanic','diet', 'shirt' ]
+        labels = {
+            "is_hispanic": "Are you Hispanic or Latino?",
+            "race": "Select all races that you identify with",
+            "diet": "Select any dietary restrictions",
+            "shirt": "Shirt Size"
+        }
+        widgets = {
+            'date_of_birth': forms.DateInput(format=('%m/%d/%Y'), attrs={'class':'form-control', 'placeholder':'Select a date', 'type':'date'}),
+        }
+        
+class UserForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name']

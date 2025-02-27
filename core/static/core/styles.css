@@ -459,6 +459,170 @@ img {
     border-top: 1px solid var(--gray-200);
 }
 
+/* Form Elements */
+input, 
+select, 
+textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 0.375rem;
+    background-color: var(--white);
+    color: var(--gray-900);
+    font-size: 0.875rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    margin-bottom: 1rem;
+}
+
+input:focus, 
+select:focus, 
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(191, 30, 46, 0.2);
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Checkboxes and Radio buttons */
+input[type="checkbox"],
+input[type="radio"] {
+    width: auto;
+    margin-right: 0.5rem;
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+/* Labels */
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    font-size: 0.875rem;
+}
+
+/* Checkbox and radio labels should be inline */
+input[type="checkbox"] + label,
+input[type="radio"] + label {
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+
+/* Form layout */
+form {
+    background-color: var(--white);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+}
+
+fieldset {
+    border: 1px solid var(--gray-200);
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+legend {
+    padding: 0 0.5rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Help text */
+.helptext {
+    display: block;
+    color: var(--gray-500);
+    font-size: 0.75rem;
+    margin-top: -0.75rem;
+    margin-bottom: 1rem;
+}
+
+/* Error states */
+.errorlist {
+    color: var(--primary);
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.5rem 0;
+    font-size: 0.75rem;
+}
+
+input.error,
+select.error,
+textarea.error {
+    border-color: var(--primary);
+}
+
+/* Submit button - leveraging existing button styles */
+input[type="submit"] {
+    width: auto;
+    background-color: var(--primary);
+    color: var(--white);
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border: none;
+}
+
+input[type="submit"]:hover {
+    background-color: var(--primary-dark);
+}
+
+/* Disabled state */
+input:disabled,
+select:disabled,
+textarea:disabled,
+input[type="submit"]:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* File inputs */
+input[type="file"] {
+    padding: 0.5rem 0;
+    border: none;
+    background: none;
+}
+
+/* Select dropdown arrow styling */
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 16px;
+    padding-right: 2.5rem;
+}
+
+/* Form groups */
+.form-row {
+    margin-bottom: 1rem;
+}
+
+/* Django specific - required field indicator */
+.required label:after {
+    content: " *";
+    color: var(--primary);
+}
+
+/* Responsive form adjustments */
+@media (max-width: 640px) {
+    form {
+        padding: 1rem;
+    }
+    
+    input, 
+    select, 
+    textarea {
+        padding: 0.625rem;
+    }
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
     .sidebar {

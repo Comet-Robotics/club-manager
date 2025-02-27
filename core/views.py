@@ -7,21 +7,23 @@ from django.views.generic import ListView
 from django.http import HttpResponseRedirect
 
 
-from .forms import UserProfileForm
+from .forms import UserProfileForm, UserForm
 
 # Create your views here.
 def profile_view(request):
     user = request.user
     
     if request.method == "POST":
+        userForm = UserForm(request.POST)
         form = UserProfileForm(request.POST)
         if form.is_valid():
             return HttpResponseRedirect("/profile")
 
     else:
+        userForm = UserForm()
         form = UserProfileForm()
     
-    return render(request, 'profile.html', {'user': user, "form": form})
+    return render(request, 'profile.html', {'user': user, "form": form, "userForm": userForm})
 
 class AttendanceListView(ListView):
     model = Attendance
