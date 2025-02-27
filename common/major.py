@@ -14,13 +14,12 @@ def get_majors() -> dict[str, str]:
     Returns:
         dict[str, str]: The dictionary of major short codes to major full text.
     """
-    return {}
     for i in range(DIRECTORY_TRIES):
         print(f"Trying to fetch major... ({i+1}/{DIRECTORY_TRIES})")
         r = requests.get("https://www.utdallas.edu/directory/")
         soup = bs4.BeautifulSoup(r.text, 'html.parser')
         dirMajor = soup.find(id="dirMajor")
-        if dirMajor: 
+        if dirMajor:
             break
         time.sleep(3)
     else:

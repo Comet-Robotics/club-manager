@@ -59,7 +59,7 @@ class Team(models.Model):
     parent_team = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
     members = models.ManyToManyField(User, related_name='teams_in')
     leads = models.ManyToManyField(User, related_name='teams_leading')
-    emoji = models.CharField(max_length=100, null=True, blank=True)
+    emoji = models.CharField(max_length=3, null=True, blank=True)
 
     def __str__(self):
       if self.parent_team:
