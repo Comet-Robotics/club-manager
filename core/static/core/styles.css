@@ -512,14 +512,7 @@ input[type="radio"] + label {
     margin-bottom: 1rem;
 }
 
-/* Form layout */
-form {
-    background-color: var(--white);
-    padding: 1.5rem;
-    border-radius: 0.5rem;
-    box-shadow: var(--shadow);
-    margin-bottom: 1.5rem;
-}
+
 
 fieldset {
     border: 1px solid var(--gray-200);
