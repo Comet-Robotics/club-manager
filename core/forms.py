@@ -34,3 +34,12 @@ class UserForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['first_name', 'last_name']
+from core.models import ServerSettings
+
+class ServerSettingsForm(forms.ModelForm):
+    class Meta:
+        model = ServerSettings
+        exclude = ['_singleton', 'logo']
+        
+    # TODO: create a separate form for the logo so that form can be submitted independently of this one, so we don't have to reupload the image every time the form is submitted
+        

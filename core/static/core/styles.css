@@ -1,7 +1,8 @@
 /* Reset and Base Styles */
 :root {
     --primary: #bf1e2e;
-    --primary-dark: #a51927;
+    /* credit to https://stuffandnonsense.co.uk/blog/new-relative-colour-functions-in-css */
+    --primary-dark: color-mix(in hsl, var(--primary) 75%, black);
     --white: #ffffff;
     --gray-50: #f9fafb;
     --gray-100: #f3f4f6;
@@ -202,83 +203,7 @@ img {
     width: 100%;
 }
 
-/* ID Card */
-.id-card {
-    background-color: var(--primary);
-    color: var(--white);
-    padding: 2rem;
-    border-radius: 0.75rem;
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 2rem;
-    transition: box-shadow 0.15s;
-}
 
-.id-card:hover {
-    box-shadow: var(--shadow-md);
-}
-
-.term-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-}
-
-.badge {
-    background-color: rgba(255, 255, 255, 0.1);
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
-.vertical-text {
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 2.5rem;
-    background-color: rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    letter-spacing: 0.1em;
-    font-weight: 500;
-}
-
-.card-content {
-    margin-right: 3rem;
-}
-
-.card-name {
-    font-size: 1.5rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.5rem;
-}
-
-.card-role {
-    font-size: 0.875rem;
-    opacity: 0.8;
-    margin-bottom: 1rem;
-}
-
-.card-id {
-    font-size: 2.25rem;
-    font-family: monospace;
-    letter-spacing: 0.1em;
-}
-
-.card-org {
-    margin-top: 2rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    letter-spacing: 0.05em;
-}
 
 /* Section Styles */
 .section {
@@ -292,78 +217,7 @@ img {
     margin-bottom: 1rem;
 }
 
-/* Grid Layouts */
-.accounts-grid,
-.projects-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1rem;
-}
 
-/* Cards */
-.account-card,
-.project-card,
-.attendance-card {
-    background-color: var(--white);
-    border-radius: 0.5rem;
-    box-shadow: var(--shadow);
-    overflow: hidden;
-}
-
-.card-header {
-    padding: 1.25rem 1.25rem 0;
-}
-
-.card-header h3 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-}
-
-.card-description {
-    color: var(--gray-500);
-    font-size: 0.875rem;
-}
-
-.card-content {
-    padding: 1.25rem;
-}
-
-/* Project Cards */
-.project-card {
-    transition: all 0.15s;
-    cursor: pointer;
-}
-
-.project-card:hover {
-    transform: scale(1.02);
-    box-shadow: var(--shadow-md);
-}
-
-.project-header {
-    padding: 1.25rem;
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-}
-
-.project-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.project-info h3 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-}
-
-.project-info p {
-    color: var(--gray-500);
-    font-size: 0.875rem;
-}
 
 /* Buttons */
 .button {
@@ -413,46 +267,6 @@ img {
     color: var(--gray-700);
 }
 
-/* Attendance List */
-.attendance-list {
-    display: flex;
-    flex-direction: column;
-}
-
-.attendance-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--gray-200);
-    transition: background-color 0.15s;
-}
-
-.attendance-item:hover {
-    background-color: var(--gray-50);
-}
-
-.attendance-item:last-child {
-    border-bottom: none;
-}
-
-.attendance-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.status-dot {
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 9999px;
-    background-color: #22c55e;
-}
-
-.attendance-time {
-    color: var(--gray-500);
-    font-size: 0.875rem;
-}
 
 .card-footer {
     padding: 1rem;
@@ -646,11 +460,6 @@ select {
     .main-content {
         padding: 1rem;
     }
-
-    .accounts-grid,
-    .projects-grid {
-        grid-template-columns: 1fr;
-    }
 }
 
 @media (max-width: 640px) {
@@ -683,5 +492,83 @@ select {
     .badge {
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
+    }
+}
+
+/* Dropdown Menu */
+.user-menu {
+    position: relative;
+}
+
+.dropdown-icon {
+    transition: transform 0.2s;
+}
+
+.user-button[aria-expanded="true"] .dropdown-icon {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    width: 14rem;
+    background-color: var(--white);
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s;
+}
+
+.dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-header {
+    padding: 0.75rem 1rem;
+    color: var(--gray-500);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background-color: var(--gray-200);
+    margin: 0.25rem 0;
+}
+
+.dropdown-item {
+  background: none;
+  border: none;  
+  display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    color: var(--gray-700);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: background-color 0.15s;
+}
+
+.dropdown-item:hover {
+    background-color: var(--gray-50);
+}
+
+.dropdown-item.text-red {
+    color: var(--primary);
+}
+
+.dropdown-item.text-red:hover {
+    background-color: var(--gray-50);
+}
+
+/* Add this at the end of your CSS file */
+@media (max-width: 768px) {
+    .dropdown-menu {
+        width: 12rem;
     }
 }

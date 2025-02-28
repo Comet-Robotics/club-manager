@@ -23,7 +23,7 @@ def get_majors() -> dict[str, str]:
             break
         time.sleep(3)
     else:
-        print(f"WARNING: Failed to fetch majors.")
+        print("WARNING: Failed to fetch majors.")
         return dict()
     options = { option['value']: option.string for option in dirMajor.find_all('option') }
     del options['All']

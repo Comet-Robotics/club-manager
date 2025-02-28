@@ -1,4 +1,12 @@
-#  notes
+# clubManager
+
+clubManager is a web app for managing all things related to club operations. Some of the things it does include:
+
+- Link shortener
+- Event check-ins / meeting attendance tracking
+- Payment system for member dues and other ad-hoc payments (ex: club shirts), backed by Square
+- Discord role management based on membership status
+- Discord bot as an alternative interface for some of the above features
 
 ## dev setup 
 needs to be fleshed out, the deployment section will probably be helpful
@@ -7,7 +15,6 @@ first, install deps and create virtualenv: `pipenv install`
 obtain the config.ini from Jason or Mason for Square, place at root of project
 
 ## deployment
-im adding this temporarily to test the github action and make sure it works!
 
 ### first time setup
 you'll need to install python 3.11 (preferably via [pyenv](http://github.com/pyenv/pyenv?tab=readme-ov-file)), [pipenv](https://pipenv.pypa.io/en/latest/#install-pipenv-today), [nodejs](https://nodejs.org/en) (preferably via [nvm](http://github.com/nvm-sh/nvm?tab=readme-ov-file)), nginx, and postgresql before continuing. this assumes you are deploying on some debian-based system.
