@@ -14,7 +14,7 @@ class ContactInfoForm(forms.Form):
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['gender',  'date_of_birth', 'race', 'is_hispanic','diet', 'shirt' ]
+        fields = ['gender',  'date_of_birth', 'race', 'is_hispanic','diet', 'shirt', 'major']
         labels = {
             "is_hispanic": "Are you Hispanic or Latino?",
             "race": "Select all races that you identify with",
@@ -22,8 +22,13 @@ class UserProfileForm(forms.ModelForm):
             "shirt": "Shirt Size"
         }
         widgets = {
-            'date_of_birth': forms.DateInput(format=('%m/%d/%Y'), attrs={'class':'form-control', 'placeholder':'Select a date', 'type':'date'}),
+            'date_of_birth': forms.DateInput(format=('%Y-%m-%d'), attrs={'class':'form-control',  'type':'date'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super(UserProfileForm, self).__init__(*args, **kwargs)
+        if self.instance and self.instance.date_of_birth:
+            self.fields['date_of_birth'].initial = self.instance.date_of_birth.strftime('%Y-%m-%d')
         
 class UserForm(forms.ModelForm):
     class Meta:

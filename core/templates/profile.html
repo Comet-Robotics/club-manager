@@ -165,11 +165,15 @@
                     <div class="accounts-grid">
                         <div class="account-card">
                             <div class="card-header">
-                                <h3>Contact Information</h3>
+                                <h3> Information</h3>
                                 <p class="card-description"></p>
                             </div>
                             <div class="card-content">
-                                {{ userForm}}
+                                <form method="POST">
+                                    {% csrf_token %}
+                                    {{ user_form }}
+                                    <button type="submit" class="button button-primary" name="user">Save</button>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -184,7 +188,11 @@
                                 <p class="card-description">The following data is all optional. This data will not be shared.</p>
                             </div>
                             <div class="card-content">
-                                {{ form }}
+                                <form method="POST">
+                                    {% csrf_token %}
+                                    {{ profile_form }}
+                                    <button type="submit" class="button button-primary" name="profile">Save</button>
+                                </form>
                             </div>
                         </div>
                     </div>
