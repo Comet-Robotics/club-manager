@@ -5,12 +5,8 @@ from django.views.decorators.http import require_GET
 from django.conf import settings
 from events.models import Attendance
 from django.views.generic import ListView
-from django.http import HttpResponseRedirect
-
-
-from .forms import UserProfileForm, UserForm
+from .forms import UserProfileForm, UserForm, ServerSettingsForm
 from core.models import ServerSettings
-from core.forms import ServerSettingsForm
 from projects.models import Project
 from projects.models import Team
 from django.contrib.auth.decorators import login_required
