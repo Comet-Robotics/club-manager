@@ -49,6 +49,22 @@ def get_layout_data(request: HttpRequest) -> LayoutData:
 def profile_view(request):
     user = request.user
     
+    
+    
+    layout_data = get_layout_data(request)
+    teams = Team.get_teams_associated_with_user(request.user)
+    terms = [term for term, purchased_product in request.user.userprofile.get_membership_terms()]
+    formatted_terms = [initials(term.name) for term in terms]
+
+    return render(request, 'profile.html', {**layout_data, "teams": teams, "terms": formatted_terms})
+
+@login_required
+def account_view(request):
+    # NOTE: temporarily restricting page access in production until the corresponding page is implemented
+    if not settings.DEBUG:
+        return HttpResponse("This page is under construction - only available in DEBUG mode.")
+    
+    user = request.user
     user_form = UserForm(instance=user)
     profile_form = UserProfileForm(instance=user.userprofile)
     
@@ -63,19 +79,7 @@ def profile_view(request):
                 profile_form.save()
     
     layout_data = get_layout_data(request)
-    teams = Team.get_teams_associated_with_user(request.user)
-    terms = [term for term, purchased_product in request.user.userprofile.get_membership_terms()]
-    formatted_terms = [initials(term.name) for term in terms]
-
-    return render(request, 'profile.html', {**layout_data, "teams": teams, "terms": formatted_terms, "profile_form": profile_form, "user_form": user_form})
-
-@login_required
-def account_view(request):
-    # NOTE: temporarily restricting page access in production until the corresponding page is implemented
-    if not settings.DEBUG:
-        return HttpResponse("This page is under construction - only available in DEBUG mode.")
-    layout_data = get_layout_data(request)
-    return render(request, 'account.html', {**layout_data})
+    return render(request, 'account.html', {**layout_data, "profile_form": profile_form, "user_form": user_form})
 
 @user_passes_test(lambda u:u.is_superuser)
 def server_settings_view(request):
