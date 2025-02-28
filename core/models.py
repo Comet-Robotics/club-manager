@@ -64,7 +64,6 @@ class UserProfile(models.Model):
     race = MultiSelectField(choices=RACE_CHOICES, blank=True, null=True)
     diet = MultiSelectField(choices=DIETARY_CHOICES, blank=True, null=True)
     shirt = models.CharField(max_length=4, choices=ShirtSize.choices, null=True, blank=True)
-    is_lgbt = models.BooleanField(null=True, blank=True, default=None)
     is_hispanic = models.BooleanField(null=True, blank=True, default=None)
     discord_id = models.CharField(max_length=200, null=True, blank=True, unique=True)
     major = models.CharField(choices=list(get_majors().items())+[("unknown", "Unknown")], null=True, blank=True, default=None)  # NULL indicates major needs to be fetched
