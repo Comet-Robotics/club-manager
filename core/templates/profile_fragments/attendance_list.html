@@ -10,7 +10,9 @@
             <span class="attendance-time">{{item.event.event_date|date:"F jS Y, g:iA"}}</span>
         </div>
       {% empty %}
+      <div class="attendance-item">
           <p>No attendances yet.</p>
+      </div>
       {% endfor %}
     </div>
     <div class="card-footer">
@@ -19,7 +21,7 @@
             {% if not page_obj.has_previous %}
               disabled
             {% else %}
-              data-page={{ page_obj.previous_page_number }}
+              data-page="{{ page_obj.previous_page_number }}"
             {% endif %}
           >
             Previous
@@ -33,7 +35,7 @@
             {% if not page_obj.has_next %}
               disabled
             {% else %}
-              data-page={{ page_obj.next_page_number }}
+              data-page="{{ page_obj.next_page_number }}"
             {% endif %}
           >
             Next

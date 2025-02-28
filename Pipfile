@@ -29,5 +29,6 @@ boto3 = "*"
 async-timeout = "*"
 django-multiselectfield = "*"
 django-phonenumber-field = {extras = ["phonenumbers"], version = "*"}
+django-colorfield = "*"
 
 [dev-packages]
