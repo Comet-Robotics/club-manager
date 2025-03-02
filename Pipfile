@@ -29,6 +29,10 @@ boto3 = "*"
 async-timeout = "*"
 django-multiselectfield = "*"
 django-colorfield = "*"
+
+[dev-packages]
+types-beautifulsoup4 = "*"
+types-requests = "*"
 django-types = "*"
 django-stubs-ext = "*"
 ruff = "*"
@@ -37,5 +41,3 @@ pylint-django = "*"
 pylint-per-file-ignores = "*"
 mypy = "*"
 django-stubs = "*"
-
-[dev-packages]
