@@ -14,11 +14,12 @@ def get_country_info(dial_code):
     return "Unknown Country"
 
 while True:
-    MainPhone = input("Enter: ").strip()
-    if not MainPhone:
+    phone = input("Enter: ").strip()
+    if not phone:
         break
-    if len(MainPhone) > 10:
-        phone = "+" + MainPhone
+    if (len(phone) > 10) and not(phone.startswith("+")):
+        print("Invalid phone number, please include country code with '+'")
+        continue
 
     try:
         if phone.startswith("+"):
