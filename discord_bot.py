@@ -547,7 +547,7 @@ async def givememberroles(ctx: discord.ApplicationContext):
     if not guild:
         await ctx.respond("Could not find the Discord server! Please try again later.", ephemeral=True)
         return
-        
+
     member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
     if not member_role:
         await ctx.respond("Could not find the member role! Please try again later.", ephemeral=True)
@@ -560,16 +560,16 @@ async def givememberroles(ctx: discord.ApplicationContext):
     for discord_id in ids_to_add:
         member = guild.get_member(discord_id)
         if not member:
-          failed_discord_ids.append(discord_id)
-          continue
+            failed_discord_ids.append(discord_id)
+            continue
         await member.add_roles(member_role)
 
     if isinstance(message, discord.Interaction):
-      await message.edit_original_response(
-          content=f"Member role addition success! Added member role to {len(ids_to_add)} users."
-      )
+        await message.edit_original_response(
+            content=f"Member role addition success! Added member role to {len(ids_to_add)} users."
+        )
     else:
-      await ctx.respond(f"Member role addition success! Added member role to {len(ids_to_add)} users.")
+        await ctx.respond(f"Member role addition success! Added member role to {len(ids_to_add)} users.")
 
 
 @bot.slash_command(description="Purge member roles from non-paying members")
@@ -594,11 +594,11 @@ async def purgememberroles(ctx: discord.ApplicationContext):
             await discord_member.remove_roles(member_role)
 
     if isinstance(message, discord.Interaction):
-      await message.edit_original_response(
-          content=f"Member role purge success! Removed member role for {removed_count} users."
-      )
+        await message.edit_original_response(
+            content=f"Member role purge success! Removed member role for {removed_count} users."
+        )
     else:
-      await ctx.respond(f"Member role purge success! Removed member role for {removed_count} users.")
+        await ctx.respond(f"Member role purge success! Removed member role for {removed_count} users.")
 
 
 class ListView(discord.ui.View):
@@ -629,18 +629,18 @@ async def camera(ctx: discord.ApplicationContext):
 
     valid_members = await get_current_member_discord_ids()
     if ctx.author.id not in valid_members:
-      if isinstance(message, discord.Interaction):
-        await message.edit_original_response(content="You are not registered as a member of Comet Robotics!")
-      else:
-        await ctx.respond("You are not registered as a member of Comet Robotics!")
+        if isinstance(message, discord.Interaction):
+            await message.edit_original_response(content="You are not registered as a member of Comet Robotics!")
+        else:
+            await ctx.respond("You are not registered as a member of Comet Robotics!")
     else:
         # url = "http://eric1:8080/stream" # TODO: probably /snapshot instead of /stream
         url = "http://eric2.lab.cometrobotics.org:8001/snapshot"
         img = discord.File(io.BytesIO(requests.get(url).content), "stream.jpg")
         if isinstance(message, discord.Interaction):
-          await message.edit_original_response(content="", file=img)
+            await message.edit_original_response(content="", file=img)
         else:
-          await ctx.respond("", file=img)
+            await ctx.respond("", file=img)
 
 
 bot.run(settings.DISCORD_TOKEN)
