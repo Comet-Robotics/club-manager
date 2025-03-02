@@ -29,5 +29,13 @@ boto3 = "*"
 async-timeout = "*"
 django-multiselectfield = "*"
 django-colorfield = "*"
+django-types = "*"
+django-stubs-ext = "*"
+ruff = "*"
+pylint = "*"
+pylint-django = "*"
+pylint-per-file-ignores = "*"
+mypy = "*"
+django-stubs = "*"
 
 [dev-packages]
