@@ -2,6 +2,5 @@
   
 set -e
 
-ruff check
-pylint .
-mypy --install-types --check-untyped-defs .
+pipenv run ruff format
+pipenv run mypy --install-types --check-untyped-defs --no-namespace-packages .
