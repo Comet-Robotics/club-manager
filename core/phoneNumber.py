@@ -1,4 +1,5 @@
 import json
+import re
 import phonenumbers
 from phonenumbers import geocoder as ge
 
@@ -17,7 +18,7 @@ while True:
     phone = input("Enter: ").strip()
     if not phone:
         break
-    if (len(phone) > 10) and not(phone.startswith("+")):
+    if (len(phone) > 10) and not(phone.startswith("+") and not ((re.search("-", phone)))):
         print("Invalid phone number, please include country code with '+'")
         continue
 
