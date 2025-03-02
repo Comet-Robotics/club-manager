@@ -22,13 +22,9 @@ class Event(models.Model):
 
 
 class Attendance(models.Model):
-    event = models.ForeignKey(
-        Event, on_delete=models.CASCADE, related_name="attendances"
-    )
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="attendances")
     timestamp = models.DateTimeField(default=timezone.now)
-    user = models.ForeignKey(
-        User, on_delete=models.SET_NULL, blank=True, null=True
-    )
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self):
         return str(self.event) + " - " + str(self.timestamp)
@@ -39,9 +35,7 @@ class CombatEvent(models.Model):
     A CombatEvent is an object representing a combat event. This is used to track robot payments and competitor waivers for each event.
     """
 
-    event = models.OneToOneField(
-        Event, on_delete=models.CASCADE, related_name="combat_event"
-    )
+    event = models.OneToOneField(Event, on_delete=models.CASCADE, related_name="combat_event")
 
     # Documenso is an open source DocuSign clone that we use to store the waivers for minors and adults. It sends an email with a link to the document that they can e-sign (or we can optionally embed that same flow into our project via a React component).
     # If a user's DOB indicates they are under 18, they will receive the minor waiver to sign, which also requires their parent to sign before Documenso will mark it as complete. most of what we found on COPPA said that we should be fine storing minor data as long as we have parental permission which this can cover
@@ -61,9 +55,7 @@ class Waiver(models.Model):
     A Waiver is an object representing a waiver that can be signed by a user.
     """
 
-    combat_event = models.ForeignKey(
-        CombatEvent, on_delete=models.CASCADE, related_name="waivers"
-    )
+    combat_event = models.ForeignKey(CombatEvent, on_delete=models.CASCADE, related_name="waivers")
     name = models.CharField(max_length=200)
     internal_description = models.CharField(max_length=200)
     alternate_for_waiver_id = models.ForeignKey(
@@ -95,9 +87,7 @@ class WaiverStatus(ComputedFieldsModel):
     """
 
     waiver = models.ForeignKey(Waiver, on_delete=models.CASCADE)
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="waiver_statuses"
-    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="waiver_statuses")
     timestamp = models.DateTimeField(default=timezone.now)
 
     internal_notes = models.TextField(null=True, blank=True)
@@ -118,16 +108,10 @@ class WaiverStatus(ComputedFieldsModel):
 
     @computed(
         models.BooleanField(),
-        depends=[
-            ("self", ["signed_file", "documenso_id", "signature_verified_by"])
-        ],
+        depends=[("self", ["signed_file", "documenso_id", "signature_verified_by"])],
     )
     def is_signed(self):
-        return (
-            self.signed_file is not None
-            or self.documenso_id is not None
-            or self.signature_verified_by is not None
-        )
+        return self.signed_file is not None or self.documenso_id is not None or self.signature_verified_by is not None
 
     def __str__(self):
         return str(self.waiver) + " - " + str(self.user)
@@ -162,9 +146,7 @@ class CombatRobot(models.Model):
 
     robot_combat_events_robot_id = models.CharField()
     combat_team = models.ForeignKey(CombatTeam, on_delete=models.CASCADE)
-    purchased_products = models.ManyToManyField(
-        PurchasedProduct, related_name="combat_robots", blank=True
-    )
+    purchased_products = models.ManyToManyField(PurchasedProduct, related_name="combat_robots", blank=True)
     combat_events = models.ManyToManyField(
         CombatEvent,
         related_name="combat_robots",
@@ -230,23 +212,13 @@ class UserIdentification(models.Model):
         UserIdentification.objects.create(user=user, student_id=student_id)
 
     def create_basic_user(net_id, first, last):
-        return User.objects.create(
-            username=net_id, first_name=first, last_name=last
-        )
+        return User.objects.create(username=net_id, first_name=first, last_name=last)
 
     def link_user(user_id, student_id):
-        UserIdentification.objects.create(
-            user=User.objects.get(pk=user_id), student_id=student_id
-        )
+        UserIdentification.objects.create(user=User.objects.get(pk=user_id), student_id=student_id)
 
     def __str__(self):
-        return (
-            self.user.first_name
-            + "_"
-            + self.user.last_name
-            + "_"
-            + self.student_id
-        )
+        return self.user.first_name + "_" + self.user.last_name + "_" + self.student_id
 
 
 class Reservation(models.Model):
@@ -256,9 +228,7 @@ class Reservation(models.Model):
 
     def rsvpBeforeEvent(event, user):
         print("im called")
-        reservation = Reservation.objects.filter(
-            event=event, user=user
-        ).first()
+        reservation = Reservation.objects.filter(event=event, user=user).first()
         if reservation.timestamp < event.event_date:
             return True
         else:

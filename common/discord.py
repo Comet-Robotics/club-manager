@@ -28,9 +28,7 @@ async def get_client():
     return client
 
 
-async def add_member_role(
-    dcord: discord.Client | discord.Bot, member_id: int | str
-):
+async def add_member_role(dcord: discord.Client | discord.Bot, member_id: int | str):
     guild = dcord.get_guild(settings.DISCORD_SERVER_ID)
     member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
     member = guild.get_member(int(member_id))

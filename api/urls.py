@@ -12,12 +12,8 @@ router = routers.DefaultRouter()
 router.register(r"users", views.UserViewSet, basename="user")
 router.register(r"products", views.ProductViewSet, basename="product")
 router.register(r"combatteams", views.CombatTeamViewSet, basename="combatteam")
-router.register(
-    r"combatrobots", views.CombatRobotViewSet, basename="combatrobot"
-)
-router.register(
-    r"combatevents", views.CombatEventViewSet, basename="combatevent"
-)
+router.register(r"combatrobots", views.CombatRobotViewSet, basename="combatrobot")
+router.register(r"combatevents", views.CombatEventViewSet, basename="combatevent")
 router.register(r"events", views.EventViewSet, basename="event")
 router.register(r"waivers", views.WaiverViewSet, basename="waiver")
 
@@ -25,9 +21,7 @@ router.register(r"waivers", views.WaiverViewSet, basename="waiver")
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
     path("", include(router.urls)),
-    path(
-        "api-auth/", include("rest_framework.urls", namespace="rest_framework")
-    ),
+    path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
     path("csrf/", views.get_csrf, name="api-csrf"),
     path("auth/login/", views.LoginView.as_view(), name="api-login"),
     path("auth/logout/", views.LogoutView.as_view(), name="api-logout"),

@@ -26,10 +26,7 @@ def get_majors() -> dict[str, str]:
     else:
         print("WARNING: Failed to fetch majors.")
         return dict()
-    options = {
-        option["value"]: option.string
-        for option in dirMajor.find_all("option")
-    }
+    options = {option["value"]: option.string for option in dirMajor.find_all("option")}
     del options["All"]
     return options
 
@@ -54,12 +51,6 @@ def get_major_from_netid(netid: str) -> str | None:
     for p in soup.find_all("p"):
         if p.contents[0].string == "Major":
             major = p.contents[1].string.replace(": ", "")
-            matching_short_codes = [
-                o[0] for o in get_majors().items() if o[1] == major
-            ]
-            return (
-                matching_short_codes[0]
-                if len(matching_short_codes) > 0
-                else None
-            )
+            matching_short_codes = [o[0] for o in get_majors().items() if o[1] == major]
+            return matching_short_codes[0] if len(matching_short_codes) > 0 else None
     return None

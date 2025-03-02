@@ -5,9 +5,7 @@ from .models import UserIdentification, Reservation, Event
 
 
 class UserTable(tables.Table):
-    student_id = tables.Column(
-        accessor="useridentification.student_id", verbose_name="Student ID"
-    )
+    student_id = tables.Column(accessor="useridentification.student_id", verbose_name="Student ID")
     reservation_time = tables.BooleanColumn()
 
     def __init__(self, *args, event_id=None, **kwargs):
@@ -15,9 +13,7 @@ class UserTable(tables.Table):
         self.event_id = event_id
 
     def render_reservation_time(self, record):
-        reservation = Reservation.objects.filter(
-            user=record, event=self.event_id
-        ).first()
+        reservation = Reservation.objects.filter(user=record, event=self.event_id).first()
         event = Event.objects.get(pk=self.event_id)
         if reservation and reservation.timestamp < event.event_date:
             return "✅"
@@ -36,9 +32,7 @@ class UserTable(tables.Table):
 
 
 class LinkUserTable(tables.Table):
-    student_id = tables.Column(
-        accessor="useridentification.student_id", verbose_name="Student ID"
-    )
+    student_id = tables.Column(accessor="useridentification.student_id", verbose_name="Student ID")
     reservation_time = tables.BooleanColumn()
 
     def __init__(self, *args, event_id=None, student_id=None, **kwargs):
@@ -47,9 +41,7 @@ class LinkUserTable(tables.Table):
         self.event_id = event_id
 
     def render_reservation_time(self, record):
-        reservation = Reservation.objects.filter(
-            user=record, event=self.event_id
-        ).first()
+        reservation = Reservation.objects.filter(user=record, event=self.event_id).first()
         event = Event.objects.get(pk=self.event_id)
         if reservation and reservation.timestamp < event.event_date:
             return "✅"

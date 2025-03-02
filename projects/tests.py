@@ -8,9 +8,7 @@ from django.contrib.auth.models import User
 class TeamManagementTest(TestCase):
     def setUp(self):
         create_test_data()
-        self.srp_project = Project.objects.get(
-            name="Seeded:Solis Rover Project"
-        )
+        self.srp_project = Project.objects.get(name="Seeded:Solis Rover Project")
         self.mech_team = Team.objects.get(name="Seeded:Mechanical")
         self.arm_team = Team.objects.get(name="Seeded:Arm")
         self.wheel_team = Team.objects.get(name="Seeded:Wheel Design")
@@ -26,62 +24,36 @@ class TeamManagementTest(TestCase):
         """Project managers should be able to manage any team in their project"""
         self.assertTrue(Team.user_can_manage_team(self.srp_pm, self.mech_team))
         self.assertTrue(Team.user_can_manage_team(self.srp_pm, self.arm_team))
-        self.assertTrue(
-            Team.user_can_manage_team(self.srp_pm, self.wheel_team)
-        )
+        self.assertTrue(Team.user_can_manage_team(self.srp_pm, self.wheel_team))
 
     def test_officer_can_manage_any_team(self):
         """Officers (superusers) should be able to manage any team"""
-        self.assertTrue(
-            Team.user_can_manage_team(self.officer, self.mech_team)
-        )
+        self.assertTrue(Team.user_can_manage_team(self.officer, self.mech_team))
         self.assertTrue(Team.user_can_manage_team(self.officer, self.arm_team))
-        self.assertTrue(
-            Team.user_can_manage_team(self.officer, self.wheel_team)
-        )
+        self.assertTrue(Team.user_can_manage_team(self.officer, self.wheel_team))
 
     def test_team_lead_can_manage_own_team(self):
         """Team leads should be able to manage their own team"""
-        self.assertTrue(
-            Team.user_can_manage_team(self.mech_lead, self.mech_team)
-        )
-        self.assertTrue(
-            Team.user_can_manage_team(self.arm_lead, self.arm_team)
-        )
-        self.assertTrue(
-            Team.user_can_manage_team(self.wheel_lead, self.wheel_team)
-        )
+        self.assertTrue(Team.user_can_manage_team(self.mech_lead, self.mech_team))
+        self.assertTrue(Team.user_can_manage_team(self.arm_lead, self.arm_team))
+        self.assertTrue(Team.user_can_manage_team(self.wheel_lead, self.wheel_team))
 
     def test_team_lead_can_manage_child_teams(self):
         """Team leads should be able to manage teams under their team"""
-        self.assertTrue(
-            Team.user_can_manage_team(self.mech_lead, self.arm_team)
-        )
-        self.assertTrue(
-            Team.user_can_manage_team(self.mech_lead, self.wheel_team)
-        )
+        self.assertTrue(Team.user_can_manage_team(self.mech_lead, self.arm_team))
+        self.assertTrue(Team.user_can_manage_team(self.mech_lead, self.wheel_team))
 
     def test_team_lead_cannot_manage_other_teams(self):
         """Team leads should not be able to manage teams they don't lead or aren't under their team"""
         # Arm lead shouldn't be able to manage mechanical team (parent) or wheel team (different branch)
-        self.assertFalse(
-            Team.user_can_manage_team(self.arm_lead, self.mech_team)
-        )
-        self.assertFalse(
-            Team.user_can_manage_team(self.arm_lead, self.wheel_team)
-        )
+        self.assertFalse(Team.user_can_manage_team(self.arm_lead, self.mech_team))
+        self.assertFalse(Team.user_can_manage_team(self.arm_lead, self.wheel_team))
 
     def test_regular_member_cannot_manage_teams(self):
         """Regular team members should not be able to manage any teams"""
-        self.assertFalse(
-            Team.user_can_manage_team(self.wheel_member, self.wheel_team)
-        )
-        self.assertFalse(
-            Team.user_can_manage_team(self.wheel_member, self.arm_team)
-        )
-        self.assertFalse(
-            Team.user_can_manage_team(self.wheel_member, self.mech_team)
-        )
+        self.assertFalse(Team.user_can_manage_team(self.wheel_member, self.wheel_team))
+        self.assertFalse(Team.user_can_manage_team(self.wheel_member, self.arm_team))
+        self.assertFalse(Team.user_can_manage_team(self.wheel_member, self.mech_team))
 
 
 class ProjectTest(TestCase):
@@ -132,29 +104,15 @@ class ProjectTest(TestCase):
         self.assertEqual(self.chessbot_proj.direct_teams().count(), 1)
 
     def test_officers_can_manage_project(self):
-        self.assertTrue(
-            Project.user_can_manage_project(self.officer, self.srp_proj)
-        )
+        self.assertTrue(Project.user_can_manage_project(self.officer, self.srp_proj))
 
-        self.assertFalse(
-            Project.user_can_manage_project(self.not_officer, self.srp_proj)
-        )
+        self.assertFalse(Project.user_can_manage_project(self.not_officer, self.srp_proj))
 
     def test_project_managers_can_manage_project(self):
-        self.assertTrue(
-            Project.user_can_manage_project(self.srp_pm, self.srp_proj)
-        )
+        self.assertTrue(Project.user_can_manage_project(self.srp_pm, self.srp_proj))
 
-        self.assertFalse(
-            Project.user_can_manage_project(self.srp_mech_lead, self.srp_proj)
-        )
+        self.assertFalse(Project.user_can_manage_project(self.srp_mech_lead, self.srp_proj))
 
-        self.assertFalse(
-            Project.user_can_manage_project(self.chessbot_pm, self.srp_proj)
-        )
+        self.assertFalse(Project.user_can_manage_project(self.chessbot_pm, self.srp_proj))
 
-        self.assertFalse(
-            Project.user_can_manage_project(
-                self.chessbot_team_lead, self.srp_proj
-            )
-        )
+        self.assertFalse(Project.user_can_manage_project(self.chessbot_team_lead, self.srp_proj))

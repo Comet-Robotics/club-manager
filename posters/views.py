@@ -85,8 +85,6 @@ class PosterListView(ListView):
 
     def get_queryset(self) -> QuerySet[Any]:
         queryset = super().get_queryset()
-        return queryset.annotate(visits_count=Count("visits")).order_by(
-            "-visits_count"
-        )
+        return queryset.annotate(visits_count=Count("visits")).order_by("-visits_count")
 
     # ordering = ['-visits_count']

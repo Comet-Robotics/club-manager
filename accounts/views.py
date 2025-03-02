@@ -79,14 +79,8 @@ def get_discord_user(user_id: int, bot_token: str) -> DiscordUser | None:
     if "avatar" in user_data:
         profile_image = f"https://cdn.discordapp.com/avatars/{discord_id}/{user_data['avatar']}.png"
     else:
-        discord_profile_image_index = (
-            ((discord_id >> 22) % 6)
-            if discriminator == 0
-            else discriminator % 5
-        )
-        profile_image = (
-            f"https://cdn.discordapp.com/embed/avatars/{discord_id}.png"
-        )
+        discord_profile_image_index = ((discord_id >> 22) % 6) if discriminator == 0 else discriminator % 5
+        profile_image = f"https://cdn.discordapp.com/embed/avatars/{discord_id}.png"
 
     return {
         "username": user_data["username"],

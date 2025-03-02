@@ -26,9 +26,7 @@ def get_profile(**kwargs):
         return None
 
 
-get_profile_async = sync_to_async(
-    get_profile
-)
+get_profile_async = sync_to_async(get_profile)
 
 
 def get_or_create_profile(**kwargs):
@@ -41,6 +39,4 @@ def get_or_create_profile(**kwargs):
         return None
 
 
-get_or_create_profile_async = (
-    sync_to_async(get_or_create_profile)
-)
+get_or_create_profile_async = sync_to_async(get_or_create_profile)

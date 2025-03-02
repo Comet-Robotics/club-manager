@@ -30,9 +30,7 @@ class UserProfileForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(UserProfileForm, self).__init__(*args, **kwargs)
         if self.instance and self.instance.date_of_birth:
-            self.fields[
-                "date_of_birth"
-            ].initial = self.instance.date_of_birth.strftime("%Y-%m-%d")
+            self.fields["date_of_birth"].initial = self.instance.date_of_birth.strftime("%Y-%m-%d")
 
 
 class UserForm(forms.ModelForm):

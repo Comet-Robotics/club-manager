@@ -62,21 +62,13 @@ class UserProfile(models.Model):
         ("G", _("Gluten Free")),
     )
 
-    user = models.OneToOneField(
-        User, on_delete=models.CASCADE, primary_key=True
-    )
-    gender = models.CharField(
-        max_length=1, choices=GenderChoice.choices, null=True, blank=True
-    )
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    gender = models.CharField(max_length=1, choices=GenderChoice.choices, null=True, blank=True)
     race = MultiSelectField(choices=RACE_CHOICES, blank=True, null=True)
     diet = MultiSelectField(choices=DIETARY_CHOICES, blank=True, null=True)
-    shirt = models.CharField(
-        max_length=4, choices=ShirtSize.choices, null=True, blank=True
-    )
+    shirt = models.CharField(max_length=4, choices=ShirtSize.choices, null=True, blank=True)
     is_hispanic = models.BooleanField(null=True, blank=True, default=None)
-    discord_id = models.CharField(
-        max_length=200, null=True, blank=True, unique=True
-    )
+    discord_id = models.CharField(max_length=200, null=True, blank=True, unique=True)
     major = models.CharField(
         choices=list(get_majors().items()) + [("unknown", "Unknown")],
         null=True,
@@ -90,9 +82,7 @@ class UserProfile(models.Model):
 
     def is_minor(self):
         assert self.date_of_birth is not None
-        return self.date_of_birth < timezone.now().date() - timedelta(
-            weeks=52 * 18
-        )
+        return self.date_of_birth < timezone.now().date() - timedelta(weeks=52 * 18)
 
     def __str__(self):
         return self.user.first_name + "_" + self.user.last_name
@@ -112,13 +102,9 @@ class UserProfile(models.Model):
             .order_by("-product__term__start_date")
         )
 
-        return [
-            (product.product.term, product) for product in purchased_products
-        ]
+        return [(product.product.term, product) for product in purchased_products]
 
-    def is_member(
-        self, for_term: Term | None = None
-    ) -> tuple[Term, PurchasedProduct | None]:
+    def is_member(self, for_term: Term | None = None) -> tuple[Term, PurchasedProduct | None]:
         """
         Returns a tuple with the Term and PurchasedProduct object for the current member if the user is a member for the given term, or a tuple with the given Term and None if they are not a member.
         """
@@ -162,7 +148,5 @@ def update_profile_signal(sender, instance, created, **kwargs):
     if not instance.is_utd_affiliate:
         return
     if created or instance.major is None:
-        instance.major = (
-            get_major_from_netid(instance.user.username) or "unknown"
-        )
+        instance.major = get_major_from_netid(instance.user.username) or "unknown"
         instance.save()

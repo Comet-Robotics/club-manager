@@ -17,19 +17,13 @@ def sign_in(request, event_id):
         if form.is_valid():
             student_id = form.cleaned_data["card_data"]
             try:
-                user_profile = UserIdentification.objects.get(
-                    student_id=student_id
-                )
+                user_profile = UserIdentification.objects.get(student_id=student_id)
                 if user_profile:
                     user = User.objects.get(username=user_profile.user)
-                    valid_payment = UserProfile.objects.get(
-                        user=user
-                    ).is_member()[1]
+                    valid_payment = UserProfile.objects.get(user=user).is_member()[1]
                     print(valid_payment)
                     form = SignInForm()
-                    status, created = Attendance.objects.get_or_create(
-                        event=current_event, user=user_profile.user
-                    )
+                    status, created = Attendance.objects.get_or_create(event=current_event, user=user_profile.user)
                     if created:
                         message = "success"
                         if not valid_payment:
@@ -39,9 +33,7 @@ def sign_in(request, event_id):
                         if not valid_payment:
                             message = "nomember"
             except UserIdentification.DoesNotExist:
-                return redirect(
-                    "lookup-user", event_id=event_id, student_id=student_id
-                )
+                return redirect("lookup-user", event_id=event_id, student_id=student_id)
 
             return render(
                 request,
@@ -70,9 +62,7 @@ def sign_in(request, event_id):
 def pass_sign_in(request, event_id, user_id):
     current_event = Event.objects.get(pk=event_id)
     user = User.objects.get(pk=user_id)
-    status, created = Attendance.objects.get_or_create(
-        event=current_event, user=user
-    )
+    status, created = Attendance.objects.get_or_create(event=current_event, user=user)
     if created:
         print("success")
         message = "success"
@@ -87,9 +77,7 @@ def pass_link(request, event_id, user_id, student_id):
     current_event = Event.objects.get(pk=event_id)
     user_profile = UserIdentification.link_user(user_id, student_id)
     user = User.objects.get(pk=user_id)
-    status, created = Attendance.objects.get_or_create(
-        event=current_event, user=user
-    )
+    status, created = Attendance.objects.get_or_create(event=current_event, user=user)
     print(user_profile)
     if created:
         print("success")
@@ -108,9 +96,7 @@ def create_profile(request, student_id):
             net_id = form.cleaned_data["net_id"]
             first = form.cleaned_data["first_name"]
             last = form.cleaned_data["last_name"]
-            UserIdentification.create_extended_user(
-                net_id=net_id, student_id=student_id, first=first, last=last
-            )
+            UserIdentification.create_extended_user(net_id=net_id, student_id=student_id, first=first, last=last)
             return redirect("sign_in")
     else:
         form = CreateProfileForm()
@@ -160,9 +146,7 @@ def rsvp(request, event_id):
             net_id = form.cleaned_data["net_id"]
             user = User.objects.filter(username=net_id).first()
             if not user:
-                user = User.objects.create(
-                    username=net_id, first_name=first, last_name=last
-                )
+                user = User.objects.create(username=net_id, first_name=first, last_name=last)
             if not Reservation.objects.filter(user=user, event=event).exists():
                 reserved = Reservation.objects.create(event=event, user=user)
             return redirect(event.url)
@@ -175,6 +159,4 @@ def rsvp(request, event_id):
 def report(request, event_id):
     event = Event.objects.get(pk=event_id)
     attendance = Attendance.objects.filter(event=event)
-    return render(
-        request, "report.html", {"event": event, "attendances": attendance}
-    )
+    return render(request, "report.html", {"event": event, "attendances": attendance})

@@ -33,9 +33,7 @@ class RCEEvent:
 
 
 def get_robot_combat_event(rce_event_id: str) -> RCEEvent:
-    r = requests.get(
-        f"https://www.robotcombatevents.com/events/{rce_event_id}"
-    )
+    r = requests.get(f"https://www.robotcombatevents.com/events/{rce_event_id}")
     soup = bs4.BeautifulSoup(r.text, "html.parser")
 
     # Get event title
@@ -77,9 +75,7 @@ def get_robot_combat_event(rce_event_id: str) -> RCEEvent:
         r = requests.get(url)
         thing = bs4.BeautifulSoup(r.text, "html.parser")
 
-        registration_panel_div = thing.find(
-            "div", class_="registrations-panel"
-        )
+        registration_panel_div = thing.find("div", class_="registrations-panel")
         assert registration_panel_div is not None
 
         registration_panel_table_rows = registration_panel_div.find_all("tr")

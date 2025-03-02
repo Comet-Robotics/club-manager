@@ -45,9 +45,7 @@ def get_layout_data(request: HttpRequest) -> LayoutData:
         raise Exception("User must be an instance of User or AnonymousUser")
     # NOTE: temporarily hiding these sidebar links in production until the corresponding pages are implemented
     accessible_projects = (
-        Project.get_projects_user_can_manage(user)
-        if user and isinstance(user, User) and settings.DEBUG
-        else []
+        Project.get_projects_user_can_manage(user) if user and isinstance(user, User) and settings.DEBUG else []
     )
     return LayoutData(
         user=user,
@@ -62,10 +60,7 @@ def profile_view(request):
 
     layout_data = get_layout_data(request)
     teams = Team.get_teams_associated_with_user(request.user)
-    terms = [
-        term
-        for term, purchased_product in request.user.userprofile.get_membership_terms()
-    ]
+    terms = [term for term, purchased_product in request.user.userprofile.get_membership_terms()]
     formatted_terms = [initials(term.name) for term in terms]
 
     return render(
@@ -79,9 +74,7 @@ def profile_view(request):
 def account_view(request):
     # NOTE: temporarily restricting page access in production until the corresponding page is implemented
     if not settings.DEBUG:
-        return HttpResponse(
-            "This page is under construction - only available in DEBUG mode."
-        )
+        return HttpResponse("This page is under construction - only available in DEBUG mode.")
 
     user = request.user
     user_form = UserForm(instance=user)
@@ -93,9 +86,7 @@ def account_view(request):
             if user_form.is_valid():
                 user_form.save()
         if "profile" in request.POST:
-            profile_form = UserProfileForm(
-                request.POST, instance=user.userprofile
-            )
+            profile_form = UserProfileForm(request.POST, instance=user.userprofile)
             if profile_form.is_valid():
                 profile_form.save()
 
@@ -111,16 +102,12 @@ def account_view(request):
 def server_settings_view(request):
     layout_data = get_layout_data(request)
     if request.method == "POST":
-        form = ServerSettingsForm(
-            request.POST, instance=layout_data["settings"]
-        )
+        form = ServerSettingsForm(request.POST, instance=layout_data["settings"])
         if form.is_valid():
             form.save()
     else:
         form = ServerSettingsForm(instance=layout_data["settings"])
-    return render(
-        request, "server_settings.html", {**layout_data, "form": form}
-    )
+    return render(request, "server_settings.html", {**layout_data, "form": form})
 
 
 class AttendanceListView(ListView):
@@ -130,9 +117,7 @@ class AttendanceListView(ListView):
     context_object_name = "attendances"
 
     def get_queryset(self):
-        return Attendance.objects.order_by("-timestamp").filter(
-            user=self.request.user
-        )
+        return Attendance.objects.order_by("-timestamp").filter(user=self.request.user)
 
 
 def spa_view(request):
@@ -141,9 +126,7 @@ def spa_view(request):
 
 @require_GET
 def apple_merchant_id(request):
-    return HttpResponse(
-        settings.SQUARE_APPLE_MERCHANT_ID, content_type="text/plain"
-    )
+    return HttpResponse(settings.SQUARE_APPLE_MERCHANT_ID, content_type="text/plain")
 
 
 def index(request):

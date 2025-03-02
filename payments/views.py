@@ -18,9 +18,7 @@ from pathlib import Path
 
 config_path = Path("config.ini")
 if not config_path.exists():
-    raise FileNotFoundError(
-        f"Missing Square config.ini file! Looking in folder: {Path().resolve()}"
-    )
+    raise FileNotFoundError(f"Missing Square config.ini file! Looking in folder: {Path().resolve()}")
 
 
 config = configparser.ConfigParser()
@@ -43,9 +41,7 @@ client = Client(
     environment=config.get("DEFAULT", "environment"),
 )
 
-location = client.locations.retrieve_location(location_id=LOCATION_ID).body[
-    "location"
-]
+location = client.locations.retrieve_location(location_id=LOCATION_ID).body["location"]
 ACCOUNT_CURRENCY = location["currency"]
 ACCOUNT_COUNTRY = location["country"]
 
@@ -166,9 +162,7 @@ class ChooseUserView(View):
                 )
             else:
                 if payment_choice == "square_api":
-                    return redirect(
-                        "payment_form", product_id=product_id, user_id=user.id
-                    )
+                    return redirect("payment_form", product_id=product_id, user_id=user.id)
                 elif payment_choice == "cash":
                     with transaction.atomic():
                         payment = Payment(
@@ -177,9 +171,7 @@ class ChooseUserView(View):
                             amount_cents=product.amount_cents,
                         )
                         payment.save()
-                        purchased_product = PurchasedProduct(
-                            product=product, payment=payment
-                        )
+                        purchased_product = PurchasedProduct(product=product, payment=payment)
                         purchased_product.save()
                     return redirect(
                         "payment_success",
@@ -232,9 +224,7 @@ def process_square_payment(request, product_id, user_id):
 
         message = can_purchase_product(product, user)
         if message:
-            return JsonResponse(
-                {"square_res": {"errors": [{"detail": message}]}}, safe=False
-            )
+            return JsonResponse({"square_res": {"errors": [{"detail": message}]}}, safe=False)
 
         fees = calculate_cost_with_square_fee(product.amount_cents)
 
@@ -245,9 +235,7 @@ def process_square_payment(request, product_id, user_id):
                 amount_cents=fees["total_payment_amount_cents"],
             )
             payment.save()
-            purchased_product = PurchasedProduct(
-                product=product, payment=payment
-            )
+            purchased_product = PurchasedProduct(product=product, payment=payment)
             purchased_product.save()
 
         create_payment_response = client.payments.create_payment(
@@ -263,9 +251,7 @@ def process_square_payment(request, product_id, user_id):
             }
         )
 
-        payment.metadata = {
-            "square_response_body": create_payment_response.body
-        }
+        payment.metadata = {"square_response_body": create_payment_response.body}
         payment.save()
 
         if create_payment_response.is_success():
@@ -279,10 +265,6 @@ def process_square_payment(request, product_id, user_id):
                 safe=False,
             )
         elif create_payment_response.is_error():
-            return JsonResponse(
-                {"square_res": create_payment_response.body}, safe=False
-            )
+            return JsonResponse({"square_res": create_payment_response.body}, safe=False)
     else:
-        return JsonResponse(
-            {"error": "Invalid request method"}, safe=False, status_code=405
-        )
+        return JsonResponse({"error": "Invalid request method"}, safe=False, status_code=405)

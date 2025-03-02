@@ -94,11 +94,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    (
-        "django.middleware.csrf.CsrfViewMiddleware"
-        if not DISABLE_CSRF
-        else "common.middle.DisableCSRFMiddleware"
-    ),
+    ("django.middleware.csrf.CsrfViewMiddleware" if not DISABLE_CSRF else "common.middle.DisableCSRFMiddleware"),
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -192,9 +188,7 @@ STORAGES = {
             "signature_version": "s3v4",
         },
     },
-    "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
-    },
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 
 # Default primary key field type
@@ -217,8 +211,6 @@ EMAIL_HOST_PASSWORD = str(os.getenv("SMTP_PASS"))
 DISCORD_TOKEN = str(os.getenv("DISCORD_TOKEN"))
 DISCORD_SERVER_ID = int(str(os.getenv("DISCORD_SERVER_ID")))
 DISCORD_OFFICER_ROLE_ID = int(str(os.getenv("DISCORD_OFFICER_ROLE_ID")))
-DISCORD_PROJECT_MANAGER_ROLE_ID = int(
-    str(os.getenv("DISCORD_PROJECT_MANAGER_ROLE_ID"))
-)
+DISCORD_PROJECT_MANAGER_ROLE_ID = int(str(os.getenv("DISCORD_PROJECT_MANAGER_ROLE_ID")))
 DISCORD_TEAM_LEAD_ROLE_ID = int(str(os.getenv("DISCORD_TEAM_LEAD_ROLE_ID")))
 DISCORD_MEMBER_ROLE_ID = int(str(os.getenv("DISCORD_MEMBER_ROLE_ID")))

@@ -41,3 +41,5 @@ pylint-django = "*"
 pylint-per-file-ignores = "*"
 mypy = "*"
 django-stubs = "*"
+djangorestframework-stubs = {extras = ["compatible-mypy"], version = "*"}
+types-markdown = "*"

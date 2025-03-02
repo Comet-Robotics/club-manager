@@ -35,9 +35,7 @@ class Project(models.Model):
 
     def all_team_members(self):
         return User.objects.filter(
-            Q(projects_managing=self)
-            | Q(teams_in__project=self)
-            | Q(teams_leading__project=self)
+            Q(projects_managing=self) | Q(teams_in__project=self) | Q(teams_leading__project=self)
         ).distinct("id")
 
     def all_teams(self):
@@ -53,11 +51,7 @@ class Project(models.Model):
 
     @staticmethod
     def get_projects_user_can_manage(user: User):
-        return (
-            Project.objects.all()
-            if user.is_superuser
-            else Project.objects.filter(managers=user)
-        )
+        return Project.objects.all() if user.is_superuser else Project.objects.filter(managers=user)
 
 
 class Team(models.Model):
@@ -66,9 +60,7 @@ class Team(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    parent_team = models.ForeignKey(
-        "self", on_delete=models.CASCADE, null=True, blank=True
-    )
+    parent_team = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
     members = models.ManyToManyField(User, related_name="teams_in")
     leads = models.ManyToManyField(User, related_name="teams_leading")
     emoji = models.CharField(max_length=3, null=True, blank=True)
@@ -83,12 +75,8 @@ class Team(models.Model):
         return Team.objects.filter(parent_team=self)
 
     def all_team_members(self):
-        members = [
-            TeamMember(user=i, team=self, role="member")
-            for i in list(self.members.all())
-        ] + [
-            TeamMember(user=i, team=self, role="lead")
-            for i in list(self.leads.all())
+        members = [TeamMember(user=i, team=self, role="member") for i in list(self.members.all())] + [
+            TeamMember(user=i, team=self, role="lead") for i in list(self.leads.all())
         ]
         for team in self.direct_teams():
             members.extend(team.all_team_members())

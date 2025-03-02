@@ -133,9 +133,7 @@ class CombatEventViewSet(viewsets.ModelViewSet):
 
         if user.userprofile.date_of_birth is None:
             return Response(
-                {
-                    "detail": "You have no DOB on file. DOB required to determine applicable waivers"
-                },
+                {"detail": "You have no DOB on file. DOB required to determine applicable waivers"},
                 status=status.HTTP_428_PRECONDITION_REQUIRED,
             )
 
@@ -152,26 +150,17 @@ class CombatEventViewSet(viewsets.ModelViewSet):
         waivers = Waiver.objects.filter(user=user, combat_event=combat_event)
         # TODO: revisit the mofel
 
-        serializer = WaiverSerializer(
-            waivers, many=True, context={"request": request}
-        )
+        serializer = WaiverSerializer(waivers, many=True, context={"request": request})
         return Response(serializer.data)
 
-    def _upsert_teams_with_rce_data(
-        self, rce_teams: list[RCETeam]
-    ) -> dict[str, CombatTeam]:
+    def _upsert_teams_with_rce_data(self, rce_teams: list[RCETeam]) -> dict[str, CombatTeam]:
         """
         Upserts the given list of teams from Robot Combat Events into the database. Returns a dictionary mapping the Robot Combat Events team IDs to the upserted teams.
 
         Parameters:
         - rce_teams (list[RCETeam]): The list of teams to upsert.
         """
-        combat_teams = [
-            CombatTeam(
-                name=team.name, robot_combat_events_team_id=team.rce_team_id
-            )
-            for team in rce_teams
-        ]
+        combat_teams = [CombatTeam(name=team.name, robot_combat_events_team_id=team.rce_team_id) for team in rce_teams]
         CombatTeam.objects.bulk_create(
             combat_teams,
             update_conflicts=True,
@@ -182,9 +171,7 @@ class CombatEventViewSet(viewsets.ModelViewSet):
         upserted_teams = {
             team.robot_combat_events_team_id: team
             for team in CombatTeam.objects.filter(
-                robot_combat_events_team_id__in=[
-                    team.rce_team_id for team in rce_teams
-                ]
+                robot_combat_events_team_id__in=[team.rce_team_id for team in rce_teams]
             )
         }
         return upserted_teams
@@ -209,9 +196,7 @@ class CombatEventViewSet(viewsets.ModelViewSet):
         all_robots = [
             CombatRobot(
                 name=rce_robot.name,
-                weight_class=RCE_WEIGHT_CLASS_LABEL_TO_COMBAT_ROBOT_WEIGHT_CLASS[
-                    rce_robot.weight_class
-                ],
+                weight_class=RCE_WEIGHT_CLASS_LABEL_TO_COMBAT_ROBOT_WEIGHT_CLASS[rce_robot.weight_class],
                 robot_combat_events_robot_id=rce_robot.rce_resource_id,
                 combat_team=combat_teams[rce_robot.rce_team_id],
                 image_url=rce_robot.img_url,
@@ -238,8 +223,7 @@ class CombatEventViewSet(viewsets.ModelViewSet):
         }
 
         rce_robot_id_to_combat_robot_map: dict[str, CombatRobot] = {
-            robot.robot_combat_events_robot_id: robot
-            for robot in combat_robots
+            robot.robot_combat_events_robot_id: robot for robot in combat_robots
         }
 
         reg_objs = []
@@ -248,12 +232,8 @@ class CombatEventViewSet(viewsets.ModelViewSet):
                 reg_objs.append(
                     CombatEventRegistration(
                         combat_event=combat_event,
-                        combat_robot=rce_robot_id_to_combat_robot_map[
-                            rce_robot.rce_resource_id
-                        ],
-                        status=RCE_STATUS_LABELS_TO_REG_STATUS[
-                            rce_robot.status
-                        ],
+                        combat_robot=rce_robot_id_to_combat_robot_map[rce_robot.rce_resource_id],
+                        status=RCE_STATUS_LABELS_TO_REG_STATUS[rce_robot.status],
                     )
                 )
         CombatEventRegistration.objects.bulk_create(
@@ -298,22 +278,16 @@ class CombatEventViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        rce_event = get_robot_combat_event(
-            combat_event.robot_combat_events_event_id
-        )
+        rce_event = get_robot_combat_event(combat_event.robot_combat_events_event_id)
 
         upserted_teams = self._upsert_teams_with_rce_data(rce_event.teams)
-        upserted_robots = self._upsert_robots_with_rce_data(
-            rce_event.robots, upserted_teams
-        )
-        self._associate_robots_with_event(
-            upserted_robots, combat_event, rce_event.robots
-        )
+        upserted_robots = self._upsert_robots_with_rce_data(rce_event.robots, upserted_teams)
+        self._associate_robots_with_event(upserted_robots, combat_event, rce_event.robots)
 
         # purging registrations for robots not returned by RCE
-        CombatEventRegistration.objects.filter(
-            combat_event=combat_event
-        ).exclude(combat_robot__in=upserted_robots).delete()
+        CombatEventRegistration.objects.filter(combat_event=combat_event).exclude(
+            combat_robot__in=upserted_robots
+        ).delete()
 
         return Response("", status=status.HTTP_200_OK)
 
@@ -338,15 +312,11 @@ class CombatEventViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        registrations = CombatEventRegistration.objects.filter(
-            combat_event=combat_event
-        )
+        registrations = CombatEventRegistration.objects.filter(combat_event=combat_event)
         team_ids = registrations.values("combat_robot__combat_team").distinct()
         teams = CombatTeam.objects.filter(pk__in=team_ids)
 
-        serializer = CombatTeamSerializer(
-            teams, many=True, context={"request": request}
-        )
+        serializer = CombatTeamSerializer(teams, many=True, context={"request": request})
 
         return Response(serializer.data)
 
@@ -460,9 +430,7 @@ class WhoAmIView(APIView):
         responses={
             403: {
                 "type": "object",
-                "properties": {
-                    "isAuthenticated": {"type": "boolean", "enum": [False]}
-                },
+                "properties": {"isAuthenticated": {"type": "boolean", "enum": [False]}},
                 "required": ["isAuthenticated"],
             },
             200: {
@@ -479,9 +447,7 @@ class WhoAmIView(APIView):
     )
     def get(self, request):
         if not request.user.is_authenticated:
-            return Response(
-                {"isAuthenticated": False}, status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"isAuthenticated": False}, status=status.HTTP_403_FORBIDDEN)
 
         return Response(
             {
@@ -503,14 +469,10 @@ class RobotsInTeamView(APIView):
         team = CombatTeam.objects.get(pk=combatteam_id)
 
         if not team:
-            return Response(
-                {"detail": "Team not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"detail": "Team not found."}, status=status.HTTP_404_NOT_FOUND)
 
         robots = CombatRobot.objects.filter(combat_team=team)
-        serializer = CombatRobotSerializer(
-            robots, many=True, context={"request": request}
-        )
+        serializer = CombatRobotSerializer(robots, many=True, context={"request": request})
         return Response(serializer.data)
 
 
@@ -533,9 +495,7 @@ class RobotsInEventView(APIView):
             )
 
         robots = CombatRobot.objects.filter(combat_events__id=combatevent_id)
-        serializer = CombatRobotSerializer(
-            robots, many=True, context={"request": request}
-        )
+        serializer = CombatRobotSerializer(robots, many=True, context={"request": request})
 
         return Response(serializer.data)
 
@@ -565,9 +525,7 @@ class Cart(TypedDict):
     total_cents_with_fee: int
 
 
-def build_cart(
-    cart: list[CartItem], user: User, method: Payment.Method
-) -> tuple[Cart, dict[int, Product]]:
+def build_cart(cart: list[CartItem], user: User, method: Payment.Method) -> tuple[Cart, dict[int, Product]]:
     """Create a Cart from a list of CartItems.
 
     The goal of the cart key is to ensure that what the user sees in the cart preview is the same
@@ -578,9 +536,7 @@ def build_cart(
     for it, which would be a problem since we just calculate cost based on the quantity of each
     product in the cart.
     """
-    products_list = Product.objects.get(
-        pk__in=[item.product_id for item in cart]
-    )
+    products_list = Product.objects.get(pk__in=[item.product_id for item in cart])
     products_map = {product.id: product for product in products_list}
 
     subtotal = 0
@@ -609,9 +565,7 @@ def build_cart(
         "hash": cart_key,
         "subtotal_cents": final_cost_calculation["product_amount_cents"],
         "process_fee_cents": final_cost_calculation["square_fee_cents"],
-        "total_cents_with_fee": final_cost_calculation[
-            "total_payment_amount_cents"
-        ],
+        "total_cents_with_fee": final_cost_calculation["total_payment_amount_cents"],
     }, products_map
 
 
@@ -639,22 +593,16 @@ class CartView(APIView):
             )
 
         # TODO: im 99% sure there is a way to make DRF do this request body validation for us in a cleaner way
-        payment_method_serializer = PaymentChoiceSerializer(
-            data=request.data.get("payment_choice")
-        )
+        payment_method_serializer = PaymentChoiceSerializer(data=request.data.get("payment_choice"))
         if not payment_method_serializer.is_valid():
             return Response(
                 payment_method_serializer.errors,
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        cart_serializer = CartItemSerializer(
-            data=request.data.get("cart", []), many=True
-        )
+        cart_serializer = CartItemSerializer(data=request.data.get("cart", []), many=True)
         if not cart_serializer.is_valid():
-            return Response(
-                cart_serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(cart_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         cart_items_as_tuples = [
             CartItem(product_id=item["product_id"], quantity=item["quantity"])
@@ -663,17 +611,13 @@ class CartView(APIView):
         cart, products = build_cart(
             cart_items_as_tuples,
             user,
-            Payment.Method(
-                payment_method_serializer.validated_data["payment_choice"]
-            ),
+            Payment.Method(payment_method_serializer.validated_data["payment_choice"]),
         )
 
         response_serializer = CartSerializer(data=cart)
 
         if not response_serializer.is_valid():
-            return Response(
-                response_serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(response_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(response_serializer.data)
 
@@ -698,9 +642,7 @@ class PayView(APIView):
             )
 
         # TODO: im 99% sure there is a way to make DRF do request body validation for us
-        payment_method_serializer = PaymentChoiceSerializer(
-            data=request.data.get("payment_choice")
-        )
+        payment_method_serializer = PaymentChoiceSerializer(data=request.data.get("payment_choice"))
         if not payment_method_serializer.is_valid():
             return Response(
                 payment_method_serializer.errors,
@@ -709,22 +651,15 @@ class PayView(APIView):
 
         cart_serializer = CartSerializer(data=request.data.get("cart"))
         if not cart_serializer.is_valid():
-            return Response(
-                cart_serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(cart_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         provided_cart = cart_serializer.validated_data["cart"]
         cart_items_as_tuples = [
-            CartItem(product_id=item["product_id"], quantity=item["quantity"])
-            for item in provided_cart
+            CartItem(product_id=item["product_id"], quantity=item["quantity"]) for item in provided_cart
         ]
 
-        method = Payment.Method(
-            payment_method_serializer.validated_data["payment_choice"]
-        )
-        control_cart, product_map = build_cart(
-            cart_items_as_tuples, user, method
-        )
+        method = Payment.Method(payment_method_serializer.validated_data["payment_choice"])
+        control_cart, product_map = build_cart(cart_items_as_tuples, user, method)
         assert control_cart["hash"] == cart_serializer.validated_data["hash"]
 
         with transaction.atomic():
@@ -758,9 +693,7 @@ class PayView(APIView):
             }
         )
 
-        payment.metadata = {
-            "square_response_body": create_payment_response.body
-        }
+        payment.metadata = {"square_response_body": create_payment_response.body}
         payment.save()
 
         if create_payment_response.is_success():
@@ -772,6 +705,4 @@ class PayView(APIView):
             # TODO: some error response
             return
 
-        return Response(
-            cart_serializer.validated_data, status=status.HTTP_200_OK
-        )
+        return Response(cart_serializer.validated_data, status=status.HTTP_200_OK)

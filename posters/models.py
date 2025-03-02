@@ -13,9 +13,7 @@ class Campaign(models.Model):
 
 class Poster(models.Model):
     pub_date = models.DateTimeField("date published")
-    campaign = models.ForeignKey(
-        Campaign, on_delete=models.CASCADE, related_name="posters"
-    )
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name="posters")
     latitude = models.DecimalField(max_digits=9, decimal_places=6)
     longitude = models.DecimalField(max_digits=9, decimal_places=6)
     location = models.CharField(max_length=200)
@@ -25,7 +23,5 @@ class Poster(models.Model):
 
 
 class Visit(models.Model):
-    poster = models.ForeignKey(
-        Poster, on_delete=models.CASCADE, related_name="visits"
-    )
+    poster = models.ForeignKey(Poster, on_delete=models.CASCADE, related_name="visits")
     timestamp = models.DateTimeField(default=timezone.now)

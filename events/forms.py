@@ -31,9 +31,7 @@ class SignInForm(forms.Form):
     card_data = CometCardField(
         label="Swipe Card",
         max_length=100,
-        widget=forms.TextInput(
-            attrs={"autofocus": True, "class": "input input-bordered"}
-        ),
+        widget=forms.TextInput(attrs={"autofocus": True, "class": "input input-bordered"}),
     )
 
 
@@ -48,9 +46,7 @@ class UserSearchForm(forms.Form):
         label="Search",
         max_length=100,
         required=False,
-        widget=forms.TextInput(
-            attrs={"autofocus": True, "class": "input input-bordered"}
-        ),
+        widget=forms.TextInput(attrs={"autofocus": True, "class": "input input-bordered"}),
     )
 
 

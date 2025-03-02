@@ -38,9 +38,7 @@ class UserAdmin(BaseUserAdmin):
 class EventAdmin(admin.ModelAdmin):
     readonly_fields = ["id"]
 
-    def get_fields(
-        self, request: HttpRequest, obj: Any | None = ...
-    ) -> Sequence[Callable[..., Any] | str]:
+    def get_fields(self, request: HttpRequest, obj: Any | None = ...) -> Sequence[Callable[..., Any] | str]:
         fields = list(super().get_fields(request, obj))
         fields.remove("id")
         fields.insert(0, "id")
@@ -49,17 +47,13 @@ class EventAdmin(admin.ModelAdmin):
 
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
-admin.site.register(
-    UserIdentification, search_fields=["student_id"] + SearchFields.USER
-)
+admin.site.register(UserIdentification, search_fields=["student_id"] + SearchFields.USER)
 admin.site.register(
     Attendance,
     autocomplete_fields=["user"],
     search_fields=SearchFields.USER + SearchFields.EVENT,
 )
-admin.site.register(
-    Reservation, search_fields=SearchFields.USER + SearchFields.EVENT
-)
+admin.site.register(Reservation, search_fields=SearchFields.USER + SearchFields.EVENT)
 admin.site.register(Event, EventAdmin, search_fields=["event_name", "id"])
 admin.site.register(CombatEvent)
 admin.site.register(CombatTeam)

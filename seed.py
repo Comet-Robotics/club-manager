@@ -23,9 +23,7 @@ def create_officer():
         is_superuser=True,
     )
 
-    not_officer = User.objects.create_user(
-        username="seeded_not_officer", password=PASSWORD
-    )
+    not_officer = User.objects.create_user(username="seeded_not_officer", password=PASSWORD)
 
 
 def create_srp_project():
@@ -64,40 +62,26 @@ def create_srp_project():
         project=proj,
     )
 
-    srp_pm = User.objects.create_user(
-        username="seeded_srp_pm", password=PASSWORD
-    )
+    srp_pm = User.objects.create_user(username="seeded_srp_pm", password=PASSWORD)
     proj.managers.add(srp_pm)
     proj.save()
 
-    mech_lead = User.objects.create_user(
-        username="seeded_mech_lead", password=PASSWORD
-    )
+    mech_lead = User.objects.create_user(username="seeded_mech_lead", password=PASSWORD)
     mech_team.leads.add(mech_lead)
 
-    arm_lead = User.objects.create_user(
-        username="seeded_arm_lead", password=PASSWORD
-    )
+    arm_lead = User.objects.create_user(username="seeded_arm_lead", password=PASSWORD)
     arm_team.leads.add(arm_lead)
 
-    dt_lead = User.objects.create_user(
-        username="seeded_dt_lead", password=PASSWORD
-    )
+    dt_lead = User.objects.create_user(username="seeded_dt_lead", password=PASSWORD)
     dt_team.leads.add(dt_lead)
 
-    wheel_lead = User.objects.create_user(
-        username="seeded_wheel_lead", password=PASSWORD
-    )
+    wheel_lead = User.objects.create_user(username="seeded_wheel_lead", password=PASSWORD)
     wheel_team.leads.add(wheel_lead)
 
-    wheel_member = User.objects.create_user(
-        username="seeded_wheel_member", password=PASSWORD
-    )
+    wheel_member = User.objects.create_user(username="seeded_wheel_member", password=PASSWORD)
     wheel_team.members.add(wheel_member)
 
-    embed_lead = User.objects.create_user(
-        username="seeded_embed_lead", password=PASSWORD
-    )
+    embed_lead = User.objects.create_user(username="seeded_embed_lead", password=PASSWORD)
     embed_team.leads.add(embed_lead)
 
     print("Seeded!")
@@ -121,20 +105,14 @@ def create_chessbot_project():
         project=proj,
     )
 
-    cb_pm = User.objects.create_user(
-        username="seeded_cb_pm", password=PASSWORD
-    )
+    cb_pm = User.objects.create_user(username="seeded_cb_pm", password=PASSWORD)
     proj.managers.add(cb_pm)
     proj.save()
 
-    sw_lead = User.objects.create_user(
-        username="seeded_sw_lead", password=PASSWORD
-    )
+    sw_lead = User.objects.create_user(username="seeded_sw_lead", password=PASSWORD)
     sw_team.leads.add(sw_lead)
 
-    hw_lead = User.objects.create_user(
-        username="seeded_hw_lead", password=PASSWORD
-    )
+    hw_lead = User.objects.create_user(username="seeded_hw_lead", password=PASSWORD)
     hw_team.leads.add(hw_lead)
 
     print("Seeded!")
