@@ -1,0 +1,22 @@
+on:
+  - push
+  - pull_request
+
+name: Check
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: "pipenv"
+      - name: Run image
+        uses: tiagovrtr/actions-pipenv@v1
+      - name: Install dependencies
+        run: pipenv install --dev
+      - name: Run lint
+        run: pipenv run ./scripts/lint.sh
