@@ -7,6 +7,7 @@ from more_admin_filters import MultiSelectDropdownFilter
 
 from .models import Product, Payment, Term, PurchasedProduct
 
+
 class PaymentAdmin(admin.ModelAdmin):
     exclude = ["completed_at", "metadata"]
     readonly_fields = ["created_at", "updated_at", "metadata", "completed_at"]
@@ -17,7 +18,12 @@ class PaymentAdmin(admin.ModelAdmin):
         ("method", MultiSelectDropdownFilter),
     ]
 
+
 admin.site.register(Product, search_fields=["name"])
 admin.site.register(Term, search_fields=["name"] + SearchFields.PRODUCT)
-admin.site.register(Payment, PaymentAdmin, search_fields=SearchFields.USER + SearchFields.PURCHASED_PRODUCT)
+admin.site.register(
+    Payment,
+    PaymentAdmin,
+    search_fields=SearchFields.USER + SearchFields.PURCHASED_PRODUCT,
+)
 admin.site.register(PurchasedProduct, search_fields=SearchFields.PRODUCT)
