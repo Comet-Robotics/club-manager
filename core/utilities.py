@@ -5,11 +5,11 @@ from projects.models import Project
 from typing import Iterable, TypedDict
 
 
-
 class LayoutData(TypedDict):
     user: User | AnonymousUser
     settings: ServerSettings
     accessible_projects: Iterable[Project]
+
 
 def get_layout_data(request: HttpRequest) -> LayoutData:
     user = request.user
