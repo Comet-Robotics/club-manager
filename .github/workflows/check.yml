@@ -13,8 +13,8 @@ jobs:
         with:
           python-version: 3.11
           cache: "pipenv"
-      - name: Run image
-        uses: tiagovrtr/actions-pipenv@v1
+      - name: Install pipenv
+        run: pip install pipenv
       - name: Install dependencies
         run: pipenv install --dev
       - name: Run lint
