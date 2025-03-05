@@ -19,3 +19,5 @@ jobs:
         run: pipenv install --dev
       - name: Run lint
         run: pipenv run ./scripts/lint.sh
+      - name: Run tests
+        run: pipenv run python manage.py test
