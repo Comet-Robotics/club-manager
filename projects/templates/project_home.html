@@ -143,6 +143,7 @@
 
 <main class="main-content">
     <!-- Current Event Card -->
+    {% for current_event in current_events %}
     <div class="event-card" style="border: var(--primary) 2px solid;">
         <div class="event-header">
             <div>
@@ -191,6 +192,7 @@
             {% endfor %}
         </div>
     </div>
+    {% endfor %}
     
     <!-- Subteams Overview -->
     <section class="section">
