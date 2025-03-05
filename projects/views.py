@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from core.models import ServerSettings, User
+from events.models import Event
 from django.http import HttpRequest
 from django.contrib.auth.models import AnonymousUser
 from projects.models import Project
@@ -28,6 +29,7 @@ def project_view(request, project_id):
     user = request.user
     layout_data = get_layout_data(request)
     
-
-
-    return render(request, 'project_home.html', {**layout_data, "user": user})
+    current_event = Event.objects.filter(project=project_id).order_by('event_date').first()
+    teams = Project.objects.get(pk=project_id).all_teams()
+    
+    return render(request, 'project_home.html', {**layout_data, "current_event": current_event, "teams": teams})

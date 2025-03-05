@@ -143,15 +143,11 @@
 
 <main class="main-content">
     <!-- Current Event Card -->
-    <div class="event-card">
+    <div class="event-card" style="border: var(--primary) 2px solid;">
         <div class="event-header">
             <div>
-                <h2 class="event-title">{{current_event.title}}</h2>
-                <div class="event-date">{{current_event.start_time|date:"F j, Y • g:i A"}} - {{current_event.end_time|date:"g:i A"}}</div>
-                <div class="event-location">
-                    <i data-lucide="map-pin" class="w-4 h-4"></i>
-                    <span>{{current_event.location}}</span>
-                </div>
+                <h2 class="event-title">{{current_event.event_name}}</h2>
+                <div class="event-date">{{current_event.event_date|date:"F j, Y • g:i A"}} - {{current_event.end_time|date:"g:i A"}}</div>
             </div>
             <a href="#" class="sign-in-button">
                 <i data-lucide="log-in" class="w-4 h-4"></i>
@@ -162,36 +158,31 @@
         <!-- Event Stats -->
         <div class="event-stats">
             <div class="stat-card">
-                <div class="stat-value">{{current_event.attendance_count}}</div>
+                <div class="stat-value">{{current_event.get_attendance}}</div>
                 <div class="stat-label">Members Present</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">{{attendance_percentage}}%</div>
+                <div class="stat-value">{{current_event.get_attendance_rate|floatformat:2}}%</div>
                 <div class="stat-label">Attendance Rate</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">{{current_event.duration_hours}}</div>
-                <div class="stat-label">Hours</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">{{total_members}}</div>
-                <div class="stat-label">Total Members</div>
+                <div class="stat-value">{{current_event.get_expected_attendees}}</div>
+                <div class="stat-label">Expected Members</div>
             </div>
         </div>
         
         <!-- Current Attendance -->
         <h3 class="section-title">Current Attendance</h3>
         <div class="attendance-list">
-            {% for attendance in current_attendances %}
+            {% for attendance in current_event.get_attendees|slice:":4" %}
             <div class="attendance-item">
                 <div class="attendance-info">
                     <div class="status-dot"></div>
                     <div>
                         <div>{{attendance.user.first_name}} {{attendance.user.last_name}}</div>
-                        <div class="attendance-time">Signed in at {{attendance.sign_in_time|date:"g:i A"}}</div>
+                        <div class="attendance-time">Signed in at {{attendance.timestamp|date:"g:i A"}}</div>
                     </div>
                 </div>
-                <div class="badge">{{attendance.user.team.name}}</div>
             </div>
             {% empty %}
             <div class="attendance-item">
@@ -205,6 +196,7 @@
     <section class="section">
         <h2 class="section-title">Subteams Overview</h2>
         <div class="subteam-grid">
+            {% for subteam in teams %}
             <div class="subteam-card">
                 <div class="subteam-header">
                     <div class="project-info">
@@ -213,65 +205,31 @@
                         </div>
                         <div>
                             <h3>{{subteam.name}}</h3>
-                            <p>{{subteam.lead.first_name}} {{subteam.lead.last_name}} (Lead)</p>
+                            {% for lead in subteam.leads.all %}
+                            <p>{{lead.first_name}} {{lead.last_name}} (Lead)</p>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
                 <div class="subteam-stats">
                     <div>
                         <div class="stat-label">Members</div>
-                        <div class="stat-value">{{subteam.member_count}}</div>
+                        <div class="stat-value">{{subteam.get_member_count}}</div>
                     </div>
                     <div>
                         <div class="stat-label">Avg. Attendance</div>
-                        <div class="stat-value">{{subteam.avg_attendance}}%</div>
+                        <div class="stat-value">{{subteam.get_average_attendance}}%</div>
                         <div class="progress-bar">
-                            <div class="progress-value" style="width: {{subteam.avg_attendance}}%;"></div>
+                            <div class="progress-value" style="width: {{subteam.get_average_attendance}}%;"></div>
                         </div>
                     </div>
                     <div>
-                        <div class="stat-label">Events Attended</div>
-                        <div class="stat-value">{{subteam.events_attended}}</div>
-                    </div>
-                    <div>
-                        <div class="stat-label">Total Hours</div>
-                        <div class="stat-value">{{subteam.total_hours}}</div>
+                        <div class="stat-label">Team Events</div>
+                        <div class="stat-value">{{subteam.get_team_meetings}}</div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
-    
-    <!-- Project Progress -->
-    <section class="section">
-        <h2 class="section-title">Project Progress</h2>
-        <div class="event-card">
-            <div class="stat-card" style="margin-bottom: 1rem;">
-                <div class="stat-value">{{project_completion}}%</div>
-                <div class="stat-label">Overall Completion</div>
-                <div class="progress-bar">
-                    <div class="progress-value" style="width: {{project_completion}}%;"></div>
-                </div>
-            </div>
-            
-            <div class="event-stats">
-                <div class="stat-card">
-                    <div class="stat-value">{{total_events}}</div>
-                    <div class="stat-label">Total Events</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{upcoming_events}}</div>
-                    <div class="stat-label">Upcoming Events</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{total_hours_logged}}</div>
-                    <div class="stat-label">Hours Logged</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{active_members}}</div>
-                    <div class="stat-label">Active Members</div>
-                </div>
-            </div>
+            {% endfor %}
         </div>
     </section>
 </main>

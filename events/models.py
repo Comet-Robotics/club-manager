@@ -6,6 +6,7 @@ from common.utils import validate_staff
 from computedfields.models import ComputedFieldsModel, computed
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
+from projects.models import Project, Team
 
 
 # Create your models here.
@@ -14,11 +15,33 @@ class Event(models.Model):
     event_date = models.DateTimeField("event date")
     url = models.CharField(max_length=200, default="https://cometrobotics.org")
     
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='events', null=True, blank=True)
+    teams = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='events', null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return self.event_name
+    
+    def get_attendance(self):
+        return self.attendances.all().count()
+    
+    def get_attendees(self):
+        return self.attendances.all()
+    
+    def get_expected_attendees(self):
+        if self.teams is not None:
+            total_members = len(self.team.all_team_members())
+        elif self.project is not None:
+            total_members = len(self.project.all_team_members())
+        else:
+            total_members = None
+        return total_members
+
+    def get_attendance_rate(self):
+        return (self.get_attendance() / self.get_expected_attendees() ) * 100
+    
     
 class Attendance(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='attendances')
@@ -27,7 +50,6 @@ class Attendance(models.Model):
     
     def __str__(self):
         return str(self.event) + ' - ' + str(self.timestamp)
-
 
 class CombatEvent(models.Model):
     """

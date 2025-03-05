@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User
 from django.db.models import Q
 
+
 """
 The goal of this app is to allow a project manager to easily view retention from meeting to meeting on their project, as well as being able to programmatically grant members access to project resources like GitHub repositories based on team membership. To do this, we need to be able to mark a user as being a 'member' to a project and/or team(s) within that project.
 
@@ -75,6 +76,17 @@ class Team(models.Model):
       for team in self.direct_teams():
         members.extend(team.all_team_members())
       return members
+    
+    def get_member_count(self):
+      return len(self.all_team_members())
+    
+    def get_team_meetings(self):
+      return self.events.all().count()
+    
+    def get_average_attendance(self):
+      if self.get_team_meetings() == 0 or self.get_member_count() == 0:
+        return 0
+      return sum([event.get_attendance()/self.get_member_count() for event in self.events.all()]) / (self.get_team_meetings()) * 100
 
       
     @staticmethod
