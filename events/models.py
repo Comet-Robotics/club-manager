@@ -32,9 +32,9 @@ class Event(models.Model):
     
     def get_expected_attendees(self):
         if self.teams is not None:
-            total_members = len(self.team.all_team_members())
+            total_members = User.objects.filter(Q(teams_leading=self.teams) | Q(teams_in=self.teams)).distinct('id').count()
         elif self.project is not None:
-            total_members = len(self.project.all_team_members())
+            total_members = self.project.all_team_members().count()
         else:
             total_members = None
         return total_members

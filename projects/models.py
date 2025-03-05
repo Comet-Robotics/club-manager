@@ -70,15 +70,33 @@ class Team(models.Model):
       
     def direct_teams(self):
       return Team.objects.filter(parent_team=self)
-      
+    
+    def get_unique_users(self):
+        """
+        Returns a QuerySet of all users who are either members or leads of this team
+        and all of its subteams, without duplicates.
+        """
+        subteams = Team.objects.filter(parent_team=self)
+        user_query = Q(teams_in=self) | Q(teams_leading=self)
+        
+        for subteam in subteams:
+            user_query |= Q(teams_in=subteam) | Q(teams_leading=subteam)
+            
+        return User.objects.filter(user_query).distinct()
+    
     def all_team_members(self):
+      """
+      Return a list of all the team's members and leads. This method includes members and leads of all subteams.
+
+      NOTE: since this method includes subteam members and leads, it may return duplicate users
+      """
       members = [TeamMember(user=i, team=self, role='member') for i in list(self.members.all())] + [TeamMember(user=i, team=self, role='lead') for i in list(self.leads.all())]
       for team in self.direct_teams():
         members.extend(team.all_team_members())
       return members
     
     def get_member_count(self):
-      return len(self.all_team_members())
+      return self.get_unique_users().count()
     
     def get_team_meetings(self):
       return self.events.all().count()
