@@ -1,16 +1,13 @@
-from typing import Iterable, TypedDict
 from django.shortcuts import render
-from django.http import HttpRequest, HttpResponse, HttpResponsePermanentRedirect
+from django.http import HttpResponse, HttpResponsePermanentRedirect
 from django.views.decorators.http import require_GET
 from django.conf import settings
+from core.utilities import get_layout_data
 from events.models import Attendance
 from django.views.generic import ListView
 from .forms import UserProfileForm, UserForm, ServerSettingsForm
-from core.models import ServerSettings
-from projects.models import Project
 from projects.models import Team
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.auth.decorators import user_passes_test
 
 
@@ -28,25 +25,9 @@ def initials(name: str) -> str:
             out += split[i][0]
     return out.upper()
 
-class LayoutData(TypedDict):
-    user: User | AnonymousUser
-    settings: ServerSettings
-    accessible_projects: Iterable[Project]
-
-def get_layout_data(request: HttpRequest) -> LayoutData:
-    user = request.user
-    if not isinstance(user, (AnonymousUser, User)):
-        raise Exception("User must be an instance of User or AnonymousUser")
-    # NOTE: temporarily hiding these sidebar links in production until the corresponding pages are implemented
-    accessible_projects = Project.get_projects_user_can_manage(user) if user and isinstance(user, User) and settings.DEBUG else []
-    return LayoutData(user=user, settings=ServerSettings.objects.get(), accessible_projects=accessible_projects)
 
 @login_required
 def profile_view(request):
-    user = request.user
-    
-    
-    
     layout_data = get_layout_data(request)
     teams = Team.get_teams_associated_with_user(request.user)
     terms = [term for term, purchased_product in request.user.userprofile.get_membership_terms()]
