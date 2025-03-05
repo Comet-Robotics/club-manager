@@ -555,7 +555,7 @@ async def camera(ctx: discord.ApplicationContext):
         await message.edit_original_response(content=f"You are not registered as a member of Comet Robotics!")
     else:
         # url = "http://eric1:8080/stream" # TODO: probably /snapshot instead of /stream
-        url = "http://eric2.lab.cometrobotics.org:8001/snapshot"
+        url = "http://192.168.11.213:8080/snapshot"
         img = discord.File(io.BytesIO(requests.get(url).content), "stream.jpg")
         await message.edit_original_response(content="", file=img)
 
