@@ -508,6 +508,7 @@ async def givememberroles(ctx: discord.ApplicationContext):
         member = guild.get_member(discord_id)
         await member.add_roles(member_role)
 
+    print(f"Added role to {len(ids_to_add)} users.")
     await message.edit_original_response(
         content=f"Member role addition success! Added member role to {len(ids_to_add)} users."
     )
@@ -528,6 +529,7 @@ async def purgememberroles(ctx: discord.ApplicationContext):
             removed_count += 1
             await discord_member.remove_roles(member_role)
 
+    print(f"Purged role for {removed_count} users.")
     await message.edit_original_response(
         content=f"Member role purge success! Removed member role for {removed_count} users."
     )
