@@ -10,16 +10,10 @@ from core.admin import UserProfileInline
 
 # Register your models here.
 from .models import (
-    CombatTeam,
-    CombatRobot,
     Event,
-    CombatEvent,
     Attendance,
     Reservation,
     UserIdentification,
-    Waiver,
-    WaiverStatus,
-    CombatEventRegistration,
 )
 
 
@@ -51,9 +45,3 @@ admin.site.register(UserIdentification, search_fields=["student_id"] + SearchFie
 admin.site.register(Attendance, autocomplete_fields=["user"], search_fields=SearchFields.USER + SearchFields.EVENT)
 admin.site.register(Reservation, search_fields=SearchFields.USER + SearchFields.EVENT)
 admin.site.register(Event, EventAdmin, search_fields=["event_name", "id"])
-admin.site.register(CombatEvent)
-admin.site.register(CombatTeam)
-admin.site.register(CombatRobot)
-admin.site.register(Waiver)
-admin.site.register(WaiverStatus)
-admin.site.register(CombatEventRegistration)

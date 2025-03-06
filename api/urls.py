@@ -7,11 +7,7 @@ from . import views
 router = routers.DefaultRouter()
 router.register(r"users", views.UserViewSet, basename="user")
 router.register(r"products", views.ProductViewSet, basename="product")
-router.register(r"combatteams", views.CombatTeamViewSet, basename="combatteam")
-router.register(r"combatrobots", views.CombatRobotViewSet, basename="combatrobot")
-router.register(r"combatevents", views.CombatEventViewSet, basename="combatevent")
 router.register(r"events", views.EventViewSet, basename="event")
-router.register(r"waivers", views.WaiverViewSet, basename="waiver")
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
@@ -26,6 +22,4 @@ urlpatterns = [
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path("schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
-    path("combatteams/<int:combatteam_id>/robots/", views.RobotsInTeamView.as_view(), name="robots-in-team"),
-    path("combatevents/<int:combatevent_id>/robots/", views.RobotsInEventView.as_view(), name="robots-in-event"),
 ]
