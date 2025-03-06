@@ -1,3 +1,4 @@
+import traceback
 from asgiref.sync import sync_to_async
 import os
 
@@ -556,8 +557,11 @@ async def camera(ctx: discord.ApplicationContext):
     else:
         # url = "http://eric1:8080/stream" # TODO: probably /snapshot instead of /stream
         url = "http://192.168.1.64:8080/snapshot"
-        img = discord.File(io.BytesIO(requests.get(url).content), "stream.jpg")
-        await message.edit_original_response(content="", file=img)
+        try:
+            img = discord.File(io.BytesIO(requests.get(url).content), "stream.jpg")
+            await message.edit_original_response(content="", file=img)
+        except Exception as e:
+            await message.edit_original_response(content=traceback.format_exc())
 
 
 bot.run(settings.DISCORD_TOKEN)
