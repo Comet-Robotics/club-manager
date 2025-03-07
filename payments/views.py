@@ -17,9 +17,7 @@ from clubManager import settings
 if settings.ENABLE_SQUARE_PAYMENTS:
     config_path = Path("config.ini")
     if not config_path.exists():
-        raise FileNotFoundError(
-            f"Missing Square config.ini file! Looking in folder: {Path().resolve()}"
-        )
+        raise FileNotFoundError(f"Missing Square config.ini file! Looking in folder: {Path().resolve()}")
 
     config = configparser.ConfigParser()
     config.read("config.ini")
@@ -41,9 +39,7 @@ if settings.ENABLE_SQUARE_PAYMENTS:
         environment=config.get("DEFAULT", "environment"),
     )
 
-    location = client.locations.retrieve_location(location_id=LOCATION_ID).body[
-        "location"
-    ]
+    location = client.locations.retrieve_location(location_id=LOCATION_ID).body["location"]
     ACCOUNT_CURRENCY = location["currency"]
     ACCOUNT_COUNTRY = location["country"]
 
@@ -69,9 +65,7 @@ class ChooseUserView(View):
     def get(self, request, product_id):
         product = get_object_or_404(Product, id=product_id)
         form = PaymentSignInForm()
-        return render(
-            request, self.template_name, {"form": form, "product_name": product.name}
-        )
+        return render(request, self.template_name, {"form": form, "product_name": product.name})
 
     def post(self, request, product_id):
         form = PaymentSignInForm(request.POST)
@@ -101,9 +95,7 @@ class ChooseUserView(View):
                 )
             else:
                 if payment_choice == "square_api":
-                    return redirect(
-                        "payment_form", product_id=product_id, user_id=user.id
-                    )
+                    return redirect("payment_form", product_id=product_id, user_id=user.id)
                 elif payment_choice == "cash":
                     with transaction.atomic():
                         payment = Payment(
@@ -112,18 +104,12 @@ class ChooseUserView(View):
                             amount_cents=product.amount_cents,
                         )
                         payment.save()
-                        purchased_product = PurchasedProduct(
-                            product=product, payment=payment
-                        )
+                        purchased_product = PurchasedProduct(product=product, payment=payment)
                         purchased_product.save()
-                    return redirect(
-                        "payment_success", payment_id=purchased_product.payment.id
-                    )
+                    return redirect("payment_success", payment_id=purchased_product.payment.id)
                 else:
                     raise Exception("Invalid payment choice")
-        return render(
-            request, self.template_name, {"form": form, "product_name": product.name}
-        )
+        return render(request, self.template_name, {"form": form, "product_name": product.name})
 
 
 def product_payment(request, product_id, user_id):
@@ -158,9 +144,7 @@ def product_payment(request, product_id, user_id):
 def process_square_payment(request, product_id, user_id):
     if request.method == "POST":
         if settings.ENABLE_SQUARE_PAYMENTS == False:
-            return JsonResponse(
-                {"detail": "Payments are currently disabled."}, safe=False, status=403
-            )
+            return JsonResponse({"detail": "Payments are currently disabled."}, safe=False, status=403)
         requestBody = json.loads(request.body)
 
         token = requestBody.get("token")
@@ -171,9 +155,7 @@ def process_square_payment(request, product_id, user_id):
 
         message = can_purchase_product(product, user)
         if message:
-            return JsonResponse(
-                {"square_res": {"errors": [{"detail": message}]}}, safe=False
-            )
+            return JsonResponse({"square_res": {"errors": [{"detail": message}]}}, safe=False)
 
         fees = calculate_cost_with_square_fee(product.amount_cents)
 
@@ -214,10 +196,6 @@ def process_square_payment(request, product_id, user_id):
                 safe=False,
             )
         elif create_payment_response.is_error():
-            return JsonResponse(
-                {"square_res": create_payment_response.body}, safe=False
-            )
+            return JsonResponse({"square_res": create_payment_response.body}, safe=False)
     else:
-        return JsonResponse(
-            {"error": "Invalid request method"}, safe=False, status_code=405
-        )
+        return JsonResponse({"error": "Invalid request method"}, safe=False, status_code=405)

@@ -261,7 +261,6 @@ class PayView(APIView):
     #   description='Allows a user to pay for their cart'
     # )
     def post(self, request):
-        
         user = request.user
 
         # TODO: im 99% sure there is a way to make DRF do request body validation for us

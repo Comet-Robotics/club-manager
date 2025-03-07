@@ -94,11 +94,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    (
-        "django.middleware.csrf.CsrfViewMiddleware"
-        if not DISABLE_CSRF
-        else "common.middle.DisableCSRFMiddleware"
-    ),
+    ("django.middleware.csrf.CsrfViewMiddleware" if not DISABLE_CSRF else "common.middle.DisableCSRFMiddleware"),
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

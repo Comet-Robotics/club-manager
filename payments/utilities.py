@@ -4,6 +4,7 @@ from payments.models import Product, PurchasedProduct
 from math import ceil
 from typing import TypedDict
 
+
 def can_purchase_product(product: Product, user: User) -> str | None:
     """
     Returns None if product can be purchased, otherwise returns a string messsage explaining why it can't be purchased
