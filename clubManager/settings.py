@@ -34,7 +34,11 @@ SESSION_COOKIE_SAMESITE = "Strict"
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
 ALLOWED_HOSTS = ["127.0.0.1", "*", "https://portal.cometrobotics.org"]
-CSRF_TRUSTED_ORIGINS = ["https://portal.cometrobotics.org", "http://127.0.0.1", "http://localhost:5173"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://portal.cometrobotics.org",
+    "http://127.0.0.1",
+    "http://localhost:5173",
+]
 
 
 # Application definition
@@ -90,7 +94,11 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    ("django.middleware.csrf.CsrfViewMiddleware" if not DISABLE_CSRF else "common.middle.DisableCSRFMiddleware"),
+    (
+        "django.middleware.csrf.CsrfViewMiddleware"
+        if not DISABLE_CSRF
+        else "common.middle.DisableCSRFMiddleware"
+    ),
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -211,4 +219,4 @@ DISCORD_PROJECT_MANAGER_ROLE_ID = int(str(os.getenv("DISCORD_PROJECT_MANAGER_ROL
 DISCORD_TEAM_LEAD_ROLE_ID = int(str(os.getenv("DISCORD_TEAM_LEAD_ROLE_ID")))
 DISCORD_MEMBER_ROLE_ID = int(str(os.getenv("DISCORD_MEMBER_ROLE_ID")))
 
-ENABLE_PAYMENTS = bool(int(os.getenv("ENABLE_PAYMENTS", 0)))
+ENABLE_SQUARE_PAYMENTS = bool(int(os.getenv("ENABLE_SQUARE_PAYMENTS", 0)))
