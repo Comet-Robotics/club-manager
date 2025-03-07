@@ -1,9 +1,8 @@
 from typing import TypedDict, NamedTuple
-from discord.components import ActionRow
 from django.contrib.auth.models import User
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from payments.models import Product, PurchasedProduct
-from payments.views import CostWithFee, calculate_cost_with_square_fee
+from payments.utilities import CostWithFee, calculate_cost_with_square_fee
 from .serializers import (
     UserSerializer,
     ProductSerializer,
@@ -27,7 +26,7 @@ import json
 import hashlib
 
 # TODO: that fn + some other logic i'm building here should probably move to payments app
-from payments.views import can_purchase_product
+from payments.utilities import can_purchase_product
 from payments.models import Payment
 
 from events.models import Event
