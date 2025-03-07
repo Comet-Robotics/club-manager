@@ -223,9 +223,6 @@ class CartView(APIView):
 
     @extend_schema(responses={200: CartSerializer}, description="Generates subtotal and total cost for a user's cart")
     def post(self, request):
-        if settings.ENABLE_PAYMENTS == False:
-            return Response({"detail": "Payments are currently disabled."}, status=status.HTTP_403_FORBIDDEN)
-
         user = request.user
 
         # TODO: im 99% sure there is a way to make DRF do this request body validation for us in a cleaner way
@@ -264,8 +261,6 @@ class PayView(APIView):
     #   description='Allows a user to pay for their cart'
     # )
     def post(self, request):
-        if settings.ENABLE_PAYMENTS == False:
-            return Response({"detail": "Payments are currently disabled."}, status=status.HTTP_403_FORBIDDEN)
         
         user = request.user
 
@@ -297,29 +292,29 @@ class PayView(APIView):
                 ]
             )
 
-        create_payment_response = client.payments.create_payment(
-            body={
-                "source_id": token,
-                "idempotency_key": idempotency_key,
-                "amount_money": {
-                    "amount": payment.amount_cents,
-                    "currency": ACCOUNT_CURRENCY,
-                },
-                "reference_id": str(payment.pk),
-                "note": str(payment),
-            }
-        )
+        # create_payment_response = client.payments.create_payment(
+        #     body={
+        #         "source_id": token,
+        #         "idempotency_key": idempotency_key,
+        #         "amount_money": {
+        #             "amount": payment.amount_cents,
+        #             "currency": ACCOUNT_CURRENCY,
+        #         },
+        #         "reference_id": str(payment.pk),
+        #         "note": str(payment),
+        #     }
+        # )
 
-        payment.metadata = {"square_response_body": create_payment_response.body}
-        payment.save()
+        # payment.metadata = {"square_response_body": create_payment_response.body}
+        # payment.save()
 
-        if create_payment_response.is_success():
-            payment.completed_at = timezone.now()
-            payment.save()
-            # TODO: some success response
-            return
-        elif create_payment_response.is_error():
-            # TODO: some error response
-            return
+        # if create_payment_response.is_success():
+        #     payment.completed_at = timezone.now()
+        #     payment.save()
+        #     # TODO: some success response
+        #     return
+        # elif create_payment_response.is_error():
+        #     # TODO: some error response
+        #     return
 
         return Response(cart_serializer.validated_data, status=status.HTTP_200_OK)

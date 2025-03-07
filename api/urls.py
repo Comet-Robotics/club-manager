@@ -3,13 +3,10 @@ from rest_framework import routers
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 from . import views
-from clubManager import settings
 
 router = routers.DefaultRouter()
 router.register(r"users", views.UserViewSet, basename="user")
-if settings.ENABLE_PAYMENTS:
-    router.register(r"products", views.ProductViewSet, basename="product")
-
+router.register(r"products", views.ProductViewSet, basename="product")
 router.register(r"events", views.EventViewSet, basename="event")
 
 # Wire up our API using automatic URL routing.

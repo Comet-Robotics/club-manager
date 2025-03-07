@@ -4,7 +4,7 @@ import configparser
 from django.utils import timezone
 import json
 from square.client import Client
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from django.views import View
@@ -12,36 +12,37 @@ from payments.models import Payment, Product, PurchasedProduct
 from django.db import transaction
 from pathlib import Path
 from .utilities import can_purchase_product, calculate_cost_with_square_fee
+from clubManager import settings
+
+if settings.ENABLE_PAYMENTS:
+    config_path = Path("config.ini")
+    if not config_path.exists():
+        raise FileNotFoundError(f"Missing Square config.ini file! Looking in folder: {Path().resolve()}")
 
 
-config_path = Path("config.ini")
-if not config_path.exists():
-    raise FileNotFoundError(f"Missing Square config.ini file! Looking in folder: {Path().resolve()}")
+    config = configparser.ConfigParser()
+    config.read("config.ini")
 
+    CONFIG_TYPE = config.get("DEFAULT", "environment").upper()
 
-config = configparser.ConfigParser()
-config.read("config.ini")
+    PAYMENT_FORM_URL = (
+        "https://web.squarecdn.com/v1/square.js"
+        if CONFIG_TYPE == "PRODUCTION"
+        else "https://sandbox.web.squarecdn.com/v1/square.js"
+    )
 
-CONFIG_TYPE = config.get("DEFAULT", "environment").upper()
+    APPLICATION_ID = config.get(CONFIG_TYPE, "square_application_id")
+    LOCATION_ID = config.get(CONFIG_TYPE, "square_location_id")
+    ACCESS_TOKEN = config.get(CONFIG_TYPE, "square_access_token")
 
-PAYMENT_FORM_URL = (
-    "https://web.squarecdn.com/v1/square.js"
-    if CONFIG_TYPE == "PRODUCTION"
-    else "https://sandbox.web.squarecdn.com/v1/square.js"
-)
+    client = Client(
+        access_token=ACCESS_TOKEN,
+        environment=config.get("DEFAULT", "environment"),
+    )
 
-APPLICATION_ID = config.get(CONFIG_TYPE, "square_application_id")
-LOCATION_ID = config.get(CONFIG_TYPE, "square_location_id")
-ACCESS_TOKEN = config.get(CONFIG_TYPE, "square_access_token")
-
-client = Client(
-    access_token=ACCESS_TOKEN,
-    environment=config.get("DEFAULT", "environment"),
-)
-
-location = client.locations.retrieve_location(location_id=LOCATION_ID).body["location"]
-ACCOUNT_CURRENCY = location["currency"]
-ACCOUNT_COUNTRY = location["country"]
+    location = client.locations.retrieve_location(location_id=LOCATION_ID).body["location"]
+    ACCOUNT_CURRENCY = location["currency"]
+    ACCOUNT_COUNTRY = location["country"]
 
 
 
@@ -103,6 +104,9 @@ class ChooseUserView(View):
 
 
 def product_payment(request, product_id, user_id):
+    if settings.ENABLE_PAYMENTS == False:
+        return HttpResponse("Payments are currently disabled.", status=403)
+    
     product = get_object_or_404(Product, id=product_id)
     fees = calculate_cost_with_square_fee(product.amount_cents)
 
@@ -130,6 +134,8 @@ def product_payment(request, product_id, user_id):
 @csrf_exempt
 def process_square_payment(request, product_id, user_id):
     if request.method == "POST":
+        if settings.ENABLE_PAYMENTS == False:
+            return JsonResponse({"detail": "Payments are currently disabled."}, safe=False, status=403)
         requestBody = json.loads(request.body)
 
         token = requestBody.get("token")
