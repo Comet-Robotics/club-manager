@@ -17,11 +17,11 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path
+from clubManager import settings
 
 urlpatterns = [
     path("posters/", include("posters.urls")),
     path("events/", include("events.urls")),
-    path("payments/", include("payments.urls")),
     path("", include("core.urls")),
     path("projects/", include("projects.urls")),
     path("admin/", admin.site.urls),
@@ -29,3 +29,6 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("api/", include("api.urls")),
 ]
+
+if settings.ENABLE_PAYMENTS:
+    urlpatterns.append(path("payments/", include("payments.urls")))

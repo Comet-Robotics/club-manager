@@ -19,11 +19,9 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
-from rest_framework.decorators import action
-from common.robot_combat_events import RCETeam, get_robot_combat_event, RCERobot
-from django.db.models import Q
 import json
 import hashlib
+from clubManager import settings
 
 # TODO: that fn + some other logic i'm building here should probably move to payments app
 from payments.utilities import can_purchase_product
@@ -225,10 +223,10 @@ class CartView(APIView):
 
     @extend_schema(responses={200: CartSerializer}, description="Generates subtotal and total cost for a user's cart")
     def post(self, request):
-        user = request.user
+        if settings.ENABLE_PAYMENTS == False:
+            return Response({"detail": "Payments are currently disabled."}, status=status.HTTP_403_FORBIDDEN)
 
-        if not user.is_authenticated:
-            return Response({"detail": "You're not logged in."}, status=status.HTTP_401_UNAUTHORIZED)
+        user = request.user
 
         # TODO: im 99% sure there is a way to make DRF do this request body validation for us in a cleaner way
         payment_method_serializer = PaymentChoiceSerializer(data=request.data.get("payment_choice"))
@@ -266,10 +264,10 @@ class PayView(APIView):
     #   description='Allows a user to pay for their cart'
     # )
     def post(self, request):
+        if settings.ENABLE_PAYMENTS == False:
+            return Response({"detail": "Payments are currently disabled."}, status=status.HTTP_403_FORBIDDEN)
+        
         user = request.user
-
-        if not user.is_authenticated:
-            return Response({"detail": "You're not logged in."}, status=status.HTTP_401_UNAUTHORIZED)
 
         # TODO: im 99% sure there is a way to make DRF do request body validation for us
         payment_method_serializer = PaymentChoiceSerializer(data=request.data.get("payment_choice"))
