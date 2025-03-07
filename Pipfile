@@ -29,6 +29,7 @@ boto3 = "*"
 async-timeout = "*"
 django-multiselectfield = "*"
 django-colorfield = "*"
+platformdirs = "*"
 
 [dev-packages]
 types-beautifulsoup4 = "*"
