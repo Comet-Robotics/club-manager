@@ -197,7 +197,7 @@ STORAGES = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_REDIRECT_URL = "/profile/"
-SQUARE_APPLE_MERCHANT_ID = str(os.getenv("SQUARE_APPLE_MERCHANT_ID", None))
+SQUARE_APPLE_MERCHANT_ID = os.getenv("SQUARE_APPLE_MERCHANT_ID")
 
 # Email Settings
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

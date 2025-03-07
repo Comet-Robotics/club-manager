@@ -22,8 +22,8 @@ from clubManager import settings
 urlpatterns = [
     path("posters/", include("posters.urls")),
     path("events/", include("events.urls")),
-    path("", include("core.urls")),
     path("payments/", include("payments.urls")),
+    path("", include("core.urls")),
     path("projects/", include("projects.urls")),
     path("admin/", admin.site.urls),
     path("accounts/", include("django.contrib.auth.urls")),

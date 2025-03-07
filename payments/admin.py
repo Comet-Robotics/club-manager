@@ -2,7 +2,6 @@ from django.contrib import admin
 
 from common.admin import SearchFields
 from more_admin_filters import MultiSelectDropdownFilter
-from clubManager import settings
 
 # Register your models here.
 
