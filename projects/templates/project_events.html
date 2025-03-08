@@ -1,0 +1,15 @@
+{% extends "newBase.html" %}
+{% load static %}
+{% block title %}Events{% endblock %}
+{% load render_table from django_tables2 %}
+{% block content %}
+<main class="main-content">
+  <section class="section">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2 class="section-title">Events</h2>
+      <a href="{% url 'create_event_view' %}" class="button button-primary">Create Event</a>
+    </div>
+    {% render_table table %}
+   </section>
+</main>
+{%endblock%}

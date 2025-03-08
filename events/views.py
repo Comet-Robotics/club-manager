@@ -1,6 +1,8 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.http import Http404
-from .forms import SignInForm, CreateProfileForm, UserSearchForm, RSVPForm
+
+from core.utilities import get_layout_data
+from .forms import EventForm, SignInForm, CreateProfileForm, UserSearchForm, RSVPForm
 from .models import UserIdentification, Attendance, Event, Reservation
 from core.models import UserProfile
 from django.contrib.auth.models import User
@@ -152,3 +154,32 @@ def report(request, event_id):
     event = Event.objects.get(pk=event_id)
     attendance = Attendance.objects.filter(event=event)
     return render(request, "report.html", {"event": event, "attendances": attendance})
+
+
+
+    
+def event_editor_view(request, event_id: int | None = None):
+    layout_data = get_layout_data(request)
+    if event_id:
+        event = get_object_or_404(Event, pk=event_id)
+        if request.method == "POST":
+            form = EventForm(request.POST, instance=event)
+            if form.is_valid():
+                form.save()
+        else:
+            form = EventForm(instance=event)
+        return render(request, "edit_event.html", {**layout_data, "form": form})
+    else:
+        form = EventForm()
+        return render(request, "edit_event.html", {**layout_data, "form": form})
+
+def create_event_view(request):
+    layout_data = get_layout_data(request)
+    if request.method == "POST":
+        form = EventForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("event_editor_view", event_id=form.instance.id)
+    else:
+        form = EventForm()
+    return render(request, "edit_event.html", {**layout_data, "form": form})

@@ -572,3 +572,7 @@ select {
         width: 12rem;
     }
 }
+
+/* @view-transition {
+    navigation: auto;
+} */
