@@ -10,7 +10,11 @@
     <h2 class="section-title">Server Settings</h2>
     <form method="post">
       {% csrf_token %} {{ form }}
-      <button class="button button-primary" type="submit">Continue</button>
+      <button class="button button-primary" type="submit">Submit</button>
+    </form>
+    <form method="post" action="{% url 'server_settings_logo_form' %}" enctype="multipart/form-data">
+      {% csrf_token %} {{ logo_form }}
+      <button class="button button-primary" type="submit">Upload Logo</button>
     </form>
   </section>
   {% if message %}
