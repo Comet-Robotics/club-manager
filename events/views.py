@@ -56,7 +56,9 @@ def sign_in(request, event_id):
     else:
         form = SignInForm()
 
-    return render(request, "sign_in.html", {**layout_data, "form": form, "event_id": event_id, "event_name": event_name})
+    return render(
+        request, "sign_in.html", {**layout_data, "form": form, "event_id": event_id, "event_name": event_name}
+    )
 
 
 @staff_member_required
@@ -163,7 +165,8 @@ def event_overview(request, event_id):
     layout_data = get_layout_data(request)
     event = Event.objects.get(pk=event_id)
     return render(request, "event_overview.html", {**layout_data, "event": event})
-    
+
+
 def event_editor_view(request, event_id: int | None = None):
     layout_data = get_layout_data(request)
     if event_id:
@@ -178,6 +181,7 @@ def event_editor_view(request, event_id: int | None = None):
     else:
         form = EventForm()
         return render(request, "edit_event.html", {**layout_data, "form": form})
+
 
 def create_event_view(request):
     layout_data = get_layout_data(request)

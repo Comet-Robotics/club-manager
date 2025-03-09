@@ -63,14 +63,15 @@ class RSVPForm(forms.Form):
     net_id = NetIDField(label="Net ID", max_length=20, widget=forms.TextInput(attrs={"class": "input input-bordered"}))
 
 
-
 class EventForm(forms.ModelForm):
     class Meta:
         model = Event
         exclude = ["created_at", "updated_at"]
 
         widgets = {
-            "event_date": forms.DateTimeInput(format=("%Y-%m-%dT%H:%M"), attrs={"class": "form-control", "type": "datetime-local"}),
+            "event_date": forms.DateTimeInput(
+                format=("%Y-%m-%dT%H:%M"), attrs={"class": "form-control", "type": "datetime-local"}
+            ),
         }
 
     def __init__(self, *args, **kwargs):
