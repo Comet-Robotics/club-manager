@@ -2,20 +2,36 @@
 {% load static %}
 {% block title %}Server Settings{% endblock %}
 {%block head%}
-
+<link rel="stylesheet" href="{% static 'core/profile.css' %}">
 {%endblock%}
 {% block content %}
 <main class="main-content">
+  
   <section class="section">
     <h2 class="section-title">Server Settings</h2>
-    <form method="post">
-      {% csrf_token %} {{ form }}
-      <button class="button button-primary" type="submit">Submit</button>
-    </form>
-    <form method="post" action="{% url 'server_settings_logo_form' %}" enctype="multipart/form-data">
-      {% csrf_token %} {{ logo_form }}
-      <button class="button button-primary" type="submit">Upload Logo</button>
-    </form>
+    <div class="accounts-grid">
+      <div class="account-card">
+        <div class="card-content">
+          <form method="post">
+            {% csrf_token %} {{ form }}
+            <button class="button button-primary" type="submit">Submit</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="accounts-grid">
+      <div class="account-card">
+        <div class="card-content">
+          <form method="post" action="{% url 'server_settings_logo_form' %}" enctype="multipart/form-data">
+            {% csrf_token %} {{ logo_form }}
+            <button class="button button-primary" type="submit">Upload Logo</button>
+          </form>
+        </div>
+      </div>
+    </div>
   </section>
   {% if message %}
   <div role="alert" class="alert alert-info">
