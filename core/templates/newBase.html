@@ -27,9 +27,9 @@
             </div>
             <div class="user-menu">
                 <button class="user-button" onclick="toggleDropdown()">
-                    <div class="avatar">
+                    {% comment %} <div class="avatar">
                         <img src="/placeholder.svg?height=32&width=32" alt="User avatar">
-                    </div>
+                    </div> {% endcomment %}
                     <span>{{request.user.first_name}} {{user.last_name}}</span>
                     <i data-lucide="chevron-down"></i>
                 </button>

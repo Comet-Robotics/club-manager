@@ -23,6 +23,8 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+PUBLIC_URL = os.getenv("PUBLIC_URL")
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
@@ -36,8 +38,18 @@ CSRF_COOKIE_SAMESITE = "Strict"
 SESSION_COOKIE_SAMESITE = "Strict"
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
-ALLOWED_HOSTS = ["127.0.0.1", "*", "https://portal.cometrobotics.org"]
-CSRF_TRUSTED_ORIGINS = ["https://portal.cometrobotics.org", "http://127.0.0.1", "http://localhost:5173"]
+ALLOWED_HOSTS = []
+CSRF_TRUSTED_ORIGINS = []
+
+if PUBLIC_URL:
+    ALLOWED_HOSTS += [PUBLIC_URL]
+    CSRF_TRUSTED_ORIGINS += [PUBLIC_URL]
+else:
+    print("Warning: PUBLIC_URL not set. Things might break.")
+
+if DEBUG:
+    ALLOWED_HOSTS += ["127.0.0.1", "*"]
+    CSRF_TRUSTED_ORIGINS += ["http://127.0.0.1", "http://localhost:5173"]
 
 
 # Application definition
@@ -185,7 +197,7 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_REDIRECT_URL = "/profile/"
-SQUARE_APPLE_MERCHANT_ID = str(os.getenv("SQUARE_APPLE_MERCHANT_ID"))
+SQUARE_APPLE_MERCHANT_ID = os.getenv("SQUARE_APPLE_MERCHANT_ID")
 
 # Email Settings
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -202,3 +214,5 @@ DISCORD_OFFICER_ROLE_ID = int(str(os.getenv("DISCORD_OFFICER_ROLE_ID")))
 DISCORD_PROJECT_MANAGER_ROLE_ID = int(str(os.getenv("DISCORD_PROJECT_MANAGER_ROLE_ID")))
 DISCORD_TEAM_LEAD_ROLE_ID = int(str(os.getenv("DISCORD_TEAM_LEAD_ROLE_ID")))
 DISCORD_MEMBER_ROLE_ID = int(str(os.getenv("DISCORD_MEMBER_ROLE_ID")))
+
+ENABLE_SQUARE_PAYMENTS = bool(int(os.getenv("ENABLE_SQUARE_PAYMENTS", 0)))

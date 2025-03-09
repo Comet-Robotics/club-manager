@@ -1,15 +1,20 @@
 from django import forms
 from common.forms import NetIDField
+from clubManager import settings
 
 
 class PaymentSignInForm(forms.Form):
     payment_choices = [
-        ("square_api", "Credit Card/Debit Card (Online)"),
         ("cash", "In-Person Cash Payment"),
     ]
-    # TODO: allow username to not be a net id
+    if settings.ENABLE_SQUARE_PAYMENTS:
+        payment_choices.append(("square_api", "Credit Card/Debit Card (Online)"))
+
     username = NetIDField(
-        label="Net ID", max_length=20, required=True, widget=forms.TextInput(attrs={"autofocus": True})
+        label="Net ID",
+        max_length=9,
+        required=True,
+        widget=forms.TextInput(attrs={"autofocus": True}),
     )
     payment_method = forms.ChoiceField(
         label="Payment Method",
