@@ -92,4 +92,4 @@ def apple_merchant_id(request):
 
 
 def index(request):
-    return HttpResponsePermanentRedirect("/_/")
+    return HttpResponsePermanentRedirect("/profile")
