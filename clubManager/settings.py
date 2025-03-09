@@ -34,7 +34,11 @@ SESSION_COOKIE_SAMESITE = "Strict"
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
 ALLOWED_HOSTS = ["127.0.0.1", "*", "https://portal.cometrobotics.org"]
-CSRF_TRUSTED_ORIGINS = ["https://portal.cometrobotics.org", "http://127.0.0.1", "http://localhost:5173"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://portal.cometrobotics.org",
+    "http://127.0.0.1",
+    "http://localhost:5173",
+]
 
 
 # Application definition
@@ -193,7 +197,7 @@ STORAGES = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_REDIRECT_URL = "/profile/"
-SQUARE_APPLE_MERCHANT_ID = str(os.getenv("SQUARE_APPLE_MERCHANT_ID"))
+SQUARE_APPLE_MERCHANT_ID = os.getenv("SQUARE_APPLE_MERCHANT_ID")
 
 # Email Settings
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -210,3 +214,5 @@ DISCORD_OFFICER_ROLE_ID = int(str(os.getenv("DISCORD_OFFICER_ROLE_ID")))
 DISCORD_PROJECT_MANAGER_ROLE_ID = int(str(os.getenv("DISCORD_PROJECT_MANAGER_ROLE_ID")))
 DISCORD_TEAM_LEAD_ROLE_ID = int(str(os.getenv("DISCORD_TEAM_LEAD_ROLE_ID")))
 DISCORD_MEMBER_ROLE_ID = int(str(os.getenv("DISCORD_MEMBER_ROLE_ID")))
+
+ENABLE_SQUARE_PAYMENTS = bool(int(os.getenv("ENABLE_SQUARE_PAYMENTS", 0)))
