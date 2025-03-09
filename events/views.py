@@ -8,10 +8,12 @@ from core.models import UserProfile
 from django.contrib.auth.models import User
 from django.contrib.admin.views.decorators import staff_member_required
 from .tables import UserTable, LinkUserTable
+from core.utilities import get_layout_data
 
 
 @staff_member_required
 def sign_in(request, event_id):
+    layout_data = get_layout_data(request)
     current_event = Event.objects.get(pk=event_id)
     event_name = current_event.event_name
     if request.method == "POST":
@@ -41,6 +43,7 @@ def sign_in(request, event_id):
                 request,
                 "sign_in.html",
                 {
+                    **layout_data,
                     "form": form,
                     "message": message,
                     "status": status,
@@ -53,7 +56,7 @@ def sign_in(request, event_id):
     else:
         form = SignInForm()
 
-    return render(request, "sign_in.html", {"form": form, "event_id": event_id, "event_name": event_name})
+    return render(request, "sign_in.html", {**layout_data, "form": form, "event_id": event_id, "event_name": event_name})
 
 
 @staff_member_required
@@ -156,7 +159,10 @@ def report(request, event_id):
     return render(request, "report.html", {"event": event, "attendances": attendance})
 
 
-
+def event_overview(request, event_id):
+    layout_data = get_layout_data(request)
+    event = Event.objects.get(pk=event_id)
+    return render(request, "event_overview.html", {**layout_data, "event": event})
     
 def event_editor_view(request, event_id: int | None = None):
     layout_data = get_layout_data(request)

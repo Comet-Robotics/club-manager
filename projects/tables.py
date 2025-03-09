@@ -8,6 +8,6 @@ class EventTable(tables.Table):
         exclude = ("url", "project", "id", "created_at", "updated_at")
     
     view = tables.TemplateColumn(
-        '<a style="color: red" href="{%url "event_overview" event.id %}">Sign In</a>',
+        '<a style="color: red" href="{%url "event_overview" record.id %}">Overview</a>',
         orderable=False,
     )
