@@ -36,9 +36,7 @@ SESSION_COOKIE_SAMESITE = "Strict"
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
 ALLOWED_HOSTS = []
-CSRF_TRUSTED_ORIGINS = [
-        
-]
+CSRF_TRUSTED_ORIGINS = []
 
 if PUBLIC_URL:
     ALLOWED_HOSTS += [PUBLIC_URL]
@@ -48,8 +46,7 @@ else:
 
 if DEBUG:
     ALLOWED_HOSTS += ["127.0.0.1", "*"]
-    CSRF_TRUSTED_ORIGINS += ["http://127.0.0.1",
-    "http://localhost:5173"]
+    CSRF_TRUSTED_ORIGINS += ["http://127.0.0.1", "http://localhost:5173"]
 
 
 # Application definition
