@@ -72,6 +72,7 @@ def server_settings_logo_form_view(request):
 
     return redirect("server_settings")
 
+
 @user_passes_test(lambda u: u.is_superuser)
 def server_settings_view(request):
     layout_data = get_layout_data(request)

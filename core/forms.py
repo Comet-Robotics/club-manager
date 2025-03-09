@@ -33,6 +33,7 @@ class ServerSettingsForm(forms.ModelForm):
         model = ServerSettings
         exclude = ["_singleton", "logo"]
 
+
 class ServerSettingsLogoForm(forms.ModelForm):
     class Meta:
         model = ServerSettings

@@ -9,11 +9,9 @@ from datetime import datetime, timedelta
 __all__ = ["get_majors", "get_major_from_netid"]
 
 DIRECTORY_TRIES = 5
-MAJORS_CACHE_PATH = (
-    dirs.site_cache_path
-    / "majors.json"
-)
+MAJORS_CACHE_PATH = dirs.site_cache_path / "majors.json"
 MAJOR_CACHE_MAX_AGE = timedelta(weeks=4)
+
 
 @functools.lru_cache()
 def get_majors() -> dict[str, str]:
