@@ -10,10 +10,9 @@ class PaymentSignInForm(forms.Form):
     if settings.ENABLE_SQUARE_PAYMENTS:
         payment_choices.append(("square_api", "Credit Card/Debit Card (Online)"))
 
-    # TODO: allow username to not be a net id
     username = NetIDField(
         label="Net ID",
-        max_length=20,
+        max_length=9,
         required=True,
         widget=forms.TextInput(attrs={"autofocus": True}),
     )
