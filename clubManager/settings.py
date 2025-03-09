@@ -20,6 +20,8 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+PUBLIC_URL = os.getenv("PUBLIC_URL")
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
@@ -33,12 +35,21 @@ CSRF_COOKIE_SAMESITE = "Strict"
 SESSION_COOKIE_SAMESITE = "Strict"
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
-ALLOWED_HOSTS = ["127.0.0.1", "*", "https://portal.cometrobotics.org"]
+ALLOWED_HOSTS = []
 CSRF_TRUSTED_ORIGINS = [
-    "https://portal.cometrobotics.org",
-    "http://127.0.0.1",
-    "http://localhost:5173",
+        
 ]
+
+if PUBLIC_URL:
+    ALLOWED_HOSTS += [PUBLIC_URL]
+    CSRF_TRUSTED_ORIGINS += [PUBLIC_URL]
+else:
+    print("Warning: PUBLIC_URL not set. Things might break.")
+
+if DEBUG:
+    ALLOWED_HOSTS += ["127.0.0.1", "*"]
+    CSRF_TRUSTED_ORIGINS += ["http://127.0.0.1",
+    "http://localhost:5173"]
 
 
 # Application definition
