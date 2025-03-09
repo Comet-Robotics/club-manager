@@ -10,10 +10,10 @@ __all__ = ["get_majors", "get_major_from_netid"]
 
 DIRECTORY_TRIES = 5
 MAJORS_CACHE_PATH = (
-    platformdirs.site_cache_path(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True)
-    / "majors.json"
+    platformdirs.site_cache_path(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True) / "majors.json"
 )
 MAJOR_CACHE_MAX_AGE = timedelta(weeks=4)
+
 
 @functools.lru_cache()
 def get_majors() -> dict[str, str]:

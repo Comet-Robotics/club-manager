@@ -10,4 +10,7 @@ urlpatterns = [
     path("<int:event_id>/lookup-user/<int:student_id>/", views.lookup_user, name="lookup-user"),
     path("<int:event_id>/rsvp/", views.rsvp, name="rsvp"),
     path("<int:event_id>/report/", views.report, name="report"),
+    path("edit/<int:event_id>", views.event_editor_view, name="event_editor_view"),
+    path("create/", views.create_event_view, name="create_event_view"),
+    path("<int:event_id>/overview", views.event_overview, name="event_overview"),
 ]
