@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from platformdirs import PlatformDirs
+
+dirs = PlatformDirs(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True)
 
 load_dotenv()
 
@@ -109,6 +112,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                'django.template.context_processors.media',
             ],
         },
     },
@@ -168,24 +172,12 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = os.getenv("STATIC_ROOT")
+MEDIA_ROOT = dirs.user_data_path / "media"
+MEDIA_URL = '/media/'
 
 STATICFILES_DIRS = [
     BASE_DIR / "frontend/dist",
 ]
-
-STORAGES = {
-    "default": {
-        "BACKEND": "storages.backends.s3.S3Storage",
-        "OPTIONS": {
-            "bucket_name": str(os.getenv("AWS_STORAGE_BUCKET_NAME")),
-            "endpoint_url": str(os.getenv("AWS_ENDPOINT_URL")),
-            "access_key": str(os.getenv("AWS_ACCESS_KEY_ID")),
-            "secret_key": str(os.getenv("AWS_SECRET_ACCESS_KEY")),
-            "signature_version": "s3v4",
-        },
-    },
-    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
-}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
