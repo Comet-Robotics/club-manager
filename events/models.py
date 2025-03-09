@@ -7,6 +7,7 @@ from computedfields.models import ComputedFieldsModel, computed
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 from projects.models import Project, Team
+from django.db.models import F
 
 
 # Create your models here.
@@ -43,6 +44,15 @@ class Event(models.Model):
 
     def get_attendance_rate(self):
         return (self.get_attendance() / self.get_expected_attendees()) * 100
+    
+    def get_event_major_breakdown(self):
+        return self.attendances.values(name=F('user__userprofile__major')).annotate(count=models.Count('user__userprofile__major'))
+    
+    def get_event_gender_breakdown(self):
+        return self.attendances.values(name=F('user__userprofile__gender')).annotate(count=models.Count('user__userprofile__gender'))
+    
+    def get_event_race_breakdown(self):
+        return self.attendances.values(name=F('user__userprofile__race__name')).annotate(count=models.Count('user__userprofile__race'))
 
 
 class Attendance(models.Model):

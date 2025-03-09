@@ -21,8 +21,11 @@ class ServerSettings(models.Model):
     accent_color_hex = ColorField(default="#4BC0FF")
     logo = models.ImageField(upload_to="logos")
 
+class Race(models.Model):
+    name = models.CharField(max_length=100)
 
-# Create your models here.
+    def __str__(self):
+        return self.name
 class UserProfile(models.Model):
     class GenderChoice(models.TextChoices):
         MALE = "M", _("Man")
@@ -39,16 +42,6 @@ class UserProfile(models.Model):
         XXLARGE = "XXL", _("2XL")
         XXXLARGE = "XXXL", _("3XL")
 
-    RACE_CHOICES = (
-        ("W", _("White")),
-        ("B", _("Black or African American")),
-        ("E", _("East Asian")),
-        ("S", _("South Asian")),
-        ("N", _("American Indian or Alaska Native")),
-        ("P", _("Native Hawaiian or Other Pacific Islander")),
-        ("M", _("Middle Eastern")),
-        ("O", _("Other")),
-    )
 
     DIETARY_CHOICES = (
         ("S", _("Shellfish Allergy")),
@@ -64,7 +57,7 @@ class UserProfile(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     gender = models.CharField(max_length=1, choices=GenderChoice.choices, null=True, blank=True)
-    race = MultiSelectField(choices=RACE_CHOICES, blank=True, null=True)
+    race = models.ManyToManyField(Race)
     diet = MultiSelectField(choices=DIETARY_CHOICES, blank=True, null=True)
     shirt = models.CharField(max_length=4, choices=ShirtSize.choices, null=True, blank=True)
     is_hispanic = models.BooleanField(null=True, blank=True, default=None)
