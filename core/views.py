@@ -88,6 +88,8 @@ def spa_view(request):
 
 @require_GET
 def apple_merchant_id(request):
+    if not settings.SQUARE_APPLE_MERCHANT_ID:
+        return HttpResponse("Not configured", status=400)
     return HttpResponse(settings.SQUARE_APPLE_MERCHANT_ID, content_type="text/plain")
 
 
