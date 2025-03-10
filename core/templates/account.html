@@ -1,10 +1,13 @@
 {% extends "newBase.html" %}
 {% load static %}
+{% load socialaccount %}
+
 {% block title %}My Profile{% endblock %}
 {%block head%}
-  <link rel="stylesheet" href="{% static 'core/profile.css' %}">
+<link rel="stylesheet" href="{% static 'core/profile.css' %}">
 {%endblock%}
 {% block content %}
+{% get_social_accounts user as accounts %}
 
 <main class="main-content">
     <!-- Linked Accounts -->
@@ -23,18 +26,30 @@
             <div class="account-card">
                 <div class="card-header">
                     <h3>GitHub</h3>
+                    {% if accounts.github.0 %}
                     <div class="user-info">
                         <div class="avatar small">
-                            <img src="/placeholder.svg?height=20&width=20" alt="GitHub avatar">
+                            <img src="{{accounts.github.0.extra_data.avatar_url}}" alt="GitHub avatar">
                         </div>
-                        <span>jasonappah</span>
+                        <span>{{accounts.github.0.extra_data.login}}</span>
                     </div>
+                    {% else %}
+                    <p class="card-description">Connect your GitHub account</p>
+                    {%endif%}
                 </div>
                 <div class="card-content">
-                    <button class="button button-outline">
-                        <i data-lucide="github"></i>
-                        UNLINK
-                    </button>
+                    {% if accounts.github.0 %}
+                    <a href="{% url 'delete_social_account' 'github' %}" >
+                      <button class="button button-outline">
+                          <i data-lucide="github"></i>
+                          UNLINK
+                      </button>
+                    </a>
+                    {% else %}
+                    <a href="{% provider_login_url 'github' process='connect' %}" >
+                      <button type="button" class="button button-primary">LINK ACCOUNT</button>
+                    </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

@@ -5,6 +5,8 @@ from core.models import UserProfile
 from clubManager import settings
 import requests
 from typing import TypedDict
+from django.http import HttpRequest
+from accounts.utilities import delete_social_account
 
 
 class LinkSocialView(View):
@@ -83,3 +85,7 @@ def get_discord_user(user_id: int, bot_token: str) -> DiscordUser | None:
         profile_image = f"https://cdn.discordapp.com/embed/avatars/{discord_id}.png"
 
     return {"username": user_data["username"], "discord_id": discord_id, "profile_image": profile_image}
+
+def delete_social_account_view(request: HttpRequest, provider: str):
+    delete_social_account(request, provider)
+    return redirect("account")

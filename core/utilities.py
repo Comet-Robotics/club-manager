@@ -2,7 +2,7 @@ from core.models import ServerSettings, User
 from django.http import HttpRequest
 from django.contrib.auth.models import AnonymousUser
 from projects.models import Project
-from typing import Iterable, TypedDict
+from typing import Iterable, Literal, TypedDict
 
 
 class LayoutData(TypedDict):
