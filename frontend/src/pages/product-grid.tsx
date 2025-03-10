@@ -1,31 +1,17 @@
-import { useEffect, useState } from 'react'
 import { ShoppingCart, Minus, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { cart$, products$ } from '@/lib/state'
+import { cart$, productMeta$, products$ } from '@/lib/state'
 import { observer } from "@legendapp/state/react"
-import { apiClient } from '@/lib/state'
-import type { Product } from '@/lib/types'
 import { Link } from '@tanstack/react-router'
 
 export default observer(ProductGrid)
 
 export function ProductGrid() {
-  const addToCart = (productId: number) => {
-    cart$.quantities.set({ ...cart$.quantities.get(), [productId]: (cart$.quantities.get()[productId] || 0) + 1 })
-  }
-
-  const updateQuantity = (productId: number, delta: number) => {
-    const newQuantities = { ...cart$.quantities.get() }
-    if (!newQuantities[productId]) return
-    newQuantities[productId] += delta
-    if (newQuantities[productId] <= 0) {
-      delete newQuantities[productId]
-    }
-    cart$.quantities.set(newQuantities)
-  }
-
-  const cartCount = Object.values(cart$.quantities.get()).reduce((acc, quantity) => acc + quantity, 0)
+  
+  const cartCount = cart$.cartCount.get()
+  const productLoadError = productMeta$.error.get()
+  const productsLoaded = productMeta$.isLoaded.get()
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -44,6 +30,16 @@ export function ProductGrid() {
         
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {!productsLoaded &&
+          <div className="flex justify-center items-center h-full">
+            <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-gray-300" />
+          </div>
+        }
+        {productLoadError && 
+          <div className="flex justify-center items-center h-full">
+            <div className="text-red-500">Error loading products. Please try again later.</div>
+          </div>
+        }
         {Object.values(products$.get() ?? {}).map(product => (
           <Card key={product.id} className="overflow-hidden">
             <div className="w-full h-[300px] bg-gray-200 rounded-md">
@@ -61,7 +57,7 @@ export function ProductGrid() {
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={() => updateQuantity(product.id, -1)}
+                    onClick={() => cart$.updateQuantity(product.id, -1)}
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
@@ -69,13 +65,13 @@ export function ProductGrid() {
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={() => updateQuantity(product.id, 1)}
+                    onClick={() => cart$.updateQuantity(product.id, 1)}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
               ) : (
-                <Button className="w-full" onClick={() => addToCart(product.id)}>
+                <Button className="w-full" onClick={() => cart$.addToCart(product.id)}>
                   Add to Cart
                 </Button>
               )}

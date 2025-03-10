@@ -2,9 +2,11 @@ from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.core.exceptions import PermissionDenied
 
+
 class NoSocialLoginAccountAdapter(DefaultAccountAdapter):
     def is_open_for_signup(self, request):
         return False  # Prevents signing up with social accounts
+
 
 class NoSocialLoginSocialAccountAdapter(DefaultSocialAccountAdapter):
     def pre_social_login(self, request, sociallogin):

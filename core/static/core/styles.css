@@ -1,0 +1,574 @@
+/* Reset and Base Styles */
+:root {
+    --primary: #bf1e2e;
+    /* credit to https://stuffandnonsense.co.uk/blog/new-relative-colour-functions-in-css */
+    --primary-dark: color-mix(in hsl, var(--primary) 75%, black);
+    --white: #ffffff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--gray-900);
+    background-color: var(--gray-50);
+    line-height: 1.5;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Layout */
+.app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-container {
+    display: flex;
+    flex: 1;
+    position: relative;
+}
+
+/* Header */
+.header {
+    background-color: var(--primary);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--white);
+    box-shadow: var(--shadow);
+    position: relative;
+    z-index: 20;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.logo-container {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo {
+    width: 32px;
+    height: 32px;
+}
+
+.header-separator {
+    width: 1px;
+    height: 2rem;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.header h1 {
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+/* User Menu */
+.user-menu {
+    position: relative;
+}
+
+.user-button {
+    background: none;
+    border: none;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    font-size: 0.875rem;
+}
+
+.user-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.avatar {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    background-color: var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.avatar.small {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 16rem;
+    background-color: var(--white);
+    border-right: 1px solid var(--gray-200);
+    position: sticky;
+    top: 0;
+    height: calc(100vh - 4rem);
+    overflow-y: auto;
+}
+
+.sidebar-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.nav-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.section-title {
+    color: var(--primary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.5rem;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem;
+    color: var(--gray-600);
+    text-decoration: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: all 0.15s;
+}
+
+.nav-link:hover {
+    background-color: var(--gray-50);
+    color: var(--primary);
+}
+
+.sub-nav {
+    padding-left: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 72rem;
+    margin: 0 auto;
+    width: 100%;
+}
+
+
+
+/* Section Styles */
+.section {
+    margin-bottom: 2rem;
+}
+
+.section > h2 {
+    color: var(--primary);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+
+
+/* Buttons */
+.button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+}
+
+.button-primary {
+    background-color: var(--primary);
+    color: var(--white);
+}
+
+.button-primary:hover {
+    background-color: var(--primary-dark);
+}
+
+.button-outline {
+    background-color: transparent;
+    border: 1px solid var(--gray-300);
+    color: var(--gray-700);
+}
+
+.button-outline:hover {
+    background-color: var(--gray-50);
+}
+
+.icon-button {
+    padding: 0.5rem;
+    border: none;
+    background: none;
+    color: var(--gray-500);
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.icon-button:hover {
+    background-color: var(--gray-100);
+    color: var(--gray-700);
+}
+
+
+.card-footer {
+    padding: 1rem;
+    border-top: 1px solid var(--gray-200);
+}
+
+/* Form Elements */
+input, 
+select, 
+textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 0.375rem;
+    background-color: var(--white);
+    color: var(--gray-900);
+    font-size: 0.875rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    margin-bottom: 1rem;
+}
+
+input:focus, 
+select:focus, 
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(191, 30, 46, 0.2);
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Checkboxes and Radio buttons */
+input[type="checkbox"],
+input[type="radio"] {
+    width: auto;
+    margin-right: 0.5rem;
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+/* Labels */
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    font-size: 0.875rem;
+}
+
+/* Checkbox and radio labels should be inline */
+input[type="checkbox"] + label,
+input[type="radio"] + label {
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+
+
+
+fieldset {
+    border: 1px solid var(--gray-200);
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+legend {
+    padding: 0 0.5rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Help text */
+.helptext {
+    display: block;
+    color: var(--gray-500);
+    font-size: 0.75rem;
+    margin-top: -0.75rem;
+    margin-bottom: 1rem;
+}
+
+/* Error states */
+.errorlist {
+    color: var(--primary);
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.5rem 0;
+    font-size: 0.75rem;
+}
+
+input.error,
+select.error,
+textarea.error {
+    border-color: var(--primary);
+}
+
+/* Submit button - leveraging existing button styles */
+input[type="submit"] {
+    width: auto;
+    background-color: var(--primary);
+    color: var(--white);
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border: none;
+}
+
+input[type="submit"]:hover {
+    background-color: var(--primary-dark);
+}
+
+/* Disabled state */
+input:disabled,
+select:disabled,
+textarea:disabled,
+input[type="submit"]:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* File inputs */
+input[type="file"] {
+    padding: 0.5rem 0;
+    border: none;
+    background: none;
+}
+
+/* Select dropdown arrow styling */
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 16px;
+    padding-right: 2.5rem;
+}
+
+/* Form groups */
+.form-row {
+    margin-bottom: 1rem;
+}
+
+/* Django specific - required field indicator */
+.required label:after {
+    content: " *";
+    color: var(--primary);
+}
+
+/* Responsive form adjustments */
+@media (max-width: 640px) {
+    form {
+        padding: 1rem;
+    }
+    
+    input, 
+    select, 
+    textarea {
+        padding: 0.625rem;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 14rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .header h1 {
+        font-size: 1rem;
+    }
+
+    .user-button span {
+        display: none;
+    }
+
+    .main-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .main-content {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .header {
+        padding: 0.75rem;
+    }
+
+    .id-card {
+        padding: 1.5rem;
+    }
+
+    .card-name {
+        font-size: 1.25rem;
+    }
+
+    .card-id {
+        font-size: 1.75rem;
+    }
+
+    .attendance-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .term-badges {
+        gap: 0.25rem;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
+
+/* Dropdown Menu */
+.user-menu {
+    position: relative;
+}
+
+.dropdown-icon {
+    transition: transform 0.2s;
+}
+
+.user-button[aria-expanded="true"] .dropdown-icon {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    width: 14rem;
+    background-color: var(--white);
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s;
+}
+
+.dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-header {
+    padding: 0.75rem 1rem;
+    color: var(--gray-500);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background-color: var(--gray-200);
+    margin: 0.25rem 0;
+}
+
+.dropdown-item {
+  background: none;
+  border: none;  
+  display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    color: var(--gray-700);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: background-color 0.15s;
+}
+
+.dropdown-item:hover {
+    background-color: var(--gray-50);
+}
+
+.dropdown-item.text-red {
+    color: var(--primary);
+}
+
+.dropdown-item.text-red:hover {
+    background-color: var(--gray-50);
+}
+
+/* Add this at the end of your CSS file */
+@media (max-width: 768px) {
+    .dropdown-menu {
+        width: 12rem;
+    }
+}

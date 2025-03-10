@@ -2,6 +2,7 @@ from typing import Any
 from django import forms
 from common.utils import is_valid_net_id
 
+
 class NetIDField(forms.CharField):
     net_id = forms.CharField()
 
