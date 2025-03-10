@@ -572,3 +572,23 @@ select {
         width: 12rem;
     }
 }
+
+
+.background-svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200%; /* Make the SVG larger than the div */
+    height: 200%; /* Make the SVG larger than the div */
+    opacity: 0.6;
+    pointer-events: none;
+    transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+
+.content {
+    position: relative;
+    z-index: 1;    /* Add other styling for the content of the card */
+}
+

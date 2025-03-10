@@ -9,20 +9,170 @@
             <main class="main-content">
                 <!-- ID Card -->
                 <div class="id-card">
-                    <div class="term-badges">
-                        {% for term in terms %}
-                          <span class="badge">{{term}}</span>
-                          {%empty%}
-                          <span class="badge">BECOME A MEMBER</span>
-                        {% endfor %}
+                    <div class="background-svg">
+                        <svg width="100%" height="100%" viewBox="0 0 1080 1080" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+                            <g transform="matrix(1.20327,0,0,1.08314,-141.324,-45.9036)">
+                                <ellipse cx="696.664" cy="543.855" rx="1.407" ry="2.669" style="fill:none;stroke:white;stroke-width:3.49px;"/>
+                            </g>
+                            <g transform="matrix(1,0,0,1,-0.623004,-0.178431)">
+                                <ellipse cx="702.5" cy="541.379" rx="0.861" ry="1.788" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            </g>
+                            <g transform="matrix(1.13084,-0.0854614,0.0792614,1.0488,-133.011,30.6069)">
+                                <ellipse cx="686.561" cy="547.895" rx="1.771" ry="3.239" style="fill:none;stroke:white;stroke-width:3.66px;"/>
+                            </g>
+                            <path d="M666.218,540L669.605,540.551" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M724.961,525.238L703.361,534.844" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M724.961,532.15L717.94,528.361" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M665.147,551L598.802,579.048" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M328.859,544.656L471.725,508.479L512.268,510.708" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M697.716,523.435L724.961,525.238" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M657.86,451.413C657.86,451.413 674.028,467.46 657.482,476.152C640.937,484.843 646.877,480.223 646.877,480.223" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M738.231,139.632L740.285,130.975L787.216,129.358L784.687,158.895L744.225,162.177" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M787.216,129.358L791.725,129.358L788.397,158.895L784.687,158.895" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M604.254,579.743L328.859,544.656L335.09,665.348L350.752,668.362" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M791.725,136.255L852.478,133.939L848.807,152.594L789.023,153.332" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M795.298,136.119L795.298,129.358L830.492,129.541L830.492,133.939" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M812.051,129.358L812.051,125.331L868.314,122.93L868.314,132.739L854.08,132.739L852.478,133.939" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M868.314,122.93L874.361,125.262L874.361,131.491L868.347,132.739" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M904.608,132.739L904.755,129.358L874.361,130.133" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M789.023,158.895L789.023,168.683L761.079,168.624L752.736,164.616L748.639,165.251" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M789.023,163.789L820.75,162.177L820.75,165.436L830.492,167.138L830.492,163.789L880.408,167.138L880.408,163.789L896.923,163.789L900.143,161.129L900.624,153.332" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M896.923,163.789L898.886,165.499L908.254,165.868L908.922,160.235L900.624,158.895" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M900.624,153.332L864.462,156.416L863.576,153.332L848.807,152.594" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M413.139,167.138L390.778,167.138L381.088,170.904C381.088,170.904 373.362,173.509 374.904,177.616" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M564.362,558.978L685.149,512.804L677.638,509.115" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M561.753,557.388L564.362,558.978" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M564.362,558.978L573.907,572.902L581.115,569.945L570.093,556.787" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M578.58,566.919L683.417,525.238L681.779,514.184" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M683.417,513.494L694.255,526.568L698.071,523.908L689.746,512.804L685.149,512.804" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M683.417,525.238L694.255,526.568" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M525.227,554.588L517.554,564.845L572.738,572.902" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M417.711,175.755L380.842,177.616" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M422.78,185.309L385.876,188.665" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M478.288,177.616C478.288,177.616 476.889,182.929 471.725,182.099" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M454.036,183.235L451.263,183.235L439.419,182.187" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M441.882,161.129L441.821,156.66L449.887,156.66L459.052,159.118" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M439.419,161.129L432.06,158.895L427.107,159.118" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M576.319,438.699L427.107,159.118L419.183,156.66L570.093,441.241" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M561.753,447.228L411.792,164.6L419.183,156.66" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M601.1,433.62L471.725,182.099L465.398,181.17L595.407,436.353" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M465.398,181.17L454.036,182.233L584.202,436.353" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M510.397,315.18L506.546,307.965L526.819,308.761L520.045,315.543L510.397,315.18Z" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M497.275,440.36L486.346,446.058L366.846,181.602L374.904,177.616L489.515,428.146" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M494.341,426.739L380.842,177.616L374.904,177.616" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M537.431,445.077L502.402,425.522L492.081,427.08" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M602.955,498.038L602.856,510.708L598.802,510.708C598.802,510.708 598.271,496.438 601.1,497.843" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M598.802,510.708L596.682,512.804" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M560.073,448.434L553.638,443.67L537.431,446.058L554.817,455.405" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M537.431,446.058L533.747,458.858" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M609.271,488.428L624.983,484.399" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M604.254,488.428L609.271,488.428" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M597.53,434.975L617.127,472.084C617.127,472.084 618.38,480.473 609.271,488.428" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M597.53,434.975L611.846,432.264" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M597.53,434.975L589.231,440.36" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M586.547,436.353L604.688,471.555C604.688,471.555 609.755,483.328 604.254,488.428" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M679.881,554.069C679.881,554.069 673.745,550.744 680.196,543.721L703.361,535.562C703.361,535.562 706.824,540.338 701.747,545.677L679.881,554.069Z" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M679.881,554.069L670.796,554.588C670.796,554.588 661.021,550.916 670.04,540.551L694.255,530.255L703.361,534.942" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M667.971,552.673L666.851,553.17L664.935,551.089L666.218,539.591L691.194,530.041L694.255,530.041" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M596.682,492.21L604.254,488.428" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M611.846,432.264L623.989,456.951C623.989,456.951 638.147,476.948 624.983,484.399" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M645.669,453.845L643.131,454.975" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M601.1,497.843L618.962,499.72L618.807,521.745L642.796,523.908L643.131,454.975L623.311,452.838L621.962,451.413L645.669,453.845L646.877,520.204L642.796,523.908" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <g transform="matrix(1.04336,0.558071,-0.479525,0.896508,311.047,-413.193)">
+                                <path d="M847.854,781.837C842.024,779.206 836.883,775.498 832.716,770.99" style="fill:none;stroke:white;stroke-width:3.63px;"/>
+                            </g>
+                            <g transform="matrix(1.04336,0.558071,-0.479525,0.896508,311.047,-413.193)">
+                                <path d="M829.535,767.137C828.529,765.767 825.845,761.175 825.428,760.308" style="fill:none;stroke:white;stroke-width:3.63px;"/>
+                            </g>
+                            <g transform="matrix(1.04336,0.558071,-0.479525,0.896508,311.047,-413.193)">
+                                <path d="M822.038,734.428C825.989,713.824 845.354,698.162 868.617,698.162C894.731,698.162 915.933,717.898 915.933,742.207C915.933,761.428 902.678,777.789 884.22,783.796" style="fill:none;stroke:white;stroke-width:3.63px;"/>
+                            </g>
+                            <path d="M868.314,762.708L880.408,747.382" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M198.43,718.617C198.43,718.617 218.316,709.395 231.732,707.59C256.902,704.205 298.634,770.257 263.235,799.633C255.322,806.2 234.623,811.165 234.623,811.165" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M912.778,758.948C912.778,758.948 922.622,743.79 923.781,735.118C931.317,678.719 846.304,656.139 827.386,686.86C823.682,692.874 816.081,703.667 816.081,703.667" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M825.308,753.395L812.051,775.205" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M868.314,762.708L848.807,796.249" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M705.363,658.557L812.085,732.115L823.04,716.254L722.085,646.253" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M724.961,642.167L827.386,711.298L823.04,716.254" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M812.085,732.115L806.853,740.393L825.308,753.395" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M827.386,711.298L831.732,704.982L886.745,736.58L880.408,747.382L825.308,713.667" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M868.314,762.708C869.158,765.304 853.919,721.559 825.308,753.395" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M573.907,721.448L611.027,727.966L724.745,644.296L724.961,532.15C724.961,532.15 711.218,537.569 704.346,540.278" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M669.605,553.976L604.254,579.743L611.027,727.966" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M359.775,661.919L263.963,730.177" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M701.016,842.595L540,689.132" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M670.796,856.016L525.227,717.774L366.999,686.86L272.654,747.703" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M540,689.132L369.629,658.557L359.775,661.919" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M690.68,844.87L531.123,693.128L359.775,661.919" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M770.046,994.769L794.034,956.34C805.973,888.43 730.905,812.43 672.766,853.948L643.131,885.058" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <g transform="matrix(0.974482,1.05649,-0.595318,0.54911,562.87,-340.16)">
+                                <ellipse cx="723.275" cy="947.942" rx="58.896" ry="76.458" style="fill:none;stroke:white;stroke-width:3.43px;"/>
+                            </g>
+                            <g transform="matrix(0.891972,-0.299844,0.427058,1.27041,-311.715,-137.134)">
+                                <ellipse cx="219.754" cy="764.141" rx="33.416" ry="37.959" style="fill:none;stroke:white;stroke-width:3.45px;"/>
+                            </g>
+                            <g transform="matrix(1.103,0.830809,-0.557353,0.739952,350.2,-492.773)">
+                                <ellipse cx="834.432" cy="788.087" rx="15.611" ry="18.832" style="fill:none;stroke:white;stroke-width:3.4px;"/>
+                            </g>
+                            <path d="M520.045,553.819L554.817,558.978L554.367,526.158L520.283,520.204L520.045,553.819Z" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M554.817,558.978L561.753,557.388L561.082,523.908L525.227,518.753L520.283,520.204" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M554.373,526.568L561.082,523.908" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M561.753,541.946L581.115,544.656L580.668,520.204L511.481,512.065L511.466,534.116L520.045,536.303" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M581.115,544.656L596.503,538.865L595.807,464.966L526.819,458.858L523.642,461.239" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M581.115,520.204L591.841,512.804L591.747,466.457L523.642,461.239" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M595.807,464.966L591.747,466.457" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M523.642,461.239L523.642,503.399L511.466,508.479L511.466,512.064" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M586.547,436.353L572.373,439.605L553.638,453.053L557.741,461.239" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M584.787,463.99L572.373,439.605" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M529.956,458.858L494.341,438.699" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M536.43,449.537L496.908,427.97C496.908,427.97 492.643,425.749 488.106,428.993L492.518,440.36L494.341,438.699" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M500.648,296.912L506.546,307.965L526.819,308.761L522.384,298.04L500.648,296.912Z" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M434.622,173.199L736.304,156.66L738.231,139.632L428.691,162.086" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M736.304,156.66L748.639,165.251L478.288,177.616" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M926.567,160.235L929.265,162.381L960.947,161.129L966.306,133.939L963.98,131.048L932.794,131.048L931.928,132.739" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M854.08,132.739L942.578,132.739L956.169,133.939L952.374,154.505L941.143,150.92L900.624,152.594L850.044,152.594L854.08,132.739Z" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M926.567,160.235L908.922,160.012L900.624,158.895L900.624,153.332L924.252,153.332L926.567,160.235Z" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M646.877,496.471L662.427,492.21L665.811,484.399L683.417,480.223L683.346,490.319L646.877,501.757" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M665.811,484.399L651.906,482.874L646.877,486.414" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M662.427,492.21L646.877,490.319" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M665.811,495.819L665.811,515.178L646.877,522.412L646.877,520.204" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M665.99,512.804L685.149,506.736L683.417,501.757L665.811,508.479" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M679.117,503.399L679.363,492.21" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M660.264,483.791L675.48,480.223L683.417,480.223" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M679.117,480.223L679.117,473.712L668.21,477.096L668.953,481.549" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M665.147,482.322L665.811,451.413L670.796,451.413L670.796,476.294" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M670.796,454.41L681.779,452.458L681.497,473.501L679.363,473.501" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M630.587,451.797L645.669,449.537L668.21,451.413L681.779,451.413L695.098,447.228L695.256,441.241L614.855,438.383" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M645.669,449.537L620.508,447.228" style="fill:none;stroke:white;stroke-width:2px;"/>
+                            <path d="M679.363,451.413L679.363,446.058L695.256,441.241L679.363,446.058L617.127,443.002" style="fill:none;stroke:white;stroke-width:2px;"/>
+                        </svg>
                     </div>
-                    <div class="vertical-text">IDENTIFICATION CARD</div>
-                    <div class="card-content">
-                        <h3 class="card-name">{{user.first_name|upper}} {{user.last_name|upper}}</h3>
-                        <div class="card-role">MEMBER</div>
-                        <div class="card-id">#{{user.id|stringformat:"04d"}}</div>
-                        <div class="card-org">{{settings.organization_name|upper}}</div>
+                    <div class="content">
+                        <div class="term-badges">
+                            {% for term in terms %}
+                              <span class="badge">{{term}}</span>
+                              {%empty%}
+                              <span class="badge">BECOME A MEMBER</span>
+                            {% endfor %}
+                        </div>
+
+                        <div class="projects-container">
+                            <div class="project-badge" data-project="Project 1" data-member="Member 1"></div>
+                            <div class="project-badge" data-project="Project 2" data-member="Member 2"></div>
+                            <div class="project-badge" data-project="Project 3" data-member="Member 3"></div>
+                            <div class="project-badge" data-project="Project 4" data-member="Member 4"></div>
+                            <div class="project-badge" data-project="Project 5" data-member="Member 5"></div>
+                          </div>
+
+                        <div class="vertical-text">IDENTIFICATION CARD</div>
+                        <div class="card-content">
+                            <h3 class="card-name">{{user.first_name|upper}} {{user.last_name|upper}}</h3>
+                            <div class="card-role">MEMBER</div>
+                            <div class="card-id">#{{user.id|stringformat:"04d"}}</div>
+                            <div class="card-org">{{settings.organization_name|upper}}</div>
+                        </div>
                     </div>
+                    
                 </div>
 
                 <!-- Projects -->
