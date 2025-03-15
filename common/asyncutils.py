@@ -1,4 +1,3 @@
-from typing import Any, Coroutine
 from asgiref.sync import sync_to_async
 
 from core.models import User, UserProfile
@@ -13,7 +12,7 @@ def get_user(**kwargs):
         return None
 
 
-get_user_async: Coroutine[Any, Any, User | None] = sync_to_async(get_user)
+get_user_async = sync_to_async(get_user)
 
 
 def get_profile(**kwargs):
@@ -23,7 +22,7 @@ def get_profile(**kwargs):
         return None
 
 
-get_profile_async: Coroutine[Any, Any, UserProfile | None] = sync_to_async(get_profile)
+get_profile_async = sync_to_async(get_profile)
 
 
 def get_or_create_profile(**kwargs):
@@ -36,4 +35,4 @@ def get_or_create_profile(**kwargs):
         return None
 
 
-get_or_create_profile_async: Coroutine[Any, Any, UserProfile | None] = sync_to_async(get_or_create_profile)
+get_or_create_profile_async = sync_to_async(get_or_create_profile)

@@ -2,16 +2,14 @@ import bs4
 import functools
 import requests
 import time
-import platformdirs
+from clubManager.settings import dirs
 import json
 from datetime import datetime, timedelta
 
 __all__ = ["get_majors", "get_major_from_netid"]
 
 DIRECTORY_TRIES = 5
-MAJORS_CACHE_PATH = (
-    platformdirs.site_cache_path(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True) / "majors.json"
-)
+MAJORS_CACHE_PATH = dirs.site_cache_path / "majors.json"
 MAJOR_CACHE_MAX_AGE = timedelta(weeks=4)
 
 

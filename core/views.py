@@ -1,11 +1,12 @@
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.http import HttpResponse, HttpResponsePermanentRedirect
 from django.views.decorators.http import require_GET
 from django.conf import settings
+from core.models import ServerSettings
 from core.utilities import get_layout_data
 from events.models import Attendance
 from django.views.generic import ListView
-from .forms import UserProfileForm, UserForm, ServerSettingsForm
+from .forms import ServerSettingsLogoForm, UserProfileForm, UserForm, ServerSettingsForm
 from projects.models import Team
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
@@ -61,6 +62,18 @@ def account_view(request):
 
 
 @user_passes_test(lambda u: u.is_superuser)
+def server_settings_logo_form_view(request):
+    if not request.method == "POST":
+        return HttpResponse("Method not allowed", status=405)
+    settings = ServerSettings.objects.get()
+    form = ServerSettingsLogoForm(request.POST, request.FILES, instance=settings)
+    if form.is_valid():
+        form.save()
+
+    return redirect("server_settings")
+
+
+@user_passes_test(lambda u: u.is_superuser)
 def server_settings_view(request):
     layout_data = get_layout_data(request)
     if request.method == "POST":
@@ -69,7 +82,8 @@ def server_settings_view(request):
             form.save()
     else:
         form = ServerSettingsForm(instance=layout_data["settings"])
-    return render(request, "server_settings.html", {**layout_data, "form": form})
+    logo_form = ServerSettingsLogoForm(instance=layout_data["settings"])
+    return render(request, "server_settings.html", {**layout_data, "form": form, "logo_form": logo_form})
 
 
 class AttendanceListView(ListView):
@@ -88,8 +102,10 @@ def spa_view(request):
 
 @require_GET
 def apple_merchant_id(request):
+    if not settings.SQUARE_APPLE_MERCHANT_ID:
+        return HttpResponse("Not configured", status=400)
     return HttpResponse(settings.SQUARE_APPLE_MERCHANT_ID, content_type="text/plain")
 
 
 def index(request):
-    return HttpResponsePermanentRedirect("/_/")
+    return HttpResponsePermanentRedirect("/profile")

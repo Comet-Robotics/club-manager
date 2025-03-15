@@ -13,12 +13,17 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from platformdirs import PlatformDirs
+
+dirs = PlatformDirs(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True)
 
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+PUBLIC_URL = os.getenv("PUBLIC_URL")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -33,8 +38,18 @@ CSRF_COOKIE_SAMESITE = "Strict"
 SESSION_COOKIE_SAMESITE = "Strict"
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
-ALLOWED_HOSTS = ["127.0.0.1", "*", "https://portal.cometrobotics.org"]
-CSRF_TRUSTED_ORIGINS = ["https://portal.cometrobotics.org", "http://127.0.0.1", "http://localhost:5173"]
+ALLOWED_HOSTS = []
+CSRF_TRUSTED_ORIGINS = []
+
+if PUBLIC_URL:
+    ALLOWED_HOSTS += [PUBLIC_URL]
+    CSRF_TRUSTED_ORIGINS += [PUBLIC_URL]
+else:
+    print("Warning: PUBLIC_URL not set. Things might break.")
+
+if DEBUG:
+    ALLOWED_HOSTS += ["127.0.0.1", "*"]
+    CSRF_TRUSTED_ORIGINS += ["http://127.0.0.1", "http://localhost:5173"]
 
 
 # Application definition
@@ -109,6 +124,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "django.template.context_processors.media",
             ],
         },
     },
@@ -168,24 +184,12 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = os.getenv("STATIC_ROOT")
+MEDIA_ROOT = dirs.user_data_path / "media"
+MEDIA_URL = "/media/"
 
 STATICFILES_DIRS = [
     BASE_DIR / "frontend/dist",
 ]
-
-STORAGES = {
-    "default": {
-        "BACKEND": "storages.backends.s3.S3Storage",
-        "OPTIONS": {
-            "bucket_name": str(os.getenv("AWS_STORAGE_BUCKET_NAME")),
-            "endpoint_url": str(os.getenv("AWS_ENDPOINT_URL")),
-            "access_key": str(os.getenv("AWS_ACCESS_KEY_ID")),
-            "secret_key": str(os.getenv("AWS_SECRET_ACCESS_KEY")),
-            "signature_version": "s3v4",
-        },
-    },
-    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
-}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -193,7 +197,7 @@ STORAGES = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_REDIRECT_URL = "/profile/"
-SQUARE_APPLE_MERCHANT_ID = str(os.getenv("SQUARE_APPLE_MERCHANT_ID"))
+SQUARE_APPLE_MERCHANT_ID = os.getenv("SQUARE_APPLE_MERCHANT_ID")
 
 # Email Settings
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -210,3 +214,5 @@ DISCORD_OFFICER_ROLE_ID = int(str(os.getenv("DISCORD_OFFICER_ROLE_ID")))
 DISCORD_PROJECT_MANAGER_ROLE_ID = int(str(os.getenv("DISCORD_PROJECT_MANAGER_ROLE_ID")))
 DISCORD_TEAM_LEAD_ROLE_ID = int(str(os.getenv("DISCORD_TEAM_LEAD_ROLE_ID")))
 DISCORD_MEMBER_ROLE_ID = int(str(os.getenv("DISCORD_MEMBER_ROLE_ID")))
+
+ENABLE_SQUARE_PAYMENTS = bool(int(os.getenv("ENABLE_SQUARE_PAYMENTS", 0)))

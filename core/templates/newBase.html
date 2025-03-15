@@ -20,16 +20,16 @@
         <header class="header">
             <div class="header-left">
                 <div class="logo-container">
-                    <img src="/placeholder.svg?height=32&width=32" alt="Logo" class="logo">
+                    <img src="{{settings.logo.url}}" alt="Logo" class="logo">
                 </div>
                 <div class="header-separator"></div>
-                <h1>{{settings.organization_name}} | Portal</h1>
+                <h1>{{settings.organization_name}} Portal</h1>
             </div>
             <div class="user-menu">
                 <button class="user-button" onclick="toggleDropdown()">
-                    <div class="avatar">
+                    {% comment %} <div class="avatar">
                         <img src="/placeholder.svg?height=32&width=32" alt="User avatar">
-                    </div>
+                    </div> {% endcomment %}
                     <span>{{request.user.first_name}} {{user.last_name}}</span>
                     <i data-lucide="chevron-down"></i>
                 </button>

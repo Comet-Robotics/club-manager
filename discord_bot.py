@@ -71,6 +71,12 @@ intents.message_content = True
 
 bot = discord.Bot(intents=intents)
 
+PRIVILEGED_ROLE_IDS = {
+    os.getenv("DISCORD_OFFICER_ROLE_ID"),
+    os.getenv("DISCORD_TEAM_LEAD_ROLE_ID"),
+    os.getenv("DISCORD_PROJECT_MANAGER_ROLE_ID"),
+}
+
 # -------- Utility methods --------
 
 
@@ -232,7 +238,7 @@ Net ID: {net_id}
 
 If the above information is correct, click on the below link to connect your Discord account to your Comet Robotics account.
 
-https://portal.cometrobotics.org/accounts/link/{account_link.uuid}
+{settings.PUBLIC_URL}/accounts/link/{account_link.uuid}
 
 If the name is incorrect, reply to this email and we'll get back to you. If this was not you, you can safely ignore this email.
 
@@ -253,9 +259,9 @@ Net ID: {net_id}</p>
 
 <p>If the above information is correct, click the button below or the link to connect your Discord account to your Comet Robotics account.</p>
 
-<a href="https://portal.cometrobotics.org/accounts/link/{account_link.uuid}"><button style="border: solid #950000 3px;padding: 1em; border-radius: 10px; background-color:#bf1e2e; color: white;"><strong>Link Account</strong></button></a>
+<a href="{settings.PUBLIC_URL}/accounts/link/{account_link.uuid}"><button style="border: solid #950000 3px;padding: 1em; border-radius: 10px; background-color:#bf1e2e; color: white;"><strong>Link Account</strong></button></a>
 
-<br><br><a href="https://portal.cometrobotics.org/accounts/link/{account_link.uuid}">https://portal.cometrobotics.org/accounts/link/{account_link.uuid}</a>
+<br><br><a href="{settings.PUBLIC_URL}/accounts/link/{account_link.uuid}">{settings.PUBLIC_URL}/accounts/link/{account_link.uuid}</a>
 
 <p>If the name is incorrect, reply to this email and we'll get back to you. If this was not you, you can safely ignore this email.</p>
 
@@ -275,9 +281,28 @@ Net ID: {net_id}</p>
 
 
 @bot.slash_command(description="View your Comet Robotics profile")
-async def profile(ctx: discord.ApplicationContext):
-    user = ctx.author
-    user_profile: UserProfile | None = await get_profile_async(discord_id=str(user.id))
+@discord.option(
+    name="net_id",
+    description="Net ID of the user to view. Defaults to your own.",
+    required=False,
+    min_length=9,
+    max_length=9,
+)
+async def profile(ctx: discord.ApplicationContext, net_id: str | None = None):
+    if net_id is None:
+        discord_user_id = ctx.author.id
+    else:
+        user_role_ids = set([role.id for role in ctx.author.roles])
+        if user_role_ids.intersection(PRIVILEGED_ROLE_IDS):
+            discord_user_id = User.objects.get(username=net_id).userprofile.discord_id
+        else:
+            await ctx.respond(
+                "You don't have the required privileges to view this user's profile. Only officers, team leads, and project managers can view other user's profiles.",
+                ephemeral=True,
+            )
+            return
+
+    user_profile: UserProfile | None = await get_profile_async(discord_id=str(discord_user_id))
     if user_profile is None:
         await ctx.respond(
             "You don't have a linked Comet Robotics account. Use the `/link` command to connect your Comet Robotics account to your Discord account.",
@@ -315,13 +340,13 @@ async def profile(ctx: discord.ApplicationContext):
 
         return (
             body,
-            f"https://portal.cometrobotics.org/payments/{current_term.product.id}/pay" if not current_payment else None,
+            f"{settings.PUBLIC_URL}/payments/{current_term.product.id}/pay" if not current_payment else None,
             current_term.name,
         )
 
     membership_status, due_paying_url, term_name = await sync_to_async(get_membership_status)(user_profile)
 
-    embed = discord.Embed(title="Your Comet Robotics Profile", color=discord.Color.red())
+    embed = discord.Embed(title="Your Profile", color=discord.Color.red())
     embed.add_field(name="Basic Info", value=basic_info, inline=False)
     embed.add_field(name="Membership Status", value=membership_status, inline=False)
 
@@ -335,7 +360,7 @@ class ProfileActionsView(discord.ui.View):
         self.add_item(
             discord.ui.Button(
                 label=f"Pay Dues for {term_name}" if due_paying_url else f"Dues paid for {term_name} :)",
-                url=due_paying_url or "https://cometrobotics.org",
+                url=due_paying_url or settings.PUBLIC_URL,
                 disabled=not due_paying_url,
             )
         )
@@ -440,7 +465,7 @@ async def pay(ctx: discord.ApplicationContext):
 
         payment_links = [
             (
-                f"[Pay for {term.name}](https://portal.cometrobotics.org/payments/{term.product.id}/pay/)"
+                f"[Pay for {term.name}]({settings.PUBLIC_URL}/payments/{term.product.id}/pay/)"
                 + (" (you've already paid this term's dues)" if user.is_member(term)[1] else "")
             )
             for term in active_terms

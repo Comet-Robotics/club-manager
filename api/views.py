@@ -1,9 +1,8 @@
 from typing import TypedDict, NamedTuple
-from discord.components import ActionRow
 from django.contrib.auth.models import User
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from payments.models import Product, PurchasedProduct
-from payments.views import CostWithFee, calculate_cost_with_square_fee
+from payments.utilities import CostWithFee, calculate_cost_with_square_fee
 from .serializers import (
     UserSerializer,
     ProductSerializer,
@@ -20,14 +19,12 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
-from rest_framework.decorators import action
-from common.robot_combat_events import RCETeam, get_robot_combat_event, RCERobot
-from django.db.models import Q
 import json
 import hashlib
+from clubManager import settings
 
 # TODO: that fn + some other logic i'm building here should probably move to payments app
-from payments.views import can_purchase_product
+from payments.utilities import can_purchase_product
 from payments.models import Payment
 
 from events.models import Event
@@ -228,9 +225,6 @@ class CartView(APIView):
     def post(self, request):
         user = request.user
 
-        if not user.is_authenticated:
-            return Response({"detail": "You're not logged in."}, status=status.HTTP_401_UNAUTHORIZED)
-
         # TODO: im 99% sure there is a way to make DRF do this request body validation for us in a cleaner way
         payment_method_serializer = PaymentChoiceSerializer(data=request.data.get("payment_choice"))
         if not payment_method_serializer.is_valid():
@@ -269,9 +263,6 @@ class PayView(APIView):
     def post(self, request):
         user = request.user
 
-        if not user.is_authenticated:
-            return Response({"detail": "You're not logged in."}, status=status.HTTP_401_UNAUTHORIZED)
-
         # TODO: im 99% sure there is a way to make DRF do request body validation for us
         payment_method_serializer = PaymentChoiceSerializer(data=request.data.get("payment_choice"))
         if not payment_method_serializer.is_valid():
@@ -300,29 +291,29 @@ class PayView(APIView):
                 ]
             )
 
-        create_payment_response = client.payments.create_payment(
-            body={
-                "source_id": token,
-                "idempotency_key": idempotency_key,
-                "amount_money": {
-                    "amount": payment.amount_cents,
-                    "currency": ACCOUNT_CURRENCY,
-                },
-                "reference_id": str(payment.pk),
-                "note": str(payment),
-            }
-        )
+        # create_payment_response = client.payments.create_payment(
+        #     body={
+        #         "source_id": token,
+        #         "idempotency_key": idempotency_key,
+        #         "amount_money": {
+        #             "amount": payment.amount_cents,
+        #             "currency": ACCOUNT_CURRENCY,
+        #         },
+        #         "reference_id": str(payment.pk),
+        #         "note": str(payment),
+        #     }
+        # )
 
-        payment.metadata = {"square_response_body": create_payment_response.body}
-        payment.save()
+        # payment.metadata = {"square_response_body": create_payment_response.body}
+        # payment.save()
 
-        if create_payment_response.is_success():
-            payment.completed_at = timezone.now()
-            payment.save()
-            # TODO: some success response
-            return
-        elif create_payment_response.is_error():
-            # TODO: some error response
-            return
+        # if create_payment_response.is_success():
+        #     payment.completed_at = timezone.now()
+        #     payment.save()
+        #     # TODO: some success response
+        #     return
+        # elif create_payment_response.is_error():
+        #     # TODO: some error response
+        #     return
 
         return Response(cart_serializer.validated_data, status=status.HTTP_200_OK)
