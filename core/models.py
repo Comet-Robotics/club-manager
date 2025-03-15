@@ -21,11 +21,14 @@ class ServerSettings(models.Model):
     accent_color_hex = ColorField(default="#4BC0FF")
     logo = models.ImageField(upload_to="logos")
 
+
 class Race(models.Model):
     name = models.CharField(max_length=100)
 
     def __str__(self):
         return self.name
+
+
 class UserProfile(models.Model):
     class GenderChoice(models.TextChoices):
         MALE = "M", _("Man")
@@ -41,7 +44,6 @@ class UserProfile(models.Model):
         XLARGE = "XL", _("XL")
         XXLARGE = "XXL", _("2XL")
         XXXLARGE = "XXXL", _("3XL")
-
 
     DIETARY_CHOICES = (
         ("S", _("Shellfish Allergy")),

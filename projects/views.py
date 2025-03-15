@@ -22,8 +22,9 @@ class CanManageProjectMixin(UserPassesTestMixin):
     def test_func(self):
         project_id = self.kwargs["project_id"]
         project = Project.objects.get(pk=project_id)
-        
+
         return Project.user_can_manage_project(self.request.user, project)
+
 
 class EventView(CanManageProjectMixin, SingleTableView):
     table_class = EventTable
@@ -40,24 +41,22 @@ class EventView(CanManageProjectMixin, SingleTableView):
         return Event.objects.filter(project_id=project_id)
 
 
-
 class MembersView(CanManageProjectMixin, MultiTableMixin, TemplateView):
     model = User
     template_name = "project_members.html"
-    
-    def get_tables(self, *args, **kwargs):
-      project_id = self.kwargs.get("project_id")
-      project = Project.objects.get(pk=project_id)
-      teams = project.all_teams()
-      
-      tables = [MemberTable(team.get_unique_users(), table_name=team.name) for team in teams]
-      return tables
 
+    def get_tables(self, *args, **kwargs):
+        project_id = self.kwargs.get("project_id")
+        project = Project.objects.get(pk=project_id)
+        teams = project.all_teams()
+
+        tables = [MemberTable(team.get_unique_users(), table_name=team.name) for team in teams]
+        return tables
 
     def get_context_data(self, **kwargs):
-      context = super().get_context_data(**kwargs)
-      context = context | get_layout_data(self.request)
-      return context
+        context = super().get_context_data(**kwargs)
+        context = context | get_layout_data(self.request)
+        return context
 
 
 @login_required

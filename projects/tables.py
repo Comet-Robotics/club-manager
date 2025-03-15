@@ -14,12 +14,13 @@ class EventTable(tables.Table):
         orderable=False,
     )
 
+
 class MemberTable(tables.Table):
     class Meta:
         model = User
         template_name = "django_tables2/bootstrap.html"
         fields = ("id", "username", "first_name", "last_name")
-        
+
     def __init__(self, *args, **kwargs):
         self.table_name = kwargs.pop("table_name", None)
         super().__init__(*args, **kwargs)
