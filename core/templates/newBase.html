@@ -1,5 +1,5 @@
 <!-- TODO: make nav more responsive (on mobile, move nav into hamburger menu - nav will cover full screen when opened, like a modal) -->
- {% comment %} Support anonymous users {% endcomment %}
+ {% comment %} TODO: Support anonymous users {% endcomment %}
 
 {% load static %}
 <html>
@@ -13,6 +13,7 @@
         </style>
         <!-- Lucide Icons -->
         <script src="https://unpkg.com/lucide@0.475.0"></script>
+        <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
         {% block head %}{% endblock %}
     </head>
     <body>

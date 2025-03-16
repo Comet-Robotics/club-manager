@@ -7,12 +7,14 @@ from events.models import Event
 from django.http import Http404
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.db.models import Q
 
 from projects.tables import EventTable, MemberTable
 from projects.models import Project
 
 from django_tables2 import MultiTableMixin
 from django.views.generic.base import TemplateView
+from projects.models import Team
 
 # Used to get all the current events in a given time window. Ex: If it is now 3pm on a Monday, and the delta is set to 4 hours, we should see all events starting from 11am (3pm - 4 hours) and 7pm (3pm + 4 hours.)
 CURRENT_EVENT_WINDOW = timedelta(hours=4)
@@ -24,6 +26,14 @@ class CanManageProjectMixin(UserPassesTestMixin):
         project = Project.objects.get(pk=project_id)
 
         return Project.user_can_manage_project(self.request.user, project)
+
+
+class CanManageTeamMixin(UserPassesTestMixin):
+    def test_func(self):
+        team_id = self.kwargs["team_id"]
+        team = Team.objects.get(pk=team_id)
+        print(team)
+        return Team.user_can_manage_team(self.request.user, team)
 
 
 class EventView(CanManageProjectMixin, SingleTableView):
@@ -41,6 +51,21 @@ class EventView(CanManageProjectMixin, SingleTableView):
         return Event.objects.filter(project_id=project_id)
 
 
+class NewMemberSearchView(CanManageTeamMixin, SingleTableView):
+    template_name = "add_member_to_team.html"
+    table_class = MemberTable
+    model = User
+
+    def get_queryset(self):
+        team_id = self.kwargs["team_id"]
+        search = self.request.GET.get("search", "")
+        team = Team.objects.get(pk=team_id)
+        filter = Q()
+        if search:
+            filter = Q(username__icontains=search) | Q(first_name__icontains=search) | Q(last_name__icontains=search)
+        return User.objects.filter(filter).difference(team.get_unique_users())
+
+
 class MembersView(CanManageProjectMixin, MultiTableMixin, TemplateView):
     model = User
     template_name = "project_members.html"
@@ -50,7 +75,7 @@ class MembersView(CanManageProjectMixin, MultiTableMixin, TemplateView):
         project = Project.objects.get(pk=project_id)
         teams = project.all_teams()
 
-        tables = [MemberTable(team.get_unique_users(), table_name=team.name) for team in teams]
+        tables = [MemberTable(team.get_unique_users(), table_name=team.name, team_id=team.id) for team in teams]
         return tables
 
     def get_context_data(self, **kwargs):

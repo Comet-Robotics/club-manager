@@ -23,4 +23,5 @@ class MemberTable(tables.Table):
 
     def __init__(self, *args, **kwargs):
         self.table_name = kwargs.pop("table_name", None)
+        self.team_id = kwargs.pop("team_id", None)
         super().__init__(*args, **kwargs)
