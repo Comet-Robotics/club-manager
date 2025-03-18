@@ -6,7 +6,6 @@ from django.contrib.auth.models import User
 class EventTable(tables.Table):
     class Meta:
         model = Event
-        template_name = "django_tables2/bootstrap.html"
         exclude = ("url", "project", "id", "created_at", "updated_at")
 
     view = tables.TemplateColumn(
@@ -18,7 +17,6 @@ class EventTable(tables.Table):
 class MemberTable(tables.Table):
     class Meta:
         model = User
-        template_name = "django_tables2/bootstrap.html"
         fields = ("id", "username", "first_name", "last_name")
 
     def __init__(self, *args, **kwargs):

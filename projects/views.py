@@ -1,10 +1,12 @@
 from datetime import timedelta, datetime
-from django.shortcuts import render
+from django.http.request import HttpRequest
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.views.generic import ListView
 from django_tables2 import SingleTableView
 from core.utilities import get_layout_data
 from events.models import Event
-from django.http import Http404
+from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseForbidden, HttpResponseNotAllowed
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Q
@@ -50,11 +52,32 @@ class EventView(CanManageProjectMixin, SingleTableView):
         project_id = self.kwargs["project_id"]
         return Event.objects.filter(project_id=project_id)
 
+def update_team_members(request: HttpRequest, team_id: int):
+    if request.method != "POST":
+      return HttpResponseNotAllowed(permitted_methods=["POST"])
+      
+    member_id = request.POST.get("member_id")
+    if not member_id:
+        return HttpResponseBadRequest()
+    team = get_object_or_404(Team, pk=team_id)
+    
+    if not Team.user_can_manage_team(request.user, team):
+        return HttpResponseForbidden()
+    
+    member = get_object_or_404(User, pk=member_id)
+    team.members.add(member)
+    return HttpResponse("Done!")
 
-class NewMemberSearchView(CanManageTeamMixin, SingleTableView):
+class NewMemberSearchView(CanManageTeamMixin, ListView):
     template_name = "add_member_to_team.html"
-    table_class = MemberTable
     model = User
+    paginate_by = 5
+    context_object_name = "members"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["team_id"] = self.kwargs["team_id"]
+        return context
 
     def get_queryset(self):
         team_id = self.kwargs["team_id"]
@@ -63,7 +86,7 @@ class NewMemberSearchView(CanManageTeamMixin, SingleTableView):
         filter = Q()
         if search:
             filter = Q(username__icontains=search) | Q(first_name__icontains=search) | Q(last_name__icontains=search)
-        return User.objects.filter(filter).difference(team.get_unique_users())
+        return User.objects.filter(filter).difference(team.get_unique_users()).order_by("id")
 
 
 class MembersView(CanManageProjectMixin, MultiTableMixin, TemplateView):

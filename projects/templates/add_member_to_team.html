@@ -1,2 +1,5 @@
-{% load render_table from django_tables2 %}
-{%render_table table %}
+{% for prospective_member in members %}
+  <p>{{prospective_member.first_name}} {{prospective_member.last_name}} ({{prospective_member.username}})</p><button class="button button-outline" name="member_id" value="{{prospective_member.id}}" hx-post="/projects/team/{{team_id}}/members" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>Add</button>
+{% empty %}
+  <p value="">No members found</p>
+{% endfor %}
