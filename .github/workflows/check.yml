@@ -1,0 +1,39 @@
+on:
+  - push
+
+name: Check
+
+jobs:
+  check:
+    # services:
+    #   postgres:
+    #     image: postgres:15-alpine
+    #     env:
+    #       POSTGRES_PASSWORD: DB_PASSWORD
+    #       POSTGRES_USER: DB_USERNAME
+    #       POSTGRES_DB: DB_NAME
+    #     options: >-
+    #       --health-cmd pg_isready
+    #       --health-interval 10s
+    #       --health-timeout 5s
+    #       --health-retries 5
+    #     ports:
+    #       - 5432:5432
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: "pipenv"
+      - name: Install pipenv
+        run: pip install pipenv
+      - name: Install dependencies
+        run: pipenv install --dev
+      - name: Create .env file
+        run: cp .env.example .env
+      - name: Run lint
+        run: pipenv run ./scripts/lint.sh
+      # - name: Run tests
+      #   run: pipenv run python manage.py test

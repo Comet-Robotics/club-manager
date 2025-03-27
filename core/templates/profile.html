@@ -1,13 +1,91 @@
-{% extends "base.html" %}
-
+{% extends "newBase.html" %}
+{% load static %}
 {% block title %}My Profile{% endblock %}
-
+{%block head%}
+<link rel="stylesheet" href="{% static 'core/profile.css' %}">
+{%endblock%}
 {% block content %}
-  <h2>User Profile</h2>
-  {% if user.is_authenticated %}
-    <p>Name: {{ user.first_name }}</p>
-    <p>Student ID: {{ user.useridentification.student_id }}</p>
-  {% else %}
-    <p>No user is currently signed in.</p>
-  {% endif %}
+
+            <main class="main-content">
+                <!-- ID Card -->
+                <div class="id-card">
+                    <div class="term-badges">
+                        {% for term in terms %}
+                          <span class="badge">{{term}}</span>
+                          {%empty%}
+                          <span class="badge">BECOME A MEMBER</span>
+                        {% endfor %}
+                    </div>
+                    <div class="vertical-text">IDENTIFICATION CARD</div>
+                    <div class="card-content">
+                        <h3 class="card-name">{{user.first_name|upper}} {{user.last_name|upper}}</h3>
+                        <div class="card-role">MEMBER</div>
+                        <div class="card-id">#{{user.id|stringformat:"04d"}}</div>
+                        <div class="card-org">{{settings.organization_name|upper}}</div>
+                    </div>
+                </div>
+
+                <!-- Projects -->
+                <section class="section">
+                    <h2 class="section-title">My Teams</h2>
+                    <div class="projects-grid">
+                      {% for tm in teams %}
+                        <div class="project-card {% if tm.role == 'lead' %}lead-project-card{% endif %}">
+                            <div class="project-header">
+                                <div class="project-info">
+                                    <div class="avatar">
+                                        <span>{{tm.team.emoji|default:"-"|upper}}</span>
+                                    </div>
+                                    <div >
+                                        <h3>{{tm.team.name}}</h3>
+                                        <p>{{tm.team.project.name}}</p>
+                                      <span class="badge team-role-badge {% if tm.role == 'lead' %}lead-badge{% endif %}">
+                                          {% if tm.role == 'lead' %}
+                                          Team Lead
+                                          {% elif tm.role == 'member' %}
+                                          Team Member
+                                          {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                          {% if tm.role == 'lead' %}
+                                <button class="icon-button">
+                                    <i data-lucide="external-link"></i>
+                                </button>
+                                          {% endif %}
+                            </div>
+                        </div>
+                        {%endfor%}
+                        
+                    </div>
+                </section>
+
+                <!-- Attendances -->
+                <section id="attendance-list" class="section">
+                </section>      
+                <script>
+                loadAttendanceList(1)
+                function loadAttendanceList(page) {
+                  fetch("{% url 'attendance_list' %}?page=" + page)
+                      .then(response => response.text())
+                      .then(html => {
+                          const list = document.getElementById("attendance-list")
+                          list.innerHTML = html;
+                          const prev = list.querySelector(".prev-page")
+                          const next = list.querySelector(".next-page")
+                          const fn = (evt) => {
+                              const btn = evt.target;
+                              if (btn.disabled) return
+                              loadAttendanceList(btn.dataset.page)
+                          }
+                          prev.addEventListener("click", fn);
+                          next.addEventListener("click", fn);
+                      });
+                }
+                </script>
+
+                
+
+            </main>
+    
 {% endblock %}
