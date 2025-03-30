@@ -147,6 +147,13 @@ class Team(models.Model):
 
         return teams
 
+    def get_suggested_members(self):
+        """
+        Returns a query set of users who are not members or leads of this team, but should be considered for membership based on their attendance (> 1 event attended in the last month).
+        """
+        return User.objects.all()
+        # TODO: implement this
+
 
 class TeamMember(TypedDict):
     user: User

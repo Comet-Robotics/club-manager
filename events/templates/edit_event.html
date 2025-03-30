@@ -1,0 +1,22 @@
+{% extends "newBase.html" %}
+{% load static %}
+{% block title %}Edit Event{% endblock %}
+{%block head%}
+
+{%endblock%}
+{% block content %}
+<main class="main-content">
+  <section class="section">
+    <h2 class="section-title">Edit Event</h2>
+    <form method="post">
+      {% csrf_token %} {{ form }}
+      <button class="button button-primary" type="submit">Submit</button>
+    </form>
+  </section>
+  {% if message %}
+  <div role="alert" class="alert alert-info">
+    <p>{{ message }}</p>
+  </div>
+  {% endif %}
+</main>
+{%endblock%}
