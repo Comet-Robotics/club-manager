@@ -18,7 +18,7 @@ with open('voters.csv', 'w') as f:
     writer = csv.writer(f)
     writer.writerow(('FirstName', 'LastName', 'Email'))
     for user in User.objects.all():
-        if not user.user_profile.is_member()[1]:
+        if not user.userprofile.is_member()[1]:
             continue
         attendances = Attendance.objects.filter(user=user, event__event_date__gt=ATTENDANCES_SINCE)
         if len(attendances) >= MIN_ATTENDANCES:
