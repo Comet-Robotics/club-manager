@@ -195,13 +195,13 @@ def create_event_view(request):
         if form.is_valid():
             event = form.save()
             # Check if project_id was provided and redirect to project events page
-            project_id = form.cleaned_data.get('project_id')
+            project_id = form.cleaned_data.get("project_id")
             if project_id:
                 return redirect("events", project_id=project_id)
             else:
                 return redirect("event_editor_view", event_id=form.instance.id)
     else:
         # Get project_id from URL parameter and pre-populate the form
-        project_id = request.GET.get('project_id')
-        form = EventForm(initial={'project_id': project_id} if project_id else {})
+        project_id = request.GET.get("project_id")
+        form = EventForm(initial={"project_id": project_id} if project_id else {})
     return render(request, "edit_event.html", {**layout_data, "form": form})

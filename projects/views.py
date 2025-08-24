@@ -52,28 +52,30 @@ class EventView(CanManageProjectMixin, SingleTableView):
         project_id = self.kwargs["project_id"]
         return Event.objects.filter(project_id=project_id)
 
+
 def update_team_members(request: HttpRequest, team_id: int):
     if request.method != "POST":
-      return HttpResponseNotAllowed(permitted_methods=["POST"])
-      
+        return HttpResponseNotAllowed(permitted_methods=["POST"])
+
     member_id = request.POST.get("member_id")
     if not member_id:
         return HttpResponseBadRequest()
     team = get_object_or_404(Team, pk=team_id)
-    
+
     if not Team.user_can_manage_team(request.user, team):
         return HttpResponseForbidden()
-    
+
     member = get_object_or_404(User, pk=member_id)
     team.members.add(member)
     return HttpResponse("Done!")
+
 
 class NewMemberSearchView(CanManageTeamMixin, ListView):
     template_name = "add_member_to_team.html"
     model = User
     paginate_by = 5
     context_object_name = "members"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["team_id"] = self.kwargs["team_id"]
