@@ -18,8 +18,10 @@ class PaymentAdmin(admin.ModelAdmin):
         ("method", MultiSelectDropdownFilter),
     ]
 
+
 class PurchasedProductAdmin(admin.ModelAdmin):
     autocomplete_fields = ["product", "payment"]
+
 
 admin.site.register(Product, search_fields=["name"])
 admin.site.register(Term, search_fields=["name"] + SearchFields.PRODUCT)
