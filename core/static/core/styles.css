@@ -741,37 +741,130 @@ select {
 
 /* Django tables 2 styles */
 /* Table styles */
+.table-container {
+    background-color: var(--white);
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 2rem;
+    margin-bottom: 0;
+    background-color: var(--white);
 }
+
 thead {
-    background-color: var(--gray-100);
+    background-color: var(--primary);
+    color: var(--white);
 }
+
+thead a {
+    color: var(--white) !important;
+    text-decoration: none;
+    background-color: transparent !important;
+}
+
+thead a:hover {
+    color: var(--white) !important;
+    text-decoration: none;
+    background-color: transparent !important;
+}
+
+thead a:visited {
+    color: var(--white) !important;
+    background-color: transparent !important;
+}
+
+thead a:focus {
+    color: var(--white) !important;
+    background-color: transparent !important;
+    outline: 2px solid var(--white);
+    outline-offset: -2px;
+}
+
 th {
-    padding: 0.75rem;
+    padding: 1rem;
     text-align: left;
     font-weight: 600;
-    color: var(--gray-700);
+    color: var(--white);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
+
 th, td {
     border-bottom: 1px solid var(--gray-200);
 }
+
 td {
-    padding: 0.75rem;
-    color: var(--gray-600);
+    padding: 1rem;
+    color: var(--gray-700);
+    vertical-align: middle;
 }
-td a {
+
+tbody tr:hover {
+    background-color: var(--gray-50);
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+/* Button styling in tables */
+td .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.15s;
+    border: none;
+    cursor: pointer;
+}
+
+td .button-primary {
+    background-color: var(--primary);
+    color: var(--white);
+}
+
+td .button-primary:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+}
+
+td .button-outline {
+    background-color: transparent;
+    border: 1px solid var(--gray-300);
+    color: var(--gray-700);
+}
+
+td .button-outline:hover {
+    background-color: var(--gray-50);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+}
+
+/* Regular link styling */
+td a:not(.button) {
     color: var(--primary);
     text-decoration: none;
 }
-td a:hover {
+
+td a:not(.button):hover {
     text-decoration: underline;
 }
-td a:visited {
+
+td a:not(.button):visited {
     color: var(--gray-700);
 }
-td a:focus {
+
+td a:not(.button):focus {
     outline: 2px solid var(--primary);
 }

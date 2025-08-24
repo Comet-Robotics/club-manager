@@ -4,18 +4,25 @@ from django.contrib.auth.models import User
 
 
 class EventTable(tables.Table):
+    table_title = ""
+    
     class Meta:
         model = Event
         exclude = ("url", "project", "id", "created_at", "updated_at")
 
     view = tables.TemplateColumn(
-        '<a style="color: red" href="{%url "event_overview" record.id %}">Overview</a>',
+        '<a class="button button-primary" href="{%url "event_overview" record.id %}">Overview</a>',
         orderable=False,
+        verbose_name="",
     )
 
 
 class MemberTable(tables.Table):
-    delete = tables.LinkColumn('edit_form',verbose_name='delete')
+    delete = tables.TemplateColumn(
+        '<a class="button button-outline" href="{% url "edit_form" record.id %}">Edit</a>',
+        orderable=False,
+    )
+    
     class Meta:
         model = User
         fields = ("id", "username", "first_name", "last_name")
