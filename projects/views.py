@@ -34,7 +34,7 @@ class CanManageTeamMixin(UserPassesTestMixin):
     def test_func(self):
         team_id = self.kwargs["team_id"]
         team = Team.objects.get(pk=team_id)
-        print(team)
+
         return Team.user_can_manage_team(self.request.user, team)
 
 
