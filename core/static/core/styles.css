@@ -252,6 +252,16 @@ img {
     background-color: var(--gray-50);
 }
 
+.button-secondary {
+    background-color: var(--gray-100);
+    color: var(--gray-700);
+    border: 1px solid var(--gray-300);
+}
+
+.button-secondary:hover {
+    background-color: var(--gray-200);
+}
+
 .icon-button {
     padding: 0.5rem;
     border: none;

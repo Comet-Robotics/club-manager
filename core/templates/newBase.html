@@ -63,6 +63,15 @@
                                 <i data-lucide="chevron-right"></i>
                             </a>
                         </div>
+
+                        {% if request.user.is_staff %}
+                        <div class="nav-section">
+                            <h2 class="section-title">{{ settings.organization_name }}</h2>
+                            <div class="sub-nav">
+                                <a href="/club/events/" class="nav-link">Events</a>
+                            </div>
+                        </div>
+                        {% endif %}
     
                         {%for project in accessible_projects%}
                         <div class="nav-section">

@@ -8,6 +8,7 @@ from core.models import UserProfile
 from django.contrib.auth.models import User
 from django.contrib.admin.views.decorators import staff_member_required
 from .tables import UserTable, LinkUserTable
+from projects.tables import EventTable
 from core.utilities import get_layout_data
 
 
@@ -205,3 +206,12 @@ def create_event_view(request):
         project_id = request.GET.get("project_id")
         form = EventForm(initial={"project_id": project_id} if project_id else {})
     return render(request, "edit_event.html", {**layout_data, "form": form})
+
+
+def club_events_view(request):
+    """View for displaying club-wide events (events not associated with any project)"""
+    layout_data = get_layout_data(request)
+    # Get events that are not associated with any project
+    club_events = Event.objects.filter(project__isnull=True).order_by("event_date")
+    table = EventTable(club_events)
+    return render(request, "club_events.html", {**layout_data, "table": table})
