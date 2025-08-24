@@ -530,7 +530,7 @@ async def givememberroles(ctx: discord.ApplicationContext, new_impl: bool):
     guild = bot.get_guild(settings.DISCORD_SERVER_ID)
     member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
 
-    message = await ctx.respond("Processing...", ephemeral=True)
+    message = await ctx.respond("Processing...")
     ids_to_add = await get_current_member_discord_ids()
 
     start_time = time.time()
@@ -569,7 +569,7 @@ async def purgememberroles(ctx: discord.ApplicationContext, new_impl: bool):
     guild = bot.get_guild(settings.DISCORD_SERVER_ID)
     member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
 
-    message = await ctx.respond("Processing...", ephemeral=True)
+    message = await ctx.respond("Processing...")
 
     removed_count = 0
     discord_members = guild.members
