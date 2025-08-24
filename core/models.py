@@ -69,6 +69,7 @@ class UserProfile(models.Model):
         null=False, blank=False, default=True
     )  # TODO: get rid of default=True and fix UserProfile creation with null field
     date_of_birth = models.DateField(null=True, blank=True)
+    comet_card_serial_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
 
     def is_minor(self):
         assert self.date_of_birth is not None
