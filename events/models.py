@@ -39,10 +39,12 @@ class Event(models.Model):
         elif self.project is not None:
             total_members = self.project.all_team_members().count()
         else:
-            total_members = None
+            total_members = 0
         return total_members
 
     def get_attendance_rate(self):
+        if self.get_expected_attendees() == 0:
+            return 0
         return (self.get_attendance() / self.get_expected_attendees()) * 100
 
     def get_event_major_breakdown(self):
