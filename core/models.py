@@ -121,6 +121,29 @@ class UserProfile(models.Model):
 
         return roles_to_apply
 
+    @staticmethod
+    def create_extended_user(net_id, comet_card_serial_number, first, last):
+        """Create a user with profile and comet card serial number"""
+        user = UserProfile.create_basic_user(net_id, first, last)
+        user_profile = user.userprofile
+        user_profile.comet_card_serial_number = comet_card_serial_number
+        user_profile.save()
+        return user
+
+    @staticmethod
+    def create_basic_user(net_id, first, last):
+        """Create a basic user with automatic UserProfile creation via signal"""
+        return User.objects.create(username=net_id, first_name=first, last_name=last)
+
+    @staticmethod
+    def link_user(user_id, comet_card_serial_number):
+        """Link an existing user to a comet card serial number"""
+        user = User.objects.get(pk=user_id)
+        user_profile = user.userprofile
+        user_profile.comet_card_serial_number = comet_card_serial_number
+        user_profile.save()
+        return user_profile
+
 
 @receiver(post_save, sender=User)
 def update_user_signal(sender, instance, created, **kwargs):

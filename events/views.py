@@ -3,7 +3,7 @@ from django.http import Http404
 
 from core.utilities import get_layout_data
 from .forms import EventForm, SignInForm, CreateProfileForm, UserSearchForm, RSVPForm
-from .models import UserIdentification, Attendance, Event, Reservation
+from .models import Attendance, Event, Reservation
 from core.models import UserProfile
 from django.contrib.auth.models import User
 from django.contrib.admin.views.decorators import staff_member_required
@@ -22,13 +22,12 @@ def sign_in(request, event_id):
         if form.is_valid():
             student_id = form.cleaned_data["card_data"]
             try:
-                user_profile = UserIdentification.objects.get(student_id=student_id)
+                user_profile = UserProfile.objects.get(comet_card_serial_number=student_id)
                 if user_profile:
-                    user = User.objects.get(username=user_profile.user)
-                    valid_payment = UserProfile.objects.get(user=user).is_member()[1]
-                    print(valid_payment)
+                    user = user_profile.user
+                    valid_payment = user_profile.is_member()[1]
                     form = SignInForm()
-                    status, created = Attendance.objects.get_or_create(event=current_event, user=user_profile.user)
+                    status, created = Attendance.objects.get_or_create(event=current_event, user=user)
                     if created:
                         message = "success"
                         if not valid_payment:
@@ -37,7 +36,7 @@ def sign_in(request, event_id):
                         message = "repeat"
                         if not valid_payment:
                             message = "nomember"
-            except UserIdentification.DoesNotExist:
+            except UserProfile.DoesNotExist:
                 return redirect("lookup-user", event_id=event_id, student_id=student_id)
 
             return render(
@@ -48,7 +47,7 @@ def sign_in(request, event_id):
                     "form": form,
                     "message": message,
                     "status": status,
-                    "user": user_profile.user,
+                    "user": user,
                     "event_id": event_id,
                     "event_name": event_name,
                 },
@@ -79,7 +78,7 @@ def pass_sign_in(request, event_id, user_id):
 @staff_member_required
 def pass_link(request, event_id, user_id, student_id):
     current_event = Event.objects.get(pk=event_id)
-    user_profile = UserIdentification.link_user(user_id, student_id)
+    user_profile = UserProfile.link_user(user_id, student_id)
     user = User.objects.get(pk=user_id)
     status, created = Attendance.objects.get_or_create(event=current_event, user=user)
     print(user_profile)
@@ -100,7 +99,7 @@ def create_profile(request, student_id):
             net_id = form.cleaned_data["net_id"]
             first = form.cleaned_data["first_name"]
             last = form.cleaned_data["last_name"]
-            UserIdentification.create_extended_user(net_id=net_id, student_id=student_id, first=first, last=last)
+            UserProfile.create_extended_user(net_id=net_id, comet_card_serial_number=student_id, first=first, last=last)
             return redirect("sign_in")
     else:
         form = CreateProfileForm()
@@ -112,7 +111,7 @@ def create_profile(request, student_id):
 def lookup_user(request, event_id, student_id=None):
     if student_id:
         print("student id found")
-        users = User.objects.filter(useridentification__isnull=True)
+        users = User.objects.filter(userprofile__comet_card_serial_number__isnull=True)
     else:
         users = User.objects.all()
 
@@ -123,7 +122,7 @@ def lookup_user(request, event_id, student_id=None):
             users = (
                 users.filter(first_name__icontains=query)
                 | users.filter(last_name__icontains=query)
-                | users.filter(useridentification__student_id__icontains=query)
+                | users.filter(userprofile__comet_card_serial_number__icontains=query)
                 | users.filter(username__icontains=query)
             )
     else:
