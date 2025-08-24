@@ -1,5 +1,5 @@
 from django.shortcuts import redirect, render
-from django.http import HttpResponse, HttpResponsePermanentRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.views.decorators.http import require_GET
 from django.conf import settings
 from core.models import ServerSettings
@@ -96,10 +96,6 @@ class AttendanceListView(ListView):
         return Attendance.objects.order_by("-timestamp").filter(user=self.request.user)
 
 
-def spa_view(request):
-    return render(request, "spa.html", {"DEBUG": settings.DEBUG})
-
-
 @require_GET
 def apple_merchant_id(request):
     if not settings.SQUARE_APPLE_MERCHANT_ID:
@@ -108,4 +104,4 @@ def apple_merchant_id(request):
 
 
 def index(request):
-    return HttpResponsePermanentRedirect("/profile")
+    return HttpResponseRedirect("/profile")

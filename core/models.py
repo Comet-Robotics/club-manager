@@ -21,6 +21,10 @@ class ServerSettings(models.Model):
     accent_color_hex = ColorField(default="#4BC0FF")
     logo = models.ImageField(upload_to="logos")
 
+    class Meta:
+        verbose_name = "server configuration"
+        verbose_name_plural = "server configurations"
+
 
 class Race(models.Model):
     name = models.CharField(max_length=100)
