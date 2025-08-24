@@ -22,6 +22,7 @@ class ServerSettings(models.Model):
     logo = models.ImageField(upload_to="logos")
 
 
+
 # Create your models here.
 class UserProfile(models.Model):
     class GenderChoice(models.TextChoices):

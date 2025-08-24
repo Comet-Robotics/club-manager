@@ -15,6 +15,7 @@ def get_user(**kwargs):
 get_user_async = sync_to_async(get_user)
 
 
+
 def get_profile(**kwargs):
     try:
         return UserProfile.objects.get(**kwargs)
@@ -23,6 +24,7 @@ def get_profile(**kwargs):
 
 
 get_profile_async = sync_to_async(get_profile)
+
 
 
 def get_or_create_profile(**kwargs):

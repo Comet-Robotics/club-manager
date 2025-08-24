@@ -9,6 +9,7 @@ from django.db.models import Q
 from projects.models import Project, Team
 
 
+
 # Create your models here.
 class Event(models.Model):
     event_name = models.CharField(max_length=200)

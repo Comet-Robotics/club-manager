@@ -3,6 +3,7 @@ from common.forms import NetIDField
 from clubManager import settings
 
 
+
 class PaymentSignInForm(forms.Form):
     payment_choices = [
         ("cash", "In-Person Cash Payment"),
