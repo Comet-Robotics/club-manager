@@ -57,7 +57,7 @@
                 <nav class="sidebar">
                     <div class="sidebar-content">
                         <div class="nav-section">
-                            <a href="/profile" class="nav-link">
+                            <a href="{% url 'profile' %}" class="nav-link">
                                 <i data-lucide="house"></i>
                                 Home
                                 <i data-lucide="chevron-right"></i>
@@ -68,7 +68,7 @@
                         <div class="nav-section">
                             <h2 class="section-title">{{ settings.organization_name }}</h2>
                             <div class="sub-nav">
-                                <a href="/club/events/" class="nav-link">Events</a>
+                                <a href="{% url 'club_events' %}" class="nav-link">Events</a>
                             </div>
                         </div>
                         {% endif %}
@@ -77,9 +77,9 @@
                         <div class="nav-section">
                             <h2 class="section-title">{{project.name}}</h2>
                             <div class="sub-nav">
-                                <a href="/projects/{{project.id}}" class="nav-link">Overview</a>
-                                <a href="/projects/{{project.id}}/events" class="nav-link">Events</a>
-                                <a href="/projects/{{project.id}}/members" class="nav-link">Members</a>
+                                <a href="{% url 'project_view' project_id=project.id %}" class="nav-link">Overview</a>
+                                <a href="{% url 'events' project_id=project.id %}" class="nav-link">Events</a>
+                                <a href="{% url 'members' project_id=project.id %}" class="nav-link">Members</a>
                             </div>
                         </div>
                         {%endfor%}
@@ -89,7 +89,7 @@
                             <h2 class="section-title">Administration</h2>
                             <div class="sub-nav">
                             <a href="{% url 'club_settings' %}" class="nav-link">Server Settings</a>
-                            <a href="/admin" class="nav-link">Django Admin</a>
+                            <a href="{% url 'admin:index' %}" class="nav-link">Django Admin</a>
                             </div>
                         </div>
                         {% endif %}
