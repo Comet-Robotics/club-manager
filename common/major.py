@@ -13,7 +13,6 @@ MAJORS_CACHE_PATH = dirs.site_cache_path / "majors.json"
 MAJOR_CACHE_MAX_AGE = timedelta(weeks=4)
 
 
-
 @functools.lru_cache()
 def get_majors() -> dict[str, str]:
     """Fetches the list of majors from the directory dropdown filter. Caches the list for fast retrieval.

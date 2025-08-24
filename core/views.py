@@ -107,6 +107,5 @@ def apple_merchant_id(request):
     return HttpResponse(settings.SQUARE_APPLE_MERCHANT_ID, content_type="text/plain")
 
 
-
 def index(request):
     return HttpResponsePermanentRedirect("/profile")
