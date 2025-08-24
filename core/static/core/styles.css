@@ -709,3 +709,41 @@ select {
     background-color: var(--primary);
     border-radius: 9999px;
   }
+
+
+/* Django tables 2 styles */
+/* Table styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
+}
+thead {
+    background-color: var(--gray-100);
+}
+th {
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--gray-700);
+}
+th, td {
+    border-bottom: 1px solid var(--gray-200);
+}
+td {
+    padding: 0.75rem;
+    color: var(--gray-600);
+}
+td a {
+    color: var(--primary);
+    text-decoration: none;
+}
+td a:hover {
+    text-decoration: underline;
+}
+td a:visited {
+    color: var(--gray-700);
+}
+td a:focus {
+    outline: 2px solid var(--primary);
+}

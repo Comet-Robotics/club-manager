@@ -15,6 +15,7 @@ class EventTable(tables.Table):
 
 
 class MemberTable(tables.Table):
+    delete = tables.LinkColumn('edit_form',verbose_name='delete')
     class Meta:
         model = User
         fields = ("id", "username", "first_name", "last_name")
