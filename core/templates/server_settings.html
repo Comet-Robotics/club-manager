@@ -25,7 +25,7 @@
     <div class="accounts-grid">
       <div class="account-card">
         <div class="card-content">
-          <form method="post" action="{% url 'server_settings_logo_form' %}" enctype="multipart/form-data">
+          <form method="post" action="{% url 'club_settings_logo_form' %}" enctype="multipart/form-data">
             {% csrf_token %} {{ logo_form }}
             <button class="button button-primary" type="submit">Upload Logo</button>
           </form>
