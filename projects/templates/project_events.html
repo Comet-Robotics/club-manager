@@ -7,7 +7,7 @@
   <section class="section">
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <h2 class="section-title">Events</h2>
-      <a href="{% url 'create_event_view' %}" class="button button-primary">Create Event</a>
+      <a href="{% url 'create_event_view' %}?project_id={{ view.kwargs.project_id }}" class="button button-primary">Create Event</a>
     </div>
     {% render_table table %}
    </section>

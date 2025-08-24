@@ -64,6 +64,8 @@ class RSVPForm(forms.Form):
 
 
 class EventForm(forms.ModelForm):
+    project_id = forms.IntegerField(required=False, widget=forms.HiddenInput())
+    
     class Meta:
         model = Event
         exclude = ["created_at", "updated_at"]
@@ -78,3 +80,13 @@ class EventForm(forms.ModelForm):
         super(EventForm, self).__init__(*args, **kwargs)
         if self.instance and self.instance.event_date:
             self.fields["event_date"].initial = self.instance.event_date.strftime("%Y-%m-%dT%H:%M")
+        
+        # Prefill project field if project_id is provided in initial data
+        if 'initial' in kwargs and 'project_id' in kwargs['initial']:
+            project_id = kwargs['initial']['project_id']
+            try:
+                from projects.models import Project
+                project = Project.objects.get(pk=project_id)
+                self.fields['project'].initial = project
+            except Project.DoesNotExist:
+                pass
