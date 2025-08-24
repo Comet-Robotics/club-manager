@@ -1,5 +1,5 @@
 from django.shortcuts import redirect, render
-from django.http import HttpResponse, HttpResponsePermanentRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.views.decorators.http import require_GET
 from django.conf import settings
 from core.models import ServerSettings
@@ -104,4 +104,4 @@ def apple_merchant_id(request):
 
 
 def index(request):
-    return HttpResponsePermanentRedirect("/profile")
+    return HttpResponseRedirect("/profile")

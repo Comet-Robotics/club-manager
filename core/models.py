@@ -21,6 +21,10 @@ class ServerSettings(models.Model):
     accent_color_hex = ColorField(default="#4BC0FF")
     logo = models.ImageField(upload_to="logos")
 
+    class Meta:
+        verbose_name = "server configuration"
+        verbose_name_plural = "server configurations"
+
 
 # Create your models here.
 class UserProfile(models.Model):

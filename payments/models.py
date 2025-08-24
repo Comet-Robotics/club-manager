@@ -108,29 +108,3 @@ class PurchasedProduct(models.Model):
 
     def __str__(self):
         return f"{self.product.name} ({self.quantity}), payment {self.payment.id}, user {self.payment.user}"
-
-
-# class ProductOptionSet(models.Model):
-#   # Ex: Size, Color
-#   name = models.CharField(max_length=100)
-#   description = models.TextField()
-
-#   def __str__(self):
-#     return f"{self.name}"
-
-
-# class ProductOption(models.Model):
-#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-#     set = models.ForeignKey(ProductOptionSet, on_delete=models.CASCADE)
-
-#     def __str__(self):
-#         return f"{self.product.name} - {self.set.name}"
-
-# class ProductOptionValue(models.Model):
-#   # Ex: Size - Small, Color - Blue
-#   name = models.CharField(max_length=100)
-#   description = models.TextField()
-#   set = models.ForeignKey(ProductOptionSet, on_delete=models.CASCADE)
-
-#   def __str__(self):
-#     return f"{self.set.name} - {self.name}"
