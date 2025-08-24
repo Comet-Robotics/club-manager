@@ -14,6 +14,7 @@ class UserProfileForm(forms.ModelForm):
         }
         widgets = {
             "date_of_birth": forms.DateInput(format=("%Y-%m-%d"), attrs={"class": "form-control", "type": "date"}),
+            "race": forms.CheckboxSelectMultiple(),
         }
 
     def __init__(self, *args, **kwargs):
