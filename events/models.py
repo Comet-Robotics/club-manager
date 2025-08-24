@@ -43,6 +43,8 @@ class Event(models.Model):
         return total_members
 
     def get_attendance_rate(self):
+        if self.get_expected_attendees() is None:
+            return 0
         return (self.get_attendance() / self.get_expected_attendees()) * 100
 
     def get_event_major_breakdown(self):
