@@ -96,10 +96,6 @@ class AttendanceListView(ListView):
         return Attendance.objects.order_by("-timestamp").filter(user=self.request.user)
 
 
-def spa_view(request):
-    return render(request, "spa.html", {"DEBUG": settings.DEBUG})
-
-
 @require_GET
 def apple_merchant_id(request):
     if not settings.SQUARE_APPLE_MERCHANT_ID:

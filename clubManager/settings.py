@@ -187,10 +187,6 @@ STATIC_ROOT = os.getenv("STATIC_ROOT")
 MEDIA_ROOT = dirs.user_data_path / "media"
 MEDIA_URL = "/media/"
 
-STATICFILES_DIRS = [
-    BASE_DIR / "frontend/dist",
-]
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
