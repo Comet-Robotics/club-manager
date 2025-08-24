@@ -13,5 +13,3 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         seed.create_test_data()
-
-    

@@ -29,7 +29,9 @@ def _create_user_and_make_member(username, password, **kwargs):
     user = User.objects.create_user(username=username, password=password, **kwargs)
     if MEMBERSHIP_PRODUCT:
         with transaction.atomic():
-            payment = Payment.objects.create(user=user, amount_cents=MEMBERSHIP_PRODUCT.amount_cents, completed_at=timezone.now())
+            payment = Payment.objects.create(
+                user=user, amount_cents=MEMBERSHIP_PRODUCT.amount_cents, completed_at=timezone.now()
+            )
             PurchasedProduct.objects.get_or_create(product=MEMBERSHIP_PRODUCT, payment=payment)
     else:
         # This should not happen if create_test_data is set up correctly
@@ -38,7 +40,9 @@ def _create_user_and_make_member(username, password, **kwargs):
 
 
 def create_officer():
-    officer = _create_user_and_make_member(username="seeded_officer", password=PASSWORD, is_staff=True, is_superuser=True)
+    officer = _create_user_and_make_member(
+        username="seeded_officer", password=PASSWORD, is_staff=True, is_superuser=True
+    )
 
     not_officer = _create_user_and_make_member(username="seeded_not_officer", password=PASSWORD)
 
@@ -108,11 +112,12 @@ def create_chessbot_project():
 
     print("Seeded!")
 
+
 def get_or_create_latest_term():
     latest_term = Term.objects.order_by("-start_date").first()
     if latest_term:
         return latest_term
-    
+
     with transaction.atomic():
         product, _ = Product.objects.get_or_create(
             name=SEEDED_OBJECT_NAME_PREFIX + "1 Year Membership for Latest Term",
@@ -129,7 +134,7 @@ def get_or_create_latest_term():
 
 def create_test_data():
     clear_seeded_data()
-    
+
     current_term = get_or_create_latest_term()
     global MEMBERSHIP_PRODUCT
     MEMBERSHIP_PRODUCT = current_term.product
