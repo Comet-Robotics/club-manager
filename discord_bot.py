@@ -534,7 +534,8 @@ async def givememberroles(ctx: discord.ApplicationContext, new_impl: bool):
     ids_to_add = await get_current_member_discord_ids()
 
     start_time = time.time()
-    if new_impl:    
+    if new_impl:
+
         async def add_role_to_member(discord_id):
             member = guild.get_member(discord_id)
             if not member:
@@ -546,6 +547,7 @@ async def givememberroles(ctx: discord.ApplicationContext, new_impl: bool):
             except Exception as e:
                 print(f"Failed to add role to member {discord_id}: {e}")
                 return False
+
         tasks = [add_role_to_member(discord_id) for discord_id in ids_to_add]
         results = await asyncio.gather(*tasks, return_exceptions=True)
     else:
@@ -554,7 +556,7 @@ async def givememberroles(ctx: discord.ApplicationContext, new_impl: bool):
             await member.add_roles(member_role)
         results = [True] * len(ids_to_add)
     end_time = time.time()
-    
+
     print(f"Added role to {len(ids_to_add)} users.")
     await message.edit_original_response(
         content=f"Member role addition success! Added member role to {len(ids_to_add)} users. (Time taken: {end_time - start_time} seconds. Using new implementation: {new_impl})"
@@ -572,10 +574,11 @@ async def purgememberroles(ctx: discord.ApplicationContext, new_impl: bool):
     removed_count = 0
     discord_members = guild.members
     valid_members = await get_current_member_discord_ids()
-    
+
     start_time = time.time()
     if new_impl:
         members_to_remove = [member for member in discord_members if member.id not in valid_members]
+
         async def remove_role_from_member(discord_member):
             try:
                 await discord_member.remove_roles(member_role)
@@ -583,7 +586,7 @@ async def purgememberroles(ctx: discord.ApplicationContext, new_impl: bool):
             except Exception as e:
                 print(f"Failed to remove role from member {discord_member.id}: {e}")
                 return False
-        
+
         tasks = [remove_role_from_member(member) for member in members_to_remove]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         removed_count = sum(1 for result in results if result is True)
