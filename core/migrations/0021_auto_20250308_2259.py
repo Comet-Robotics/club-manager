@@ -13,6 +13,19 @@ def create_races(apps, schema_editor):
     Race.objects.create(name='Middle Eastern')
     Race.objects.create(name='Other')
 
+def reverse_create_races(apps, schema_editor):
+    Race = apps.get_model("core", "Race")
+    Race.objects.filter(name__in=[
+        'Black or African American',
+        'White',
+        'East Asian',
+        'South Asian',
+        'American Indian or Alaska Native',
+        'Native Hawaiian or Other Pacific Islander',
+        'Middle Eastern',
+        'Other'
+    ]).delete()
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -20,5 +33,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(create_races),
+        migrations.RunPython(create_races, reverse_create_races),
     ]
