@@ -137,6 +137,8 @@ def lookup_user(request, event_id, student_id=None):
 
 
 def rsvp(request, event_id):
+    from core.utilities import get_layout_data
+    layout_data = get_layout_data(request)
     event = Event.objects.get(pk=event_id)
     if request.method == "POST":
         form = RSVPForm(request.POST)
@@ -153,7 +155,7 @@ def rsvp(request, event_id):
             # return render(request, 'rsvp.html', {'form': form, 'user': user, 'event': event})
     else:
         form = RSVPForm()
-    return render(request, "rsvp.html", {"event": event, "form": form})
+    return render(request, "rsvp.html", {**layout_data, "event": event, "form": form})
 
 
 def report(request, event_id):
