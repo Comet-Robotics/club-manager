@@ -18,10 +18,10 @@ class EventTable(tables.Table):
 
 
 class MemberTable(tables.Table):
-    delete = tables.TemplateColumn(
-        '<a class="button button-outline" href="{% url "edit_form" record.id %}">Edit</a>',
-        orderable=False,
-    )
+    # delete = tables.TemplateColumn(
+    #     '<a class="button button-outline" href="{% url "edit_form" record.id %}">Edit</a>',
+    #     orderable=False,
+    # )
 
     class Meta:
         model = User
