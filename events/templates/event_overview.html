@@ -17,10 +17,16 @@
             <h2 class="event-title">{{event.event_name}}</h2>
             <div class="event-date">{{event.event_date|date:"F j, Y • g:i A"}} - {{event.end_time|date:"g:i A"}}</div>
         </div>
-        <a href="#" class="sign-in-button">
-            <i data-lucide="log-in" class="w-4 h-4"></i>
-            Sign In
-        </a>
+        <div class="event-actions">
+            <a href="{% url 'event_editor_view' event_id=event.id %}" class="edit-button">
+                <i data-lucide="edit" class="w-4 h-4"></i>
+                Edit Event
+            </a>
+            <a href="#" class="sign-in-button">
+                <i data-lucide="log-in" class="w-4 h-4"></i>
+                Sign In
+            </a>
+        </div>
     </div>
     
     <!-- Event Stats -->

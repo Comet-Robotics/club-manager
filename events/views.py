@@ -175,6 +175,11 @@ def event_editor_view(request, event_id: int | None = None):
             form = EventForm(request.POST, instance=event)
             if form.is_valid():
                 form.save()
+                # Redirect back to project events page if event is associated with a project
+                if event.project:
+                    return redirect("events", project_id=event.project.id)
+                else:
+                    return redirect("event_overview", event_id=event.id)
         else:
             form = EventForm(instance=event)
         return render(request, "edit_event.html", {**layout_data, "form": form})
