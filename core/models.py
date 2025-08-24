@@ -3,7 +3,6 @@ from django.db.models.signals import post_save
 from django.contrib.auth.models import User
 from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
-from multiselectfield import MultiSelectField
 
 from clubManager import settings
 from common.major import get_majors, get_major_from_netid
@@ -33,6 +32,13 @@ class Race(models.Model):
         return self.name
 
 
+class Diet(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+
 class UserProfile(models.Model):
     class GenderChoice(models.TextChoices):
         MALE = "M", _("Man")
@@ -49,22 +55,10 @@ class UserProfile(models.Model):
         XXLARGE = "XXL", _("2XL")
         XXXLARGE = "XXXL", _("3XL")
 
-    DIETARY_CHOICES = (
-        ("S", _("Shellfish Allergy")),
-        ("N", _("Nut Allergy")),
-        ("VT", _("Vegetarian")),
-        ("VN", _("Vegan")),
-        ("P", _("Pescatarian")),
-        ("H", _("Halal")),
-        ("K", _("Kosher")),
-        ("L", _("Lactose Intolerant")),
-        ("G", _("Gluten Free")),
-    )
-
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     gender = models.CharField(max_length=1, choices=GenderChoice.choices, null=True, blank=True)
-    race = models.ManyToManyField(Race)
-    diet = MultiSelectField(choices=DIETARY_CHOICES, blank=True, null=True)
+    race = models.ManyToManyField(Race, blank=True)
+    diet = models.ManyToManyField(Diet, blank=True)
     shirt = models.CharField(max_length=4, choices=ShirtSize.choices, null=True, blank=True)
     is_hispanic = models.BooleanField(null=True, blank=True, default=None)
     discord_id = models.CharField(max_length=200, null=True, blank=True, unique=True)
