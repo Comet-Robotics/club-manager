@@ -110,17 +110,6 @@ class UserProfile(models.Model):
 
         return term, purchased_product.first()
 
-    def apply_discord_roles(self, dry_run=False):
-        roles_to_apply: list[int] = []
-        if self.is_member()[1]:
-            roles_to_apply.append(settings.DISCORD_MEMBER_ROLE_ID)
-
-        if not dry_run:
-            client = discord.Client()
-            # TODO apply roles
-
-        return roles_to_apply
-
     @staticmethod
     def create_extended_user(net_id, comet_card_serial_number, first, last):
         """Create a user with profile and comet card serial number"""

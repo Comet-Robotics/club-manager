@@ -45,9 +45,6 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 # TODO: endpoints for payments
 # TODO: signing flow
-#
-# TODO: page for us to check robots/people in
-# TODO: frontend polish
 
 
 class EventViewSet(viewsets.ModelViewSet):
