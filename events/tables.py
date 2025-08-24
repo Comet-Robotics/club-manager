@@ -21,7 +21,7 @@ class UserTable(tables.Table):
 
     sign_in = tables.TemplateColumn(
         """
-            <a style="color: red"href="{% url 'pass_sign_in' table.event_id record.id %}">Sign-In</a>
+            <a href="{% url 'pass_sign_in' table.event_id record.id %}" class="button button-primary">Sign-In</a>
     """,
         orderable=False,
     )
@@ -49,7 +49,7 @@ class LinkUserTable(tables.Table):
 
     sign_in = tables.TemplateColumn(
         """
-            <a style="color: red"href="{% url 'pass_link' table.event_id record.id table.student_id  %}">Link User</a>
+            <a href="{% url 'pass_link' table.event_id record.id table.student_id %}" class="button button-primary">Link User</a>
     """,
         orderable=False,
     )

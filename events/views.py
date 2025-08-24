@@ -94,6 +94,7 @@ def pass_link(request, event_id, user_id, student_id):
 
 @staff_member_required
 def create_profile(request, student_id):
+    layout_data = get_layout_data(request)
     if request.method == "POST":
         form = CreateProfileForm(request.POST)
         if form.is_valid():
@@ -105,11 +106,12 @@ def create_profile(request, student_id):
     else:
         form = CreateProfileForm()
 
-    return render(request, "create_profile.html", {"form": form})
+    return render(request, "create_profile.html", {**layout_data, "form": form})
 
 
 @staff_member_required
 def lookup_user(request, event_id, student_id=None):
+    layout_data = get_layout_data(request)
     if student_id:
         print("student id found")
         users = User.objects.filter(useridentification__isnull=True)
@@ -133,7 +135,7 @@ def lookup_user(request, event_id, student_id=None):
         table = LinkUserTable(users, event_id=event_id, student_id=student_id)
     else:
         table = UserTable(users, event_id=event_id)
-    return render(request, "lookup_user.html", {"users": users, "form": form, "table": table})
+    return render(request, "lookup_user.html", {**layout_data, "users": users, "form": form, "table": table})
 
 
 def rsvp(request, event_id):

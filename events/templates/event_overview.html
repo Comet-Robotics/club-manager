@@ -17,7 +17,7 @@
                 <i data-lucide="edit" class="w-4 h-4"></i>
                 Edit Event
             </a>
-            <a href="#" class="sign-in-button">
+            <a href="{% url 'sign_in' event_id=event.id %}" class="sign-in-button">
                 <i data-lucide="log-in" class="w-4 h-4"></i>
                 Sign In
             </a>
