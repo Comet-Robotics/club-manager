@@ -292,8 +292,14 @@ async def profile(ctx: discord.ApplicationContext, net_id: str | None = None):
     if net_id is None:
         discord_user_id = ctx.author.id
     else:
+        if not hasattr(ctx.author, "roles"):
+            await ctx.respond(
+                "You can only view other user profiles in a server!"
+            )
+            return
         user_role_ids = set([role.id for role in ctx.author.roles])
         if user_role_ids.intersection(PRIVILEGED_ROLE_IDS):
+            # TODO handle users without linked discord ids, probably just split off function flow
             discord_user_id = User.objects.get(username=net_id).userprofile.discord_id
         else:
             await ctx.respond(
