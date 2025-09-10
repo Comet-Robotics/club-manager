@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 python-dotenv = "~=1.0.1"
-django = "~=5.1.4"
+django = "~=5.1.12"
 py-cord = "~=2.6.0"
 django-extensions = "~=3.2.3"
 django-rename-app = "~=0.1.7"
