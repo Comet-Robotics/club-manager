@@ -300,7 +300,9 @@ async def profile(ctx: discord.ApplicationContext, net_id):
 **Gender:** {UserProfile.GenderChoice(user_profile.gender).label if user_profile.gender else "Not specified"}
 """
             if not yours:
-                info_string += f"**Email:** {user_profile.user.email if user_profile.user.email else 'No email provided'}\n"
+                info_string += (
+                    f"**Email:** {user_profile.user.email if user_profile.user.email else 'No email provided'}\n"
+                )
                 info_string += f"**Discord:** {'<@' + user_profile.discord_id + '>' if user_profile.discord_id else 'Not linked'}\n"
 
             return info_string
@@ -334,7 +336,9 @@ async def profile(ctx: discord.ApplicationContext, net_id):
 
         membership_status, due_paying_url, term_name = await sync_to_async(get_membership_status)(user_profile)
 
-        embed = discord.Embed(title=("Your" if yours else (user_profile.user.username + "'s")) + " Profile", color=discord.Color.red())
+        embed = discord.Embed(
+            title=("Your" if yours else (user_profile.user.username + "'s")) + " Profile", color=discord.Color.red()
+        )
         embed.add_field(name="Basic Info", value=basic_info, inline=False)
         embed.add_field(name="Membership Status", value=membership_status, inline=False)
 
@@ -344,9 +348,7 @@ async def profile(ctx: discord.ApplicationContext, net_id):
 
     if net_id is None:
         discord_user_id = ctx.author.id
-        user_profile = await get_profile_async(
-            discord_id=str(discord_user_id)
-        )
+        user_profile = await get_profile_async(discord_id=str(discord_user_id))
         if user_profile is None:
             await ctx.respond(
                 "You don't have a linked Comet Robotics account. Use the `/link` command to connect your Comet Robotics account to your Discord account.",
@@ -361,9 +363,7 @@ async def profile(ctx: discord.ApplicationContext, net_id):
         )
     else:
         if not hasattr(ctx.author, "roles"):
-            await ctx.respond(
-                "You can only view other user profiles in a server!"
-            )
+            await ctx.respond("You can only view other user profiles in a server!")
             return
         user_role_ids = set([str(role.id) for role in ctx.author.roles])
         if not user_role_ids.intersection(PRIVILEGED_ROLE_IDS):
@@ -523,9 +523,11 @@ async def pay(ctx: discord.ApplicationContext):
 async def add_role_unchecked(member_id: int | str):
     print("method execute")
     guild = bot.get_guild(settings.DISCORD_SERVER_ID)
-    if not guild: return
+    if not guild:
+        return
     member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
-    if not member_role: return
+    if not member_role:
+        return
     member = guild.get_member(int(member_id))
     if member:
         await member.add_roles(member_role)
@@ -560,9 +562,11 @@ async def on_member_join(member: discord.Member):
 @discord.option(name="new_impl", description="Use the new async implementation", required=False, default=True)
 async def givememberroles(ctx: discord.ApplicationContext, new_impl: bool):
     guild = bot.get_guild(settings.DISCORD_SERVER_ID)
-    if not guild: return
+    if not guild:
+        return
     member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
-    if not member_role: return
+    if not member_role:
+        return
 
     message = await ctx.respond("Processing...")
     ids_to_add = await get_current_member_discord_ids()
@@ -606,9 +610,11 @@ async def givememberroles(ctx: discord.ApplicationContext, new_impl: bool):
 @discord.option(name="new_impl", description="Use the new async implementation", required=False, default=True)
 async def purgememberroles(ctx: discord.ApplicationContext, new_impl: bool):
     guild = bot.get_guild(settings.DISCORD_SERVER_ID)
-    if not guild: return
+    if not guild:
+        return
     member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
-    if not member_role: return
+    if not member_role:
+        return
 
     message = await ctx.respond("Processing...")
 
