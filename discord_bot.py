@@ -292,74 +292,98 @@ Net ID: {net_id}</p>
     max_length=9,
 )
 async def profile(ctx: discord.ApplicationContext, net_id):
+    async def get_embed(user_profile: UserProfile, yours: bool):
+        def get_basic_info(user_profile: UserProfile):
+            info_string = f"""
+**Full Name:** {user_profile.user.first_name} {user_profile.user.last_name}
+**Net ID:** {user_profile.user.username}
+**Gender:** {UserProfile.GenderChoice(user_profile.gender).label if user_profile.gender else "Not specified"}
+"""
+            if not yours:
+                info_string += f"**Email:** {user_profile.user.email if user_profile.user.email else 'No email provided'}\n"
+                info_string += f"**Discord:** {'<@' + user_profile.discord_id + '>' if user_profile.discord_id else 'Not linked'}\n"
+
+            return info_string
+
+        basic_info = await sync_to_async(get_basic_info)(user_profile)
+
+        # Membership Status
+        def get_membership_status(user_profile: UserProfile):
+            current_term, current_payment = user_profile.is_member()
+            body = "**Current Membership:** " + (
+                "Not a member" if not current_payment else f"Active for {current_term.name}"
+            )
+
+            past_terms = Term.objects.filter(end_date__lte=timezone.now())
+            future_terms = Term.objects.filter(start_date__gte=timezone.now()).exclude(pk=current_term.pk)
+
+            paid_future_terms = [term for term in future_terms if user_profile.is_member(term)[1]]
+            if len(paid_future_terms) > 0:
+                body += f"\n**Dues paid for future term(s)**: {', '.join([t.name for t in paid_future_terms])}"
+
+            paid_past_terms = [term.name for term in past_terms if user_profile.is_member(term)[1]]
+            past_terms_info = ", ".join(paid_past_terms) if len(paid_past_terms) > 0 else "No past memberships"
+
+            body += f"\n**Past Memberships:** {past_terms_info}"
+
+            return (
+                body,
+                f"{settings.PUBLIC_URL}/payments/{current_term.product.id}/pay" if not current_payment else None,
+                current_term.name,
+            )
+
+        membership_status, due_paying_url, term_name = await sync_to_async(get_membership_status)(user_profile)
+
+        embed = discord.Embed(title=("Your" if yours else (user_profile.user.username + "'s")) + " Profile", color=discord.Color.red())
+        embed.add_field(name="Basic Info", value=basic_info, inline=False)
+        embed.add_field(name="Membership Status", value=membership_status, inline=False)
+
+        actions_view = ProfileActionsView(term_name, due_paying_url, user_profile)
+
+        return embed, actions_view
+
     if net_id is None:
         discord_user_id = ctx.author.id
+        user_profile = await get_profile_async(
+            discord_id=str(discord_user_id)
+        )
+        if user_profile is None:
+            await ctx.respond(
+                "You don't have a linked Comet Robotics account. Use the `/link` command to connect your Comet Robotics account to your Discord account.",
+                ephemeral=True,
+            )
+            return
+        embed, actions_view = await get_embed(user_profile, True)
+        await ctx.respond(
+            embed=embed,
+            ephemeral=True,
+            view=actions_view,
+        )
     else:
         if not hasattr(ctx.author, "roles"):
             await ctx.respond(
                 "You can only view other user profiles in a server!"
             )
             return
-        user_role_ids = set([role.id for role in ctx.author.roles])
-        if user_role_ids.intersection(PRIVILEGED_ROLE_IDS):
-            # TODO handle users without linked discord ids, probably just split off function flow
-            discord_user_id = User.objects.get(username=net_id).userprofile.discord_id
-        else:
+        user_role_ids = set([str(role.id) for role in ctx.author.roles])
+        if not user_role_ids.intersection(PRIVILEGED_ROLE_IDS):
             await ctx.respond(
                 "You don't have the required privileges to view this user's profile. Only officers, team leads, and project managers can view other user's profiles.",
                 ephemeral=True,
             )
             return
-
-    user_profile: UserProfile | None = await get_profile_async(discord_id=str(discord_user_id))
-    if user_profile is None:
+        user_profile = await get_profile_async(user__username=str(net_id).lower())
+        if user_profile is None:
+            await ctx.respond(
+                "User with NetID not found!",
+                ephemeral=True,
+            )
+            return
+        embed, _ = await get_embed(user_profile, False)
         await ctx.respond(
-            "You don't have a linked Comet Robotics account. Use the `/link` command to connect your Comet Robotics account to your Discord account.",
+            embed=embed,
             ephemeral=True,
         )
-        return
-
-    def get_basic_info(user_profile: UserProfile):
-        return f"""
-**Full Name:** {user_profile.user.first_name} {user_profile.user.last_name}
-**Net ID:** {user_profile.user.username}
-**Gender:** {UserProfile.GenderChoice(user_profile.gender).label if user_profile.gender else "Not specified"}
-"""
-
-    basic_info = await sync_to_async(get_basic_info)(user_profile)
-
-    # Membership Status
-    def get_membership_status(user_profile: UserProfile):
-        current_term, current_payment = user_profile.is_member()
-        body = "**Current Membership:** " + (
-            "Not a member" if not current_payment else f"Active for {current_term.name}"
-        )
-
-        past_terms: list[Term] = Term.objects.filter(end_date__lte=timezone.now())
-        future_terms: list[Term] = Term.objects.filter(start_date__gte=timezone.now()).exclude(pk=current_term.pk)
-
-        paid_future_terms = [term for term in future_terms if user_profile.is_member(term)[1]]
-        if len(paid_future_terms) > 0:
-            body += f"\n**Dues paid for future term(s)**: {', '.join([t.name for t in paid_future_terms])}"
-
-        paid_past_terms = [term.name for term in past_terms if user_profile.is_member(term)[1]]
-        past_terms_info = ", ".join(paid_past_terms) if len(paid_past_terms) > 0 else "No past memberships"
-
-        body += f"\n**Past Memberships:** {past_terms_info}"
-
-        return (
-            body,
-            f"{settings.PUBLIC_URL}/payments/{current_term.product.id}/pay" if not current_payment else None,
-            current_term.name,
-        )
-
-    membership_status, due_paying_url, term_name = await sync_to_async(get_membership_status)(user_profile)
-
-    embed = discord.Embed(title="Your Profile", color=discord.Color.red())
-    embed.add_field(name="Basic Info", value=basic_info, inline=False)
-    embed.add_field(name="Membership Status", value=membership_status, inline=False)
-
-    await ctx.respond(embed=embed, ephemeral=True, view=ProfileActionsView(term_name, due_paying_url, user_profile))
 
 
 class ProfileActionsView(discord.ui.View):
@@ -499,7 +523,9 @@ async def pay(ctx: discord.ApplicationContext):
 async def add_role_unchecked(member_id: int | str):
     print("method execute")
     guild = bot.get_guild(settings.DISCORD_SERVER_ID)
+    if not guild: return
     member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
+    if not member_role: return
     member = guild.get_member(int(member_id))
     if member:
         await member.add_roles(member_role)
@@ -534,7 +560,9 @@ async def on_member_join(member: discord.Member):
 @discord.option(name="new_impl", description="Use the new async implementation", required=False, default=True)
 async def givememberroles(ctx: discord.ApplicationContext, new_impl: bool):
     guild = bot.get_guild(settings.DISCORD_SERVER_ID)
+    if not guild: return
     member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
+    if not member_role: return
 
     message = await ctx.respond("Processing...")
     ids_to_add = await get_current_member_discord_ids()
@@ -559,21 +587,28 @@ async def givememberroles(ctx: discord.ApplicationContext, new_impl: bool):
     else:
         for discord_id in ids_to_add:
             member = guild.get_member(discord_id)
+            if not member:
+                print(f"Could not find member with id {discord_id}")
+                continue
             await member.add_roles(member_role)
         results = [True] * len(ids_to_add)
     end_time = time.time()
 
     print(f"Added role to {len(ids_to_add)} users.")
-    await message.edit_original_response(
-        content=f"Member role addition success! Added member role to {len(ids_to_add)} users. (Time taken: {end_time - start_time} seconds. Using new implementation: {new_impl})"
-    )
+    success_message = f"Member role addition success! Added member role to {len(ids_to_add)} users. (Time taken: {end_time - start_time} seconds. Using new implementation: {new_impl})"
+    if isinstance(message, discord.Interaction):
+        await message.edit_original_response(content=success_message)
+    else:
+        await message.edit(content=success_message)
 
 
 @bot.slash_command(description="Purge member roles from non-paying members")
 @discord.option(name="new_impl", description="Use the new async implementation", required=False, default=True)
 async def purgememberroles(ctx: discord.ApplicationContext, new_impl: bool):
     guild = bot.get_guild(settings.DISCORD_SERVER_ID)
+    if not guild: return
     member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
+    if not member_role: return
 
     message = await ctx.respond("Processing...")
 
@@ -604,9 +639,11 @@ async def purgememberroles(ctx: discord.ApplicationContext, new_impl: bool):
     end_time = time.time()
 
     print(f"Purged role for {removed_count} users.")
-    await message.edit_original_response(
-        content=f"Member role purge success! Removed member role for {removed_count} users. (Time taken: {end_time - start_time} seconds. Using new implementation: {new_impl})"
-    )
+    success_message = f"Member role purge success! Removed member role for {removed_count} users. (Time taken: {end_time - start_time} seconds. Using new implementation: {new_impl})"
+    if isinstance(message, discord.Interaction):
+        await message.edit_original_response(content=success_message)
+    else:
+        await message.edit(content=success_message)
 
 
 class ListView(discord.ui.View):
@@ -626,6 +663,7 @@ async def thelist(ctx: discord.ApplicationContext):
 @bot.slash_command(description="View the printers")  # TODO: change to the Makerspace
 async def camera(ctx: discord.ApplicationContext):
     message = await ctx.respond("Processing...", ephemeral=True)
+    assert isinstance(message, discord.Interaction)
 
     valid_members = await get_current_member_discord_ids()
     if ctx.author.id not in valid_members:
