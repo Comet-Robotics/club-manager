@@ -75,9 +75,9 @@ intents.message_content = True
 bot = discord.Bot(intents=intents)
 
 PRIVILEGED_ROLE_IDS = {
-    os.getenv("DISCORD_OFFICER_ROLE_ID"),
-    os.getenv("DISCORD_TEAM_LEAD_ROLE_ID"),
-    os.getenv("DISCORD_PROJECT_MANAGER_ROLE_ID"),
+    int(os.getenv("DISCORD_OFFICER_ROLE_ID", "0")),
+    int(os.getenv("DISCORD_TEAM_LEAD_ROLE_ID", "0")),
+    int(os.getenv("DISCORD_PROJECT_MANAGER_ROLE_ID", "0")),
 }
 
 # -------- Utility methods --------
@@ -146,7 +146,7 @@ async def respond_user_attendances(interaction: discord.Interaction, user_profil
 
 
 async def get_current_member_discord_ids():
-    def run():
+    def run() -> list[int]:
         current_term = Term.get_current_term()
         profiles = UserProfile.objects.exclude(discord_id__isnull=True)
         valid_ids: list[int] = []
@@ -365,7 +365,7 @@ async def profile(ctx: discord.ApplicationContext, net_id):
         if not hasattr(ctx.author, "roles"):
             await ctx.respond("You can only view other user profiles in a server!")
             return
-        user_role_ids = set([str(role.id) for role in ctx.author.roles])
+        user_role_ids = set([role.id for role in ctx.author.roles])
         if not user_role_ids.intersection(PRIVILEGED_ROLE_IDS):
             await ctx.respond(
                 "You don't have the required privileges to view this user's profile. Only officers, team leads, and project managers can view other user's profiles.",
