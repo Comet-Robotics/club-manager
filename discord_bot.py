@@ -571,6 +571,7 @@ async def givememberroles(ctx: discord.ApplicationContext):
     ids_to_add = await get_current_member_discord_ids()
 
     start_time = time.time()
+
     async def add_role_to_member(discord_id):
         member = guild.get_member(discord_id)
         if not member:
@@ -586,6 +587,7 @@ async def givememberroles(ctx: discord.ApplicationContext):
     tasks = [add_role_to_member(discord_id) for discord_id in ids_to_add]
     results = await asyncio.gather(*tasks, return_exceptions=True)
     removed_count = sum(1 for result in results if result is True)
+
     end_time = time.time()
 
     print(f"Added role to {len(ids_to_add)} users.")
