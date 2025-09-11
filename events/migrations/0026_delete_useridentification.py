@@ -7,6 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('events', '0025_remove_combatrobot_combat_events_and_more'),
+        ('core', '0025_copy_student_ids'),
     ]
 
     operations = [
