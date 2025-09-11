@@ -559,8 +559,7 @@ async def on_member_join(member: discord.Member):
 
 
 @bot.slash_command(description="Give member roles to paid members")
-@discord.option(name="new_impl", description="Use the new async implementation", required=False, default=True)
-async def givememberroles(ctx: discord.ApplicationContext, new_impl: bool):
+async def givememberroles(ctx: discord.ApplicationContext):
     guild = bot.get_guild(settings.DISCORD_SERVER_ID)
     if not guild:
         return
@@ -572,34 +571,25 @@ async def givememberroles(ctx: discord.ApplicationContext, new_impl: bool):
     ids_to_add = await get_current_member_discord_ids()
 
     start_time = time.time()
-    if new_impl:
-
-        async def add_role_to_member(discord_id):
-            member = guild.get_member(discord_id)
-            if not member:
-                print(f"Could not find member with id {discord_id}")
-                return False
-            try:
-                await member.add_roles(member_role)
-                return True
-            except Exception as e:
-                print(f"Failed to add role to member {discord_id}: {e}")
-                return False
-
-        tasks = [add_role_to_member(discord_id) for discord_id in ids_to_add]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-    else:
-        for discord_id in ids_to_add:
-            member = guild.get_member(discord_id)
-            if not member:
-                print(f"Could not find member with id {discord_id}")
-                continue
+    async def add_role_to_member(discord_id):
+        member = guild.get_member(discord_id)
+        if not member:
+            print(f"Could not find member with id {discord_id}")
+            return False
+        try:
             await member.add_roles(member_role)
-        results = [True] * len(ids_to_add)
+            return True
+        except Exception as e:
+            print(f"Failed to add role to member {discord_id}: {e}")
+            return False
+
+    tasks = [add_role_to_member(discord_id) for discord_id in ids_to_add]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    removed_count = sum(1 for result in results if result is True)
     end_time = time.time()
 
     print(f"Added role to {len(ids_to_add)} users.")
-    success_message = f"Member role addition success! Added member role to {len(ids_to_add)} users. (Time taken: {end_time - start_time} seconds. Using new implementation: {new_impl})"
+    success_message = f"Member role addition success! Added member role to {removed_count} users. (Time taken: {end_time - start_time:.2f} seconds.)"
     if isinstance(message, discord.Interaction):
         await message.edit_original_response(content=success_message)
     else:
@@ -607,8 +597,7 @@ async def givememberroles(ctx: discord.ApplicationContext, new_impl: bool):
 
 
 @bot.slash_command(description="Purge member roles from non-paying members")
-@discord.option(name="new_impl", description="Use the new async implementation", required=False, default=True)
-async def purgememberroles(ctx: discord.ApplicationContext, new_impl: bool):
+async def purgememberroles(ctx: discord.ApplicationContext):
     guild = bot.get_guild(settings.DISCORD_SERVER_ID)
     if not guild:
         return
@@ -623,29 +612,23 @@ async def purgememberroles(ctx: discord.ApplicationContext, new_impl: bool):
     valid_members = await get_current_member_discord_ids()
 
     start_time = time.time()
-    if new_impl:
-        members_to_remove = [member for member in discord_members if member.id not in valid_members]
+    members_to_remove = [member for member in discord_members if member.id not in valid_members]
 
-        async def remove_role_from_member(discord_member):
-            try:
-                await discord_member.remove_roles(member_role)
-                return True
-            except Exception as e:
-                print(f"Failed to remove role from member {discord_member.id}: {e}")
-                return False
+    async def remove_role_from_member(discord_member):
+        try:
+            await discord_member.remove_roles(member_role)
+            return True
+        except Exception as e:
+            print(f"Failed to remove role from member {discord_member.id}: {e}")
+            return False
 
-        tasks = [remove_role_from_member(member) for member in members_to_remove]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        removed_count = sum(1 for result in results if result is True)
-    else:
-        for discord_member in discord_members:
-            if discord_member.id not in valid_members:
-                removed_count += 1
-                await discord_member.remove_roles(member_role)
+    tasks = [remove_role_from_member(member) for member in members_to_remove]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    removed_count = sum(1 for result in results if result is True)
     end_time = time.time()
 
     print(f"Purged role for {removed_count} users.")
-    success_message = f"Member role purge success! Removed member role for {removed_count} users. (Time taken: {end_time - start_time} seconds. Using new implementation: {new_impl})"
+    success_message = f"Member role purge success! Removed member role for {removed_count} users. (Time taken: {end_time - start_time:.2f} seconds.)"
     if isinstance(message, discord.Interaction):
         await message.edit_original_response(content=success_message)
     else:
