@@ -286,12 +286,20 @@ Net ID: {net_id}</p>
 @bot.slash_command(description="View your Comet Robotics profile")
 @discord.option(
     name="net_id",
-    description="Net ID of the user to view. Defaults to your own.",
+    description="Net ID of the account to view. Defaults to your own.",
     required=False,
+    input_type=str,
     min_length=9,
     max_length=9,
 )
-async def profile(ctx: discord.ApplicationContext, net_id):
+@discord.option(
+    name="user",
+    parameter_name="discord_user",
+    description="Discord user of the account to view. Defaults to your own.",
+    required=False,
+    input_type=discord.User,
+)
+async def profile(ctx: discord.ApplicationContext, net_id: str | None, discord_user: discord.User | None):
     async def get_embed(user_profile: UserProfile, yours: bool):
         def get_basic_info(user_profile: UserProfile):
             info_string = f"""
@@ -346,7 +354,7 @@ async def profile(ctx: discord.ApplicationContext, net_id):
 
         return embed, actions_view
 
-    if net_id is None:
+    if net_id is None and discord_user is None:
         discord_user_id = ctx.author.id
         user_profile = await get_profile_async(discord_id=str(discord_user_id))
         if user_profile is None:
@@ -368,17 +376,27 @@ async def profile(ctx: discord.ApplicationContext, net_id):
         user_role_ids = set([role.id for role in ctx.author.roles])
         if not user_role_ids.intersection(PRIVILEGED_ROLE_IDS):
             await ctx.respond(
-                "You don't have the required privileges to view this user's profile. Only officers, team leads, and project managers can view other user's profiles.",
+                "You don't have the required privileges to view this user's profile. Only officers, team leads, and project managers can view other user profiles.",
                 ephemeral=True,
             )
             return
-        user_profile = await get_profile_async(user__username=str(net_id).lower())
-        if user_profile is None:
-            await ctx.respond(
-                "User with NetID not found!",
-                ephemeral=True,
-            )
-            return
+        if net_id is not None:
+            user_profile = await get_profile_async(user__username=str(net_id).lower())
+            if user_profile is None:
+                await ctx.respond(
+                    "User with NetID not found!",
+                    ephemeral=True,
+                )
+                return
+        else:
+            assert discord_user is not None
+            user_profile = await get_profile_async(discord_id=str(discord_user.id))
+            if user_profile is None:
+                await ctx.respond(
+                    "User with Discord ID not found or not linked!",
+                    ephemeral=True,
+                )
+                return
         embed, _ = await get_embed(user_profile, False)
         await ctx.respond(
             embed=embed,
