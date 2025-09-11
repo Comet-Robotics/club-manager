@@ -84,6 +84,9 @@ function dialogClickHandler(e) {
 
 for (const dialog of document.querySelectorAll("dialog")) {
     dialog.addEventListener("click", dialogClickHandler);
+    dialog.addEventListener("close", () => {
+      window.location.reload();
+    });
 }
 </script>
 {%endblock%}

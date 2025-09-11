@@ -72,25 +72,6 @@ class Attendance(models.Model):
         return str(self.event) + " - " + str(self.timestamp)
 
 
-class UserIdentification(models.Model):
-    # TODO: we should combine the UserProfile and UserIdentification models. this model is redundant since it only has one field
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    student_id = models.CharField(max_length=20, unique=True)
-
-    def create_extended_user(net_id, student_id, first, last):
-        user = UserIdentification.create_basic_user(net_id, first, last)
-        UserIdentification.objects.create(user=user, student_id=student_id)
-
-    def create_basic_user(net_id, first, last):
-        return User.objects.create(username=net_id, first_name=first, last_name=last)
-
-    def link_user(user_id, student_id):
-        UserIdentification.objects.create(user=User.objects.get(pk=user_id), student_id=student_id)
-
-    def __str__(self):
-        return self.user.first_name + "_" + self.user.last_name + "_" + self.student_id
-
-
 class Reservation(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(default=timezone.now)
