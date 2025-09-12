@@ -46,7 +46,7 @@
             type="search"
             placeholder="Search by name or username:"
             name="search" 
-            hx-get="/projects/team/{{table.team_id}}/new_member_search"
+            hx-get="{% url 'team_new_member_search' team_id=table.team_id %}"
             hx-trigger="input changed delay:500ms, keyup[key=='Enter'], intersect"
             hx-target="#member-search-results-{{table.team_id}}"
             hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
