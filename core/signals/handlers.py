@@ -21,6 +21,7 @@ async def add_member_role(discord_id: int):
         return await resp.json()
 
 
+# Add member role when discord id is added (user linked or id manually added)
 @receiver(post_save, sender=UserProfile)
 async def update_roles_profile_signal(sender, instance: UserProfile, created, **kwargs):
     def is_member():
@@ -33,6 +34,7 @@ async def update_roles_profile_signal(sender, instance: UserProfile, created, **
         await add_member_role(int(discord_id))
 
 
+# Add member role when member due is purchased
 @receiver(post_save, sender=PurchasedProduct)
 async def update_roles_purchasedproduct_signal(sender, instance: PurchasedProduct, created, **kwargs):
     def is_member():
@@ -45,6 +47,7 @@ async def update_roles_purchasedproduct_signal(sender, instance: PurchasedProduc
         await add_member_role(int(discord_id))
 
 
+# Add UserProfile when User is created
 @receiver(post_save, sender=User)
 def update_user_signal(sender, instance, created, **kwargs):
     # if created:
@@ -53,6 +56,7 @@ def update_user_signal(sender, instance, created, **kwargs):
     instance.userprofile.save()
 
 
+# Auto-fill major when UserProfile is created or when major is None for users with a valid NetID
 @receiver(post_save, sender=UserProfile)
 def update_profile_signal(sender, instance, created, **kwargs):
     if not instance.is_utd_affiliate:
