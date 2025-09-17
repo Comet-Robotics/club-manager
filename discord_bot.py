@@ -34,7 +34,7 @@ import requests
 from operator import itemgetter
 import asyncio
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Header
 import uvicorn
 
 LIST = [
@@ -559,7 +559,10 @@ async def pay(ctx: discord.ApplicationContext):
 
 
 @app.post("/give-member-role")
-async def give_member_role(data: dict):
+async def give_member_role(data: dict, authorization: str = Header(None)):
+    if authorization != f"Bearer {settings.API_SECRET}":
+        raise HTTPException(status_code=403, detail="Forbidden")
+
     member_id = int(data.get("member_id", "0"))
     do_log = bool(data.get("log", True))
     guild = bot.get_guild(settings.DISCORD_SERVER_ID)
@@ -596,7 +599,7 @@ async def on_member_join(member: discord.Member):
 
     profile_valid = await sync_to_async(is_profile_valid)()
     if profile_valid:
-        await give_member_role({"member_id": member.id})
+        await give_member_role({"member_id": member.id}, authorization=f"Bearer {settings.API_SECRET}")
 
 
 @bot.slash_command(description="Give member roles to paid members")

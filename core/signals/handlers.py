@@ -1,18 +1,22 @@
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from asgiref.sync import sync_to_async
+from clubManager import settings
 
 from common.major import get_major_from_netid
 from core.models import UserProfile
 from payments.models import PurchasedProduct
 
 import aiohttp
+from asgiref.sync import sync_to_async
 
 
 async def add_member_role(discord_id: int):
     async with aiohttp.request(
-        "POST", "http://localhost:2468/give-member-role", json={"member_id": discord_id}
+        "POST",
+        "http://localhost:2468/give-member-role",
+        json={"member_id": discord_id},
+        headers={"Authorization": f"Bearer {settings.API_SECRET}"},
     ) as resp:
         return await resp.json()
 
