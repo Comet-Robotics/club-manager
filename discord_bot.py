@@ -86,14 +86,21 @@ PRIVILEGED_ROLE_IDS = {
 
 # -------- Utility methods --------
 
+
 async def log_msg(msg: str, embed_color: discord.Color, func_name: str):
     guild = bot.get_guild(settings.DISCORD_SERVER_ID)
     if not guild:
         return
     log_channel = guild.get_channel(settings.DISCORD_BOT_LOG_CHANNEL_ID)
     if log_channel and hasattr(log_channel, "send"):
-        await log_channel.send(embed=discord.Embed(description=msg,
-            color=embed_color, footer=discord.EmbedFooter(text=func_name), timestamp=discord.utils.utcnow()))
+        await log_channel.send(
+            embed=discord.Embed(
+                description=msg,
+                color=embed_color,
+                footer=discord.EmbedFooter(text=func_name),
+                timestamp=discord.utils.utcnow(),
+            )
+        )
 
 
 async def get_user_attendances(user_profile: UserProfile):
@@ -550,6 +557,7 @@ async def pay(ctx: discord.ApplicationContext):
 
     await ctx.respond(embed=embed, ephemeral=True)
 
+
 @app.post("/give-member-role")
 async def give_member_role(data: dict):
     member_id = int(data.get("member_id", "0"))
@@ -560,13 +568,21 @@ async def give_member_role(data: dict):
     member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
     if not member_role:
         if do_log:
-            await log_msg(f"Could not find member role with id {settings.DISCORD_MEMBER_ROLE_ID}", discord.Color.red(), "give_member_role")
+            await log_msg(
+                f"Could not find member role with id {settings.DISCORD_MEMBER_ROLE_ID}",
+                discord.Color.red(),
+                "give_member_role",
+            )
         return {"status": "error", "message": "Member role not found"}
     member = guild.get_member(member_id)
     if member:
         if member_role not in member.roles:
             await member.add_roles(member_role)
-            await log_msg(f"Added member role to {member.name} ({member.id}) (<@{member.id}>)", discord.Color.green(), "give_member_role")
+            await log_msg(
+                f"Added member role to {member.name} ({member.id}) (<@{member.id}>)",
+                discord.Color.green(),
+                "give_member_role",
+            )
     else:
         await log_msg(f"Could not find member with id {member_id}", discord.Color.red(), "give_member_role")
         return {"status": "error", "message": "Member not found"}
@@ -696,9 +712,7 @@ async def camera(ctx: discord.ApplicationContext):
 
 async def main():
     # Launch FastAPI server
-    config = uvicorn.Config(
-        app, host="0.0.0.0", port=2468, loop="asyncio", lifespan="on"
-    )
+    config = uvicorn.Config(app, host="0.0.0.0", port=2468, loop="asyncio", lifespan="on")
     server = uvicorn.Server(config)
 
     # Run bot and API concurrently
@@ -706,6 +720,7 @@ async def main():
     api_task = asyncio.create_task(server.serve())
 
     await asyncio.gather(bot_task, api_task)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

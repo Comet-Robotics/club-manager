@@ -9,26 +9,33 @@ from payments.models import PurchasedProduct
 
 import aiohttp
 
+
 async def add_member_role(discord_id: int):
-    async with aiohttp.request("POST", "http://localhost:2468/give-member-role", json={"member_id": discord_id}) as resp:
+    async with aiohttp.request(
+        "POST", "http://localhost:2468/give-member-role", json={"member_id": discord_id}
+    ) as resp:
         return await resp.json()
+
 
 @receiver(post_save, sender=UserProfile)
 async def update_roles_profile_signal(sender, instance: UserProfile, created, **kwargs):
     def is_member():
-        if not (discord_id:=instance.discord_id):
+        if not (discord_id := instance.discord_id):
             return False, None
         return instance.is_member()[1] is not None, discord_id
+
     valid, discord_id = await sync_to_async(is_member)()
     if valid:
         await add_member_role(int(discord_id))
 
+
 @receiver(post_save, sender=PurchasedProduct)
 async def update_roles_purchasedproduct_signal(sender, instance: PurchasedProduct, created, **kwargs):
     def is_member():
-        if not (discord_id:=instance.payment.user.userprofile.discord_id):
+        if not (discord_id := instance.payment.user.userprofile.discord_id):
             return False, None
         return instance.payment.user.userprofile.is_member()[1] is not None, discord_id
+
     valid, discord_id = await sync_to_async(is_member)()
     if valid:
         await add_member_role(int(discord_id))
