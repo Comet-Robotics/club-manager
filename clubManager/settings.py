@@ -204,6 +204,8 @@ EMAIL_HOST_USER = str(os.getenv("SMTP_USER"))
 EMAIL_HOST_PASSWORD = str(os.getenv("SMTP_PASS"))
 
 API_SECRET = str(os.getenv("API_SECRET"))
+DISCORD_API_PORT = int(os.getenv("DISCORD_API_PORT", 2468))
+BOT_API_HOST = str(os.getenv("BOT_API_HOST"))
 
 # Discord Integration settings
 DISCORD_TOKEN = str(os.getenv("DISCORD_TOKEN"))

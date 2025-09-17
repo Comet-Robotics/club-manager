@@ -715,7 +715,7 @@ async def camera(ctx: discord.ApplicationContext):
 
 async def main():
     # Launch FastAPI server
-    config = uvicorn.Config(app, host="0.0.0.0", port=2468, loop="asyncio", lifespan="on")
+    config = uvicorn.Config(app, host="0.0.0.0", port=settings.DISCORD_API_PORT, loop="asyncio", lifespan="on")
     server = uvicorn.Server(config)
 
     # Run bot and API concurrently
