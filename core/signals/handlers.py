@@ -50,7 +50,6 @@ async def update_roles_purchasedproduct_signal(sender, instance: PurchasedProduc
 # Add UserProfile when User is created
 @receiver(post_save, sender=User)
 def update_user_signal(sender, instance, created, **kwargs):
-    # if created:
     if created or not hasattr(instance, "userprofile"):
         UserProfile.objects.create(user=instance)
     instance.userprofile.save()
