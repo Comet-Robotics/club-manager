@@ -5,7 +5,7 @@ from asgiref.sync import sync_to_async
 
 from common.major import get_major_from_netid
 from core.models import UserProfile
-from payments.models import Payment
+from payments.models import PurchasedProduct
 
 import aiohttp
 
@@ -16,17 +16,21 @@ async def add_member_role(discord_id: int):
 @receiver(post_save, sender=UserProfile)
 async def update_roles_profile_signal(sender, instance: UserProfile, created, **kwargs):
     def is_member():
-        return instance.is_member()[1]
-    valid = sync_to_async(is_member)()
-    if (discord_id:=instance.discord_id) and valid:
+        if not (discord_id:=instance.discord_id):
+            return False, None
+        return instance.is_member()[1] is not None, discord_id
+    valid, discord_id = await sync_to_async(is_member)()
+    if valid:
         await add_member_role(int(discord_id))
 
-@receiver(post_save, sender=Payment)
-async def update_roles_payment_signal(sender, instance: Payment, created, **kwargs):
+@receiver(post_save, sender=PurchasedProduct)
+async def update_roles_purchasedproduct_signal(sender, instance: PurchasedProduct, created, **kwargs):
     def is_member():
-        return instance.user.userprofile.is_member()[1]
-    valid = sync_to_async(is_member)()
-    if (discord_id:=instance.user.userprofile.discord_id) and valid:
+        if not (discord_id:=instance.payment.user.userprofile.discord_id):
+            return False, None
+        return instance.payment.user.userprofile.is_member()[1] is not None, discord_id
+    valid, discord_id = await sync_to_async(is_member)()
+    if valid:
         await add_member_role(int(discord_id))
 
 
