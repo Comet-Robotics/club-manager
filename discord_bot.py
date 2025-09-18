@@ -567,7 +567,7 @@ async def give_member_role(data: dict, authorization: str = Header(None)):
     do_log = bool(data.get("log", True))
     guild = bot.get_guild(settings.DISCORD_SERVER_ID)
     if not guild:
-        return {"status": "error", "message": "Guild not found"}
+        raise HTTPException(status_code=500, detail="Discord server not found")
     member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
     if not member_role:
         if do_log:
@@ -576,19 +576,19 @@ async def give_member_role(data: dict, authorization: str = Header(None)):
                 discord.Color.red(),
                 "give_member_role",
             )
-        return {"status": "error", "message": "Member role not found"}
+        raise HTTPException(status_code=500, detail="Member role not found")
     member = guild.get_member(member_id)
-    if member:
-        if member_role not in member.roles:
-            await member.add_roles(member_role)
-            await log_msg(
-                f"Added member role to {member.name} ({member.id}) (<@{member.id}>)",
-                discord.Color.green(),
-                "give_member_role",
-            )
-    else:
-        await log_msg(f"Could not find member with id {member_id}", discord.Color.red(), "give_member_role")
-        return {"status": "error", "message": "Member not found"}
+    if not member:
+        if do_log:
+            await log_msg(f"Could not find member with id {member_id}", discord.Color.red(), "give_member_role")
+        raise HTTPException(status_code=422, detail="Member not found")
+    if member_role not in member.roles:
+        await member.add_roles(member_role)
+        await log_msg(
+            f"Added member role to {member.name} ({member.id}) (<@{member.id}>)",
+            discord.Color.green(),
+            "give_member_role",
+        )
 
 
 @bot.event
