@@ -30,6 +30,7 @@ async-timeout = "*"
 django-multiselectfield = "*"
 django-colorfield = "*"
 platformdirs = "*"
+fastapi = {extras = ["standard"], version = "*"}
 
 [dev-packages]
 types-beautifulsoup4 = "*"

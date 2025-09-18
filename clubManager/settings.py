@@ -198,17 +198,22 @@ SQUARE_APPLE_MERCHANT_ID = os.getenv("SQUARE_APPLE_MERCHANT_ID")
 # Email Settings
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = str(os.getenv("SMTP_SERVER"))
-EMAIL_PORT = int(os.getenv("SMTP_PORT"))
+EMAIL_PORT = int(os.getenv("SMTP_PORT", 0))
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = str(os.getenv("SMTP_USER"))
 EMAIL_HOST_PASSWORD = str(os.getenv("SMTP_PASS"))
 
+API_SECRET = str(os.getenv("API_SECRET"))
+DISCORD_API_PORT = int(os.getenv("DISCORD_API_PORT", 2468))
+BOT_API_HOST = str(os.getenv("BOT_API_HOST"))
+
 # Discord Integration settings
 DISCORD_TOKEN = str(os.getenv("DISCORD_TOKEN"))
-DISCORD_SERVER_ID = int(str(os.getenv("DISCORD_SERVER_ID")))
-DISCORD_OFFICER_ROLE_ID = int(str(os.getenv("DISCORD_OFFICER_ROLE_ID")))
-DISCORD_PROJECT_MANAGER_ROLE_ID = int(str(os.getenv("DISCORD_PROJECT_MANAGER_ROLE_ID")))
-DISCORD_TEAM_LEAD_ROLE_ID = int(str(os.getenv("DISCORD_TEAM_LEAD_ROLE_ID")))
-DISCORD_MEMBER_ROLE_ID = int(str(os.getenv("DISCORD_MEMBER_ROLE_ID")))
+DISCORD_SERVER_ID = int(os.getenv("DISCORD_SERVER_ID", 0))
+DISCORD_BOT_LOG_CHANNEL_ID = int(os.getenv("DISCORD_BOT_LOG_CHANNEL_ID", 0))
+DISCORD_OFFICER_ROLE_ID = int(os.getenv("DISCORD_OFFICER_ROLE_ID", 0))
+DISCORD_PROJECT_MANAGER_ROLE_ID = int(os.getenv("DISCORD_PROJECT_MANAGER_ROLE_ID", 0))
+DISCORD_TEAM_LEAD_ROLE_ID = int(os.getenv("DISCORD_TEAM_LEAD_ROLE_ID", 0))
+DISCORD_MEMBER_ROLE_ID = int(os.getenv("DISCORD_MEMBER_ROLE_ID", 0))
 
 ENABLE_SQUARE_PAYMENTS = bool(int(os.getenv("ENABLE_SQUARE_PAYMENTS", 0)))

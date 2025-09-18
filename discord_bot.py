@@ -2,7 +2,6 @@ import traceback
 from asgiref.sync import sync_to_async
 import os
 import time
-from typing import Optional
 
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "clubManager.settings")
@@ -34,6 +33,9 @@ import random
 import requests
 from operator import itemgetter
 import asyncio
+
+from fastapi import FastAPI, HTTPException, Header
+import uvicorn
 
 LIST = [
     "Madina Halal Grill",
@@ -74,13 +76,31 @@ intents.message_content = True
 
 bot = discord.Bot(intents=intents)
 
+app = FastAPI()
+
 PRIVILEGED_ROLE_IDS = {
-    int(os.getenv("DISCORD_OFFICER_ROLE_ID", "0")),
-    int(os.getenv("DISCORD_TEAM_LEAD_ROLE_ID", "0")),
-    int(os.getenv("DISCORD_PROJECT_MANAGER_ROLE_ID", "0")),
+    settings.DISCORD_OFFICER_ROLE_ID,
+    settings.DISCORD_PROJECT_MANAGER_ROLE_ID,
+    settings.DISCORD_TEAM_LEAD_ROLE_ID,
 }
 
 # -------- Utility methods --------
+
+
+async def log_msg(msg: str, embed_color: discord.Color, func_name: str):
+    guild = bot.get_guild(settings.DISCORD_SERVER_ID)
+    if not guild:
+        return
+    log_channel = guild.get_channel(settings.DISCORD_BOT_LOG_CHANNEL_ID)
+    if log_channel and hasattr(log_channel, "send"):
+        await log_channel.send(
+            embed=discord.Embed(
+                description=msg,
+                color=embed_color,
+                footer=discord.EmbedFooter(text=func_name),
+                timestamp=discord.utils.utcnow(),
+            )
+        )
 
 
 async def get_user_attendances(user_profile: UserProfile):
@@ -538,19 +558,37 @@ async def pay(ctx: discord.ApplicationContext):
     await ctx.respond(embed=embed, ephemeral=True)
 
 
-async def add_role_unchecked(member_id: int | str):
-    print("method execute")
+@app.post("/give-member-role")
+async def give_member_role(data: dict, authorization: str = Header(None)):
+    if authorization != f"Bearer {settings.API_SECRET}":
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    member_id = int(data.get("member_id", "0"))
+    do_log = bool(data.get("log", True))
     guild = bot.get_guild(settings.DISCORD_SERVER_ID)
     if not guild:
-        return
+        raise HTTPException(status_code=500, detail="Discord server not found")
     member_role = guild.get_role(settings.DISCORD_MEMBER_ROLE_ID)
     if not member_role:
-        return
-    member = guild.get_member(int(member_id))
-    if member:
+        if do_log:
+            await log_msg(
+                f"Could not find member role with id {settings.DISCORD_MEMBER_ROLE_ID}",
+                discord.Color.red(),
+                "give_member_role",
+            )
+        raise HTTPException(status_code=500, detail="Member role not found")
+    member = guild.get_member(member_id)
+    if not member:
+        if do_log:
+            await log_msg(f"Could not find member with id {member_id}", discord.Color.red(), "give_member_role")
+        raise HTTPException(status_code=422, detail="Member not found")
+    if member_role not in member.roles:
         await member.add_roles(member_role)
-    else:
-        print(f"could not find member with id {member_id}")
+        await log_msg(
+            f"Added member role to {member.name} ({member.id}) (<@{member.id}>)",
+            discord.Color.green(),
+            "give_member_role",
+        )
 
 
 @bot.event
@@ -561,19 +599,7 @@ async def on_member_join(member: discord.Member):
 
     profile_valid = await sync_to_async(is_profile_valid)()
     if profile_valid:
-        await add_role_unchecked(member.id)
-
-
-# TODO: signals don't work in here
-# @receiver(post_save, sender=UserProfile)
-# async def update_roles_profile_signal(sender, instance: UserProfile, created, **kwargs):
-#     if (discord_id:=instance.discord_id) and instance.is_member()[1]:
-#         await add_role_unchecked(discord_id)
-
-# @receiver(post_save, sender=Payment)
-# async def update_roles_payment_signal(sender, instance: Payment, created, **kwargs):
-#     if (discord_id:=instance.user.userprofile.discord_id) and instance.user.userprofile.is_member()[1]:
-#         await add_role_unchecked(discord_id)
+        await give_member_role({"member_id": member.id}, authorization=f"Bearer {settings.API_SECRET}")
 
 
 @bot.slash_command(description="Give member roles to paid members")
@@ -590,7 +616,7 @@ async def givememberroles(ctx: discord.ApplicationContext):
 
     start_time = time.time()
 
-    async def add_role_to_member(discord_id):
+    async def add_role_to_member(discord_id: int):
         member = guild.get_member(discord_id)
         if not member:
             print(f"Could not find member with id {discord_id}")
@@ -634,7 +660,7 @@ async def purgememberroles(ctx: discord.ApplicationContext):
     start_time = time.time()
     members_to_remove = [member for member in discord_members if member.id not in valid_members]
 
-    async def remove_role_from_member(discord_member):
+    async def remove_role_from_member(discord_member: discord.Member):
         try:
             await discord_member.remove_roles(member_role)
             return True
@@ -687,4 +713,17 @@ async def camera(ctx: discord.ApplicationContext):
             await message.edit_original_response(content=traceback.format_exc())
 
 
-bot.run(settings.DISCORD_TOKEN)
+async def main():
+    # Launch FastAPI server
+    config = uvicorn.Config(app, host="0.0.0.0", port=settings.DISCORD_API_PORT, loop="asyncio", lifespan="on")
+    server = uvicorn.Server(config)
+
+    # Run bot and API concurrently
+    bot_task = asyncio.create_task(bot.start(settings.DISCORD_TOKEN))
+    api_task = asyncio.create_task(server.serve())
+
+    await asyncio.gather(bot_task, api_task)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
