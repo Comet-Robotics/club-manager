@@ -192,6 +192,7 @@ EMAIL_PORT = int(os.getenv("SMTP_PORT", 0))
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = str(os.getenv("SMTP_USER"))
 EMAIL_HOST_PASSWORD = str(os.getenv("SMTP_PASS"))
+EMAIL_FROM = str(os.getenv("EMAIL_FROM"))
 
 API_SECRET = str(os.getenv("API_SECRET"))
 DISCORD_API_PORT = int(os.getenv("DISCORD_API_PORT", 2468))

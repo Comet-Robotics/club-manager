@@ -267,7 +267,7 @@ If the name is incorrect, reply to this email and we'll get back to you. If this
 
 Thanks!
 """,
-            "cometrobotics@utdallas.edu",
+            settings.EMAIL_FROM,
             [email],
             fail_silently=False,
             html_message=f"""
