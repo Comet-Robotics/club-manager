@@ -47,10 +47,6 @@ if PUBLIC_URL:
 else:
     print("Warning: PUBLIC_URL not set. Things might break.")
 
-if DEBUG:
-    ALLOWED_HOSTS += ["127.0.0.1", "*"]
-    CSRF_TRUSTED_ORIGINS += ["http://127.0.0.1", "http://localhost:5173"]
-
 
 # Application definition
 
