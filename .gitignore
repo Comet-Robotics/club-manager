@@ -93,3 +93,4 @@ cert.pem
 key.pem
 
 /static/
+.mypy_cache/

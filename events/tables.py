@@ -1,11 +1,11 @@
 import django_tables2 as tables
 from django.contrib.auth.models import User
 from django_tables2.utils import A
-from .models import UserIdentification, Reservation, Event
+from .models import Reservation, Event
 
 
 class UserTable(tables.Table):
-    student_id = tables.Column(accessor="useridentification.student_id", verbose_name="Student ID")
+    student_id = tables.Column(accessor="userprofile.comet_card_serial_number", verbose_name="Student ID")
     reservation_time = tables.BooleanColumn()
 
     def __init__(self, *args, event_id=None, **kwargs):
@@ -32,7 +32,7 @@ class UserTable(tables.Table):
 
 
 class LinkUserTable(tables.Table):
-    student_id = tables.Column(accessor="useridentification.student_id", verbose_name="Student ID")
+    student_id = tables.Column(accessor="userprofile.comet_card_serial_number", verbose_name="Student ID")
     reservation_time = tables.BooleanColumn()
 
     def __init__(self, *args, event_id=None, student_id=None, **kwargs):

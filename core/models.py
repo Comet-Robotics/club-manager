@@ -1,13 +1,9 @@
 from django.db import models
-from django.db.models.signals import post_save
 from django.contrib.auth.models import User
-from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 
-from clubManager import settings
-from common.major import get_majors, get_major_from_netid
+from common.major import get_majors
 from payments.models import PurchasedProduct, Term
-import discord
 from django.utils import timezone
 from datetime import timedelta
 from colorfield.fields import ColorField
@@ -69,6 +65,7 @@ class UserProfile(models.Model):
         null=False, blank=False, default=True
     )  # TODO: get rid of default=True and fix UserProfile creation with null field
     date_of_birth = models.DateField(null=True, blank=True)
+    comet_card_serial_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
 
     def is_minor(self):
         assert self.date_of_birth is not None
@@ -109,30 +106,25 @@ class UserProfile(models.Model):
 
         return term, purchased_product.first()
 
-    def apply_discord_roles(self, dry_run=False):
-        roles_to_apply: list[int] = []
-        if self.is_member()[1]:
-            roles_to_apply.append(settings.DISCORD_MEMBER_ROLE_ID)
+    @staticmethod
+    def create_extended_user(net_id, comet_card_serial_number, first, last):
+        """Create a user with profile and comet card serial number"""
+        user = UserProfile.create_basic_user(net_id, first, last)
+        user_profile = user.userprofile
+        user_profile.comet_card_serial_number = comet_card_serial_number
+        user_profile.save()
+        return user
 
-        if not dry_run:
-            client = discord.Client()
-            # TODO apply roles
+    @staticmethod
+    def create_basic_user(net_id, first, last):
+        """Create a basic user with automatic UserProfile creation via signal"""
+        return User.objects.create(username=net_id, first_name=first, last_name=last)
 
-        return roles_to_apply
-
-
-@receiver(post_save, sender=User)
-def update_user_signal(sender, instance, created, **kwargs):
-    # if created:
-    if created or not hasattr(instance, "userprofile"):
-        UserProfile.objects.create(user=instance)
-    instance.userprofile.save()
-
-
-@receiver(post_save, sender=UserProfile)
-def update_profile_signal(sender, instance, created, **kwargs):
-    if not instance.is_utd_affiliate:
-        return
-    if created or instance.major is None:
-        instance.major = get_major_from_netid(instance.user.username) or "unknown"
-        instance.save()
+    @staticmethod
+    def link_user(user_id, comet_card_serial_number):
+        """Link an existing user to a comet card serial number"""
+        user = User.objects.get(pk=user_id)
+        user_profile = user.userprofile
+        user_profile.comet_card_serial_number = comet_card_serial_number
+        user_profile.save()
+        return user_profile
