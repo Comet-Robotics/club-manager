@@ -2,7 +2,9 @@ from typing import Literal, TypedDict
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User
-from django.db.models import Q
+from django.db.models import Q, Count
+from django.utils import timezone
+from datetime import timedelta
 
 
 """
@@ -150,9 +152,32 @@ class Team(models.Model):
     def get_suggested_members(self):
         """
         Returns a query set of users who are not members or leads of this team, but should be considered for membership based on their attendance (> 1 event attended in the last month).
+        BTW CURSOR WROTE THIS. I NEED TO TEST THIS. PLEASE DON'T USE IT WITHOUT TESTING. reading it it does look quite reasonable but still. be careful.
         """
-        return User.objects.all()
-        # TODO: implement this
+        # Calculate the date one month ago
+        one_month_ago = timezone.now() - timedelta(days=30)
+        
+        # Get all users who are already members or leads of this team (to exclude them)
+        current_team_users = self.get_unique_users()
+        
+        # Find users who have attended more than 1 event for this team in the last month
+        suggested_users = User.objects.filter(
+            # User has attended events for this team
+            attendance__event__teams=self,
+            # Events were in the last month
+            attendance__event__event_date__gte=one_month_ago
+        ).annotate(
+            # Count the number of events attended
+            event_count=Count('attendance__event', distinct=True)
+        ).filter(
+            # More than 1 event attended
+            event_count__gt=1
+        ).exclude(
+            # Exclude users who are already members or leads of this team
+            id__in=current_team_users.values_list('id', flat=True)
+        ).distinct()
+        
+        return suggested_users
 
 
 class TeamMember(TypedDict):
