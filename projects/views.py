@@ -88,7 +88,7 @@ class NewMemberSearchView(CanManageTeamMixin, ListView):
         filter = Q()
         if search:
             filter = Q(username__icontains=search) | Q(first_name__icontains=search) | Q(last_name__icontains=search)
-        return User.objects.filter(filter).difference(team.get_unique_users()).order_by("id")
+        return User.objects.filter(filter).difference(team.get_unique_users())
 
 
 class MembersView(CanManageProjectMixin, MultiTableMixin, TemplateView):
