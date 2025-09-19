@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 python-dotenv = "~=1.0.1"
-django = "~=5.1.4"
+django = "~=5.1.12"
 py-cord = "~=2.6.0"
 django-extensions = "~=3.2.3"
 django-rename-app = "~=0.1.7"
@@ -27,5 +27,21 @@ django-storages = "*"
 pillow = "*"
 boto3 = "*"
 async-timeout = "*"
+django-multiselectfield = "*"
+django-colorfield = "*"
+platformdirs = "*"
+fastapi = {extras = ["standard"], version = "*"}
 
 [dev-packages]
+types-beautifulsoup4 = "*"
+types-requests = "*"
+django-types = "*"
+django-stubs-ext = "*"
+ruff = "*"
+pylint = "*"
+pylint-django = "*"
+pylint-per-file-ignores = "*"
+mypy = "*"
+django-stubs = "*"
+djangorestframework-stubs = {extras = ["compatible-mypy"], version = "*"}
+types-markdown = "*"

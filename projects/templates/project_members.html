@@ -1,0 +1,92 @@
+{% extends "newBase.html" %}
+{% load static %}
+{% block title %}Members{% endblock %}
+{% load render_table from django_tables2 %}
+{% block content %}
+<style>
+  dialog {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border-radius: 2px;
+    padding: 2rem;
+    border-width: 3px;
+    border-color: var(--gray-400);
+    box-shadow: var(--shadow-md);
+    max-width: 30rem;
+  }
+  
+  .member-search {
+    width: 100%;
+  }
+  
+</style>
+
+<main class="main-content">
+  <section class="section">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2 class="section-title">Members</h2>
+    </div>
+    {% for table in tables %}
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h3 class="section-title">{{table.table_name}}</h3>
+          <button onclick="document.getElementById('add-member-dialog-{{table.team_id}}').showModal()" class="button button-primary">TODO: Add Member</button>
+      </div>
+      <dialog id="add-member-dialog-{{table.team_id}}" data-team-id="{{table.team_id}}">
+        <form method="dialog">
+          
+            <button class="button button-primary">Close</button>
+            <input type="hidden" name="team_id" value="{{table.team_id}}"/>
+            <h3>Add Members to {{table.table_name}}</h3>
+
+          <input class="member-search" 
+            autofocus
+            type="search"
+            placeholder="Search by name or username:"
+            name="search" 
+            hx-get="{% url 'team_new_member_search' team_id=table.team_id %}"
+            hx-trigger="input changed delay:500ms, keyup[key=='Enter'], intersect"
+            hx-target="#member-search-results-{{table.team_id}}"
+            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+          />
+
+          
+          <div id="member-search-results-{{table.team_id}}" style="display: grid; grid-template-columns: 1fr min-content; gap: 0.5rem; overflow-y: scroll; align-items: center;">
+          </div>
+          
+          </form>
+
+      </dialog>
+      {% render_table table %}
+    {% endfor %}
+   </section>
+</main>
+<script>
+// from https://stackoverflow.com/a/57463812
+function dialogClickHandler(e) {
+    if (e.target.tagName !== 'DIALOG')
+        return;
+
+    const rect = e.target.getBoundingClientRect();
+
+    const clickedInDialog = (
+        rect.top <= e.clientY &&
+        e.clientY <= rect.top + rect.height &&
+        rect.left <= e.clientX &&
+        e.clientX <= rect.left + rect.width
+    );
+
+    if (clickedInDialog === false)
+        e.target.close();
+}
+
+for (const dialog of document.querySelectorAll("dialog")) {
+    dialog.addEventListener("click", dialogClickHandler);
+    dialog.addEventListener("close", () => {
+      window.location.reload();
+    });
+}
+</script>
+{%endblock%}

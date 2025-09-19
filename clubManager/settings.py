@@ -13,12 +13,17 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from platformdirs import PlatformDirs
+
+dirs = PlatformDirs(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True)
 
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+PUBLIC_URL = os.getenv("PUBLIC_URL")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -33,8 +38,14 @@ CSRF_COOKIE_SAMESITE = "Strict"
 SESSION_COOKIE_SAMESITE = "Strict"
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
-ALLOWED_HOSTS = ["127.0.0.1", "*", "https://portal.cometrobotics.org"]
-CSRF_TRUSTED_ORIGINS = ["https://portal.cometrobotics.org", "http://127.0.0.1", "http://localhost:5173"]
+ALLOWED_HOSTS = []
+CSRF_TRUSTED_ORIGINS = []
+
+if PUBLIC_URL:
+    ALLOWED_HOSTS += [PUBLIC_URL]
+    CSRF_TRUSTED_ORIGINS += [PUBLIC_URL]
+else:
+    print("Warning: PUBLIC_URL not set. Things might break.")
 
 
 # Application definition
@@ -45,6 +56,7 @@ INSTALLED_APPS = [
     "events.apps.EventsConfig",
     "payments.apps.PaymentsConfig",
     "accounts.apps.AccountsConfig",
+    "projects.apps.ProjectsConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -59,6 +71,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "django_vite",
+    "multiselectfield",
+    "colorfield",
 ]
 
 
@@ -106,6 +120,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "django.template.context_processors.media",
             ],
         },
     },
@@ -165,43 +180,36 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = os.getenv("STATIC_ROOT")
-
-STATICFILES_DIRS = [
-    BASE_DIR / "frontend/dist",
-]
-
-STORAGES = {
-    "default": {
-        "BACKEND": "storages.backends.s3.S3Storage",
-        "OPTIONS": {
-            "bucket_name": str(os.getenv("AWS_STORAGE_BUCKET_NAME")),
-            "endpoint_url": str(os.getenv("AWS_ENDPOINT_URL")),
-            "access_key": str(os.getenv("AWS_ACCESS_KEY_ID")),
-            "secret_key": str(os.getenv("AWS_SECRET_ACCESS_KEY")),
-            "signature_version": "s3v4",
-        },
-    },
-    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
-}
+MEDIA_ROOT = dirs.user_data_path / "media"
+MEDIA_URL = "/media/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOGIN_REDIRECT_URL = "/posters/"
+LOGIN_REDIRECT_URL = "/profile/"
+SQUARE_APPLE_MERCHANT_ID = os.getenv("SQUARE_APPLE_MERCHANT_ID")
 
 # Email Settings
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = str(os.getenv("SMTP_SERVER"))
-EMAIL_PORT = int(os.getenv("SMTP_PORT"))
+EMAIL_PORT = int(os.getenv("SMTP_PORT", 0))
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = str(os.getenv("SMTP_USER"))
 EMAIL_HOST_PASSWORD = str(os.getenv("SMTP_PASS"))
 
+API_SECRET = str(os.getenv("API_SECRET"))
+DISCORD_API_PORT = int(os.getenv("DISCORD_API_PORT", 2468))
+BOT_API_HOST = str(os.getenv("BOT_API_HOST"))
+
+# Discord Integration settings
 DISCORD_TOKEN = str(os.getenv("DISCORD_TOKEN"))
-DISCORD_SERVER_ID = int(str(os.getenv("DISCORD_SERVER_ID")))
-DISCORD_OFFICER_ROLE_ID = int(str(os.getenv("DISCORD_OFFICER_ROLE_ID")))
-DISCORD_PROJECT_MANAGER_ROLE_ID = int(str(os.getenv("DISCORD_PROJECT_MANAGER_ROLE_ID")))
-DISCORD_TEAM_LEAD_ROLE_ID = int(str(os.getenv("DISCORD_TEAM_LEAD_ROLE_ID")))
-DISCORD_MEMBER_ROLE_ID = int(str(os.getenv("DISCORD_MEMBER_ROLE_ID")))
+DISCORD_SERVER_ID = int(os.getenv("DISCORD_SERVER_ID", 0))
+DISCORD_BOT_LOG_CHANNEL_ID = int(os.getenv("DISCORD_BOT_LOG_CHANNEL_ID", 0))
+DISCORD_OFFICER_ROLE_ID = int(os.getenv("DISCORD_OFFICER_ROLE_ID", 0))
+DISCORD_PROJECT_MANAGER_ROLE_ID = int(os.getenv("DISCORD_PROJECT_MANAGER_ROLE_ID", 0))
+DISCORD_TEAM_LEAD_ROLE_ID = int(os.getenv("DISCORD_TEAM_LEAD_ROLE_ID", 0))
+DISCORD_MEMBER_ROLE_ID = int(os.getenv("DISCORD_MEMBER_ROLE_ID", 0))
+
+ENABLE_SQUARE_PAYMENTS = bool(int(os.getenv("ENABLE_SQUARE_PAYMENTS", 0)))

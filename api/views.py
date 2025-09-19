@@ -1,24 +1,24 @@
-from django.shortcuts import render
-from django.contrib.auth.models import Group, User
-from payments.models import Product
-from .serializers import UserSerializer, ProductSerializer
-from rest_framework import permissions, viewsets, status, serializers
+from django.contrib.auth.models import User
+from .serializers import (
+    UserSerializer,
+    ProductSerializer,
+    EventSerializer,
+)
+from rest_framework import viewsets, status, serializers
 from .permissions import IsOwnerOrStaff, DeleteNotAllowed, ReadOnlyView
-import json
 
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_POST
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.decorators import permission_classes
 from drf_spectacular.utils import extend_schema
 
+from events.models import Event
 
-# Create your views here.
+
 class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsOwnerOrStaff, DeleteNotAllowed]
     serializer_class = UserSerializer
@@ -29,6 +29,12 @@ class ProductViewSet(viewsets.ModelViewSet):
     permission_classes = [ReadOnlyView]
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
+
+
+class EventViewSet(viewsets.ModelViewSet):
+    permission_classes = [ReadOnlyView]
+    serializer_class = EventSerializer
+    queryset = Event.objects.all()
 
 
 def get_csrf(request):

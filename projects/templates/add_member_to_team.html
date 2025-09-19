@@ -1,0 +1,5 @@
+{% for prospective_member in members %}
+  <p>{{prospective_member.first_name}} {{prospective_member.last_name}} ({{prospective_member.username}})</p><button class="button button-outline" name="member_id" value="{{prospective_member.id}}" hx-post="{% url 'team_members' team_id=team_id %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>Add</button>
+{% empty %}
+  <p value="">No members found</p>
+{% endfor %}

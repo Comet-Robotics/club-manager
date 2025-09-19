@@ -1,0 +1,134 @@
+<!-- TODO: make nav more responsive (on mobile, move nav into hamburger menu - nav will cover full screen when opened, like a modal) -->
+ {% comment %} TODO: Support anonymous users {% endcomment %}
+
+{% load static %}
+<html>
+    <head>
+        <link rel="stylesheet" href="{% static 'core/styles.css' %}">
+        <title>{% block title %}Portal{% endblock %} | {{settings.organization_name}}</title>
+        <style>
+            :root {
+                --primary: {{settings.accent_color_hex}};
+            }
+        </style>
+        <!-- Lucide Icons -->
+        <script src="https://unpkg.com/lucide@0.475.0"></script>
+        <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
+        {% block head %}{% endblock %}
+    </head>
+    <body>
+      
+        <header class="header">
+            <div class="header-left">
+                <div class="logo-container">
+                    <img src="{{settings.logo.url}}" alt="Logo" class="logo">
+                </div>
+                <div class="header-separator"></div>
+                <h1>{{settings.organization_name}} Portal</h1>
+            </div>
+            <div class="user-menu">
+                <button class="user-button" onclick="toggleDropdown()">
+                    {% comment %} <div class="avatar">
+                        <img src="/placeholder.svg?height=32&width=32" alt="User avatar">
+                    </div> {% endcomment %}
+                    <span>{{request.user.first_name}} {{user.last_name}}</span>
+                    <i data-lucide="chevron-down"></i>
+                </button>
+            </div>
+            <div class="dropdown-menu" id="userDropdown">
+                <a href="{% url 'account' %}">
+                    <div class="dropdown-header">
+                        My Account
+                    </div>
+                </a>
+                 
+                  <div class="dropdown-divider"></div>
+                  <form method="post" action="{% url 'logout' %}">
+                      {% csrf_token %}
+                      <button href="#" class="dropdown-item text-red" type="submit">
+                          <i data-lucide="log-out" class="w-4 h-4"></i>
+                          Log out
+                      </button>
+                  </form>
+              </div>
+        </header>
+        <div class="app">
+            <div class="main-container">
+                <nav class="sidebar">
+                    <div class="sidebar-content">
+                        <div class="nav-section">
+                            <a href="{% url 'profile' %}" class="nav-link">
+                                <i data-lucide="house"></i>
+                                Home
+                                <i data-lucide="chevron-right"></i>
+                            </a>
+                        </div>
+
+                        {% if request.user.is_staff %}
+                        <div class="nav-section">
+                            <h2 class="section-title">{{ settings.organization_name }}</h2>
+                            <div class="sub-nav">
+                                <a href="{% url 'club_events' %}" class="nav-link">Events</a>
+                            </div>
+                        </div>
+                        {% endif %}
+    
+                        {%for project in accessible_projects%}
+                        <div class="nav-section">
+                            <h2 class="section-title">{{project.name}}</h2>
+                            <div class="sub-nav">
+                                <a href="{% url 'project_view' project_id=project.id %}" class="nav-link">Overview</a>
+                                <a href="{% url 'project_events' project_id=project.id %}" class="nav-link">Events</a>
+                                <a href="{% url 'project_members' project_id=project.id %}" class="nav-link">Members</a>
+                            </div>
+                        </div>
+                        {%endfor%}
+                        
+                        {%if request.user.is_superuser%}
+                        <div class="nav-section">
+                            <h2 class="section-title">Administration</h2>
+                            <div class="sub-nav">
+                            <a href="{% url 'club_settings' %}" class="nav-link">Server Settings</a>
+                            <a href="{% url 'admin:index' %}" class="nav-link">Django Admin</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </nav>
+                {% block content %}{% endblock %}
+    
+            </div>
+        </div>
+        <script>
+            // Initialize Lucide icons
+            lucide.createIcons();
+            
+            // Add this JavaScript to handle the dropdown functionality
+            function toggleDropdown() {
+                const button = document.querySelector('.user-button');
+                const dropdown = document.getElementById('userDropdown');
+                const isExpanded = button.getAttribute('aria-expanded') === 'true';
+                
+                button.setAttribute('aria-expanded', !isExpanded);
+                dropdown.classList.toggle('show');
+            
+                // Close dropdown when clicking outside
+                if (!isExpanded) {
+                    document.addEventListener('click', closeDropdown);
+                }
+            }
+            
+            function closeDropdown(e) {
+                const button = document.querySelector('.user-button');
+                const dropdown = document.getElementById('userDropdown');
+                
+                if (!button.contains(e.target)) {
+                    button.setAttribute('aria-expanded', 'false');
+                    dropdown.classList.remove('show');
+                    document.removeEventListener('click', closeDropdown);
+                }
+            }
+        </script>
+    </body>
+
+</html>

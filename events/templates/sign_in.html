@@ -1,38 +1,386 @@
-{% extends "base.html" %} {% block title %}Sign In{% endblock %} 
-{% block content %}
+{% extends "newBase.html" %}
+{% load static %}
+{% block title %}Sign In - {{ event_name }}{% endblock %}
 
-<body>
-  <h1>Event: {{ event_name }}</h1>
-  <br />
-  <form method="post">
-    {% csrf_token %} {{ form.as_p }}
-    <button class="btn" type="submit">Sign In</button>
-  </form>
-  <a href="{% url 'lookup-user' event_id %}"
-    ><button class="btn">Lookup User</button></a
-  >
-  <br />
-  {% if message %} 
-    {% if message == 'repeat' %}
-    <h1>You already signed in at {{ status.timestamp }}</h1>
-    {% elif message == 'nomember' %}
-    <h1>You need to pay member dues!</h1>
-    <img
-      src="https://media1.tenor.com/m/bfgjTc0DxiIAAAAC/sad-emoji.gif"
-      alt="Not a Member"
-      style="width: 200px"
-    />
-    {% else %}
-    <h1>You're all checked in!</h1>
-    {% endif %}
-    <h2>{{ user.first_name }} {{user.last_name}}</h2>
-    <h3>ID: {{ user.username }}</h3>
-    <br />
-    <img
-      src="https://cdn.pixabay.com/photo/2023/03/30/00/21/check-7886573_1280.png"
-      alt="Success"
-      style="width: 200px"
-    />
-  {% endif %}
-</body>
+{% block content %}
+<main class="main-content">
+    <div class="signin-container">
+        <div class="signin-card">
+            <div class="signin-header">
+                <div class="signin-icon">
+                    <i data-lucide="user-check"></i>
+                </div>
+                <h1 class="signin-title">Event Sign-In</h1>
+                <h2 class="event-name">{{ event_name }}</h2>
+                <p class="signin-description">Swipe your Comet Card to check in for this event.</p>
+            </div>
+            
+            <div class="signin-form-container">
+                <form method="post" class="signin-form">
+                    {% csrf_token %}
+                    <div class="form-field">
+                        {{ form.card_data.label_tag }}
+                        {{ form.card_data }}
+                        {% if form.card_data.errors %}
+                            <div class="error-message">{{ form.card_data.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <button class="submit-button" type="submit">
+                        <i data-lucide="credit-card"></i>
+                        Sign In
+                    </button>
+                </form>
+                
+                <div class="signin-actions">
+                    <a href="{% url 'lookup-user' event_id %}" class="action-button">
+                        <i data-lucide="search"></i>
+                        Lookup User
+                    </a>
+                </div>
+            </div>
+            
+            {% if message %}
+            <div class="result-container">
+                {% if message == 'repeat' %}
+                <div class="result-card result-warning">
+                    <div class="result-icon">
+                        <i data-lucide="clock"></i>
+                    </div>
+                    <div class="result-content">
+                        <h3>Already Signed In</h3>
+                        <p>You already signed in at {{ status.timestamp|date:"g:i A" }} on {{ status.timestamp|date:"M j, Y" }}</p>
+                    </div>
+                </div>
+                {% elif message == 'nomember' %}
+                <div class="result-card result-error">
+                    <div class="result-icon">
+                        <i data-lucide="alert-triangle"></i>
+                    </div>
+                    <div class="result-content">
+                        <h3>Membership Required</h3>
+                        <p>You need to pay member dues to attend this event.</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="result-card result-success">
+                    <div class="result-icon">
+                        <i data-lucide="check-circle"></i>
+                    </div>
+                    <div class="result-content">
+                        <h3>Successfully Checked In!</h3>
+                        <div class="user-info">
+                            <p class="user-name">{{ user.first_name }} {{ user.last_name }}</p>
+                            <p class="user-id">ID: {{ user.username }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</main>
+
+<style>
+    .signin-container {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 2rem 1rem;
+        min-height: calc(100vh - 4rem);
+    }
+    
+    .signin-card {
+        background: var(--white);
+        border-radius: 1rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        max-width: 700px;
+        width: 100%;
+        border: 1px solid var(--gray-200);
+    }
+    
+    .signin-header {
+        background: linear-gradient(135deg, var(--primary) 0%, color-mix(in hsl, var(--primary) 80%, black) 100%);
+        color: var(--white);
+        padding: 2.5rem 2rem;
+        text-align: center;
+        position: relative;
+    }
+    
+    .signin-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+    
+    .signin-icon {
+        margin-bottom: 1rem;
+    }
+    
+    .signin-icon i {
+        width: 3rem;
+        height: 3rem;
+        color: var(--white);
+        opacity: 0.9;
+    }
+    
+    .signin-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .event-name {
+        font-size: 1.25rem;
+        font-weight: 500;
+        margin-bottom: 1rem;
+        opacity: 0.95;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .signin-description {
+        font-size: 0.875rem;
+        opacity: 0.8;
+        line-height: 1.5;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .signin-form-container {
+        padding: 2rem;
+    }
+    
+    .signin-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .form-field label {
+        font-weight: 500;
+        color: var(--gray-700);
+        font-size: 0.875rem;
+    }
+    
+    .form-field input {
+        padding: 0.75rem;
+        border: 2px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: all 0.2s ease;
+        background: var(--white);
+    }
+    
+    .form-field input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(191, 30, 46, 0.1);
+        transform: translateY(-1px);
+    }
+    
+    .form-field input:hover {
+        border-color: var(--gray-300);
+    }
+    
+    .error-message {
+        color: var(--primary);
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        font-weight: 500;
+    }
+    
+    .submit-button {
+        background: var(--primary);
+        color: var(--white);
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .submit-button:hover {
+        background: color-mix(in hsl, var(--primary) 90%, black);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(191, 30, 46, 0.3);
+    }
+    
+    .submit-button:active {
+        transform: translateY(0);
+    }
+    
+    .submit-button i {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+    
+    .signin-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+    }
+    
+    .action-button {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: var(--gray-100);
+        color: var(--gray-700);
+        text-decoration: none;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border: 1px solid var(--gray-200);
+    }
+    
+    .action-button:hover {
+        background: var(--gray-200);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .action-button i {
+        width: 1rem;
+        height: 1rem;
+    }
+    
+    .result-container {
+        margin-top: 1.5rem;
+    }
+    
+    .result-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        border: 1px solid;
+    }
+    
+    .result-success {
+        background: rgba(34, 197, 94, 0.1);
+        border-color: rgba(34, 197, 94, 0.2);
+        color: rgba(34, 197, 94, 0.9);
+    }
+    
+    .result-warning {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: rgba(245, 158, 11, 0.2);
+        color: rgba(245, 158, 11, 0.9);
+    }
+    
+    .result-error {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.2);
+        color: rgba(239, 68, 68, 0.9);
+    }
+    
+    .result-icon {
+        flex-shrink: 0;
+    }
+    
+    .result-icon i {
+        width: 2rem;
+        height: 2rem;
+    }
+    
+    .result-content h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .result-content p {
+        font-size: 0.875rem;
+        line-height: 1.5;
+        margin-bottom: 0.5rem;
+    }
+    
+    .user-info {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid currentColor;
+        opacity: 0.8;
+    }
+    
+    .user-name {
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .user-id {
+        font-size: 0.875rem;
+        opacity: 0.8;
+    }
+    
+    @media (max-width: 640px) {
+        .signin-container {
+            padding: 1rem;
+        }
+        
+        .signin-header {
+            padding: 2rem 1.5rem;
+        }
+        
+        .signin-form-container {
+            padding: 1.5rem;
+        }
+        
+        .signin-title {
+            font-size: 1.25rem;
+        }
+        
+        .event-name {
+            font-size: 1.125rem;
+        }
+        
+        .signin-actions {
+            flex-direction: column;
+        }
+        
+        .result-card {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .signin-card {
+            border-radius: 0.75rem;
+        }
+        
+        .signin-header {
+            padding: 1.5rem 1rem;
+        }
+        
+        .signin-form-container {
+            padding: 1rem;
+        }
+    }
+</style>
 {% endblock %}

@@ -4,9 +4,12 @@ from . import views
 
 urlpatterns = [
     path("profile/", views.profile_view, name="profile"),
+    path("club/settings/", views.server_settings_view, name="club_settings"),
+    path("club/settings/logo/", views.server_settings_logo_form_view, name="club_settings_logo_form"),
+    path("account/", views.account_view, name="account"),
     path(
         ".well-known/apple-developer-merchantid-domain-association", views.apple_merchant_id, name="apple_merchant_id"
     ),
-    re_path("^_/*", views.spa_view, name="spa"),
     path("", views.index, name="index"),
+    path("profile/fragments/attendance", views.AttendanceListView.as_view(), name="attendance_list"),
 ]

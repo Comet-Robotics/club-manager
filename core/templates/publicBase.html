@@ -1,60 +1,36 @@
 {% load static %}
 <!DOCTYPE html>
-<html data-theme="halloween">
-  <head>
-    <title>{% block title %}Portal{% endblock %} | Comet Robotics
-    </title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css"
-      rel="stylesheet"
-      type="text/css"
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@200..900&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        daisyui: {
-          themes: ["lofi", "black", "halloween"],
-        },
-        theme: {
-          extend: {
-            fontFamily: {
-              'unbounded': 'Unbounded, sans-serif',
-              'mashine': 'Mashine, sans-serif',
-            },
-            colors: {
-              primary: '#bf1e2e',
-              text: '#d9d9d9',
-              textDark: '#1e1e1e',
+<html>
+    <head>
+        <link rel="stylesheet" href="{% static 'core/styles.css' %}">
+        <title>{% block title %}Portal{% endblock %} | {{settings.organization_name}}</title>
+        <style>
+            :root {
+                --primary: {{settings.accent_color_hex}};
             }
-          }
-        }
-      };
-    </script>
-    <style>
-      @font-face {
-        font-family: 'Mashine';
-        src:
-          url('https://cometrobotics.org/fonts/MashineBold.woff2') format('woff2'),
-          url('https://cometrobotics.org/fonts/fonts/MashineBold.woff') format('woff');
-        font-weight: bold;
-        font-style: normal;
-        font-display: swap;
-      }
-      
-      .font-unbounded {
-        font-family: 'Unbounded Variable', sans-serif;
-      }
-      
-      .font-mashine {
-        font-family: 'Mashine', sans-serif;
-      }
-
-    </style>
-  </head>
-  <body>
-        {% block content %}{% endblock %}
-  </body>
+        </style>
+        <!-- Lucide Icons -->
+        <script src="https://unpkg.com/lucide@0.475.0"></script>
+        {% block head %}{% endblock %}
+    </head>
+    <body>
+        <header class="header">
+            <div class="header-left">
+                <div class="logo-container">
+                    <img src="{{settings.logo.url}}" alt="Logo" class="logo">
+                </div>
+                <div class="header-separator"></div>
+                <h1>{{settings.organization_name}}</h1>
+            </div>
+        </header>
+        <div class="app">
+            <div class="main-container">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+        <script>
+            // Initialize Lucide icons
+            lucide.createIcons();
+        </script>
+    </body>
 </html>

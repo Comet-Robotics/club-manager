@@ -1,11 +1,11 @@
 import django_tables2 as tables
 from django.contrib.auth.models import User
 from django_tables2.utils import A
-from .models import UserIdentification, Reservation, Event
+from .models import Reservation, Event
 
 
 class UserTable(tables.Table):
-    student_id = tables.Column(accessor="useridentification.student_id", verbose_name="Student ID")
+    student_id = tables.Column(accessor="userprofile.comet_card_serial_number", verbose_name="Student ID")
     reservation_time = tables.BooleanColumn()
 
     def __init__(self, *args, event_id=None, **kwargs):
@@ -21,7 +21,7 @@ class UserTable(tables.Table):
 
     sign_in = tables.TemplateColumn(
         """
-            <a style="color: red"href="{% url 'pass_sign_in' table.event_id record.id %}">Sign-In</a>
+            <a href="{% url 'pass_sign_in' table.event_id record.id %}" class="button button-primary">Sign-In</a>
     """,
         orderable=False,
     )
@@ -32,7 +32,7 @@ class UserTable(tables.Table):
 
 
 class LinkUserTable(tables.Table):
-    student_id = tables.Column(accessor="useridentification.student_id", verbose_name="Student ID")
+    student_id = tables.Column(accessor="userprofile.comet_card_serial_number", verbose_name="Student ID")
     reservation_time = tables.BooleanColumn()
 
     def __init__(self, *args, event_id=None, student_id=None, **kwargs):
@@ -49,7 +49,7 @@ class LinkUserTable(tables.Table):
 
     sign_in = tables.TemplateColumn(
         """
-            <a style="color: red"href="{% url 'pass_link' table.event_id record.id table.student_id  %}">Link User</a>
+            <a href="{% url 'pass_link' table.event_id record.id table.student_id %}" class="button button-primary">Link User</a>
     """,
         orderable=False,
     )
