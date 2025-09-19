@@ -14,6 +14,7 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 from platformdirs import PlatformDirs
+from urllib.parse import urlparse
 
 dirs = PlatformDirs(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True)
 
@@ -42,7 +43,8 @@ ALLOWED_HOSTS = []
 CSRF_TRUSTED_ORIGINS = []
 
 if PUBLIC_URL:
-    ALLOWED_HOSTS += [PUBLIC_URL]
+    parsed_url = urlparse(PUBLIC_URL)
+    ALLOWED_HOSTS += [parsed_url.hostname]
     CSRF_TRUSTED_ORIGINS += [PUBLIC_URL]
 else:
     print("Warning: PUBLIC_URL not set. Things might break.")
