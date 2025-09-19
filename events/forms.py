@@ -53,12 +53,8 @@ class UserSearchForm(forms.Form):
 
 
 class RSVPForm(forms.Form):
-    first_name = forms.CharField(
-        label="First Name", max_length=100
-    )
-    last_name = forms.CharField(
-        label="Last Name", max_length=100
-    )
+    first_name = forms.CharField(label="First Name", max_length=100)
+    last_name = forms.CharField(label="Last Name", max_length=100)
     # TODO: allow username to not be a net id
     net_id = NetIDField(label="Net ID", max_length=20)
 

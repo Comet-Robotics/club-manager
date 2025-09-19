@@ -138,6 +138,7 @@ def lookup_user(request, event_id, student_id=None):
 
 def rsvp(request, event_id):
     from core.utilities import get_layout_data
+
     layout_data = get_layout_data(request)
     event = Event.objects.get(pk=event_id)
     if request.method == "POST":
@@ -152,24 +153,32 @@ def rsvp(request, event_id):
             if not Reservation.objects.filter(user=user, event=event).exists():
                 reserved = Reservation.objects.create(event=event, user=user)
                 # Show success confirmation with redirect
-                return render(request, "rsvp.html", {
-                    **layout_data, 
-                    "event": event, 
-                    "form": form, 
-                    "success": True, 
-                    "user": user,
-                    "redirect_url": event.url
-                })
+                return render(
+                    request,
+                    "rsvp.html",
+                    {
+                        **layout_data,
+                        "event": event,
+                        "form": form,
+                        "success": True,
+                        "user": user,
+                        "redirect_url": event.url,
+                    },
+                )
             else:
                 # User already has a reservation
-                return render(request, "rsvp.html", {
-                    **layout_data, 
-                    "event": event, 
-                    "form": form, 
-                    "already_rsvped": True, 
-                    "user": user,
-                    "redirect_url": event.url
-                })
+                return render(
+                    request,
+                    "rsvp.html",
+                    {
+                        **layout_data,
+                        "event": event,
+                        "form": form,
+                        "already_rsvped": True,
+                        "user": user,
+                        "redirect_url": event.url,
+                    },
+                )
     else:
         form = RSVPForm()
     return render(request, "rsvp.html", {**layout_data, "event": event, "form": form})
