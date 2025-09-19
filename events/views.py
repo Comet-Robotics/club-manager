@@ -224,6 +224,6 @@ def club_events_view(request):
     """View for displaying club-wide events (events not associated with any project)"""
     layout_data = get_layout_data(request)
     # Get events that are not associated with any project
-    club_events = Event.objects.filter(project__isnull=True).order_by("event_date")
+    club_events = Event.objects.filter(project__isnull=True).order_by("-event_date")
     table = EventTable(club_events)
     return render(request, "club_events.html", {**layout_data, "table": table})
