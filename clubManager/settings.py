@@ -14,6 +14,7 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 from platformdirs import PlatformDirs
+from urllib.parse import urlparse
 
 dirs = PlatformDirs(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True)
 
@@ -42,7 +43,8 @@ ALLOWED_HOSTS = []
 CSRF_TRUSTED_ORIGINS = []
 
 if PUBLIC_URL:
-    ALLOWED_HOSTS += [PUBLIC_URL]
+    parsed_url = urlparse(PUBLIC_URL)
+    ALLOWED_HOSTS += [parsed_url.hostname]
     CSRF_TRUSTED_ORIGINS += [PUBLIC_URL]
 else:
     print("Warning: PUBLIC_URL not set. Things might break.")
@@ -70,18 +72,10 @@ INSTALLED_APPS = [
     "more_admin_filters",
     "rest_framework",
     "drf_spectacular",
-    "django_vite",
     "multiselectfield",
     "colorfield",
 ]
 
-
-DJANGO_VITE = {
-    "default": {
-        "dev_mode": DEBUG,
-        "static_url_prefix": "" if DEBUG else "/vite/",
-    }
-}
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
