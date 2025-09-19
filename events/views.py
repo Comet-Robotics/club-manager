@@ -92,8 +92,6 @@ def pass_link(request, event_id, user_id, student_id):
     return redirect("sign_in", event_id=event_id)
 
 
-
-
 @staff_member_required
 def lookup_user(request, event_id, student_id=None):
     layout_data = get_layout_data(request)
