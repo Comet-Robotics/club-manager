@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.http import Http404
 
 from core.utilities import get_layout_data
-from .forms import EventForm, SignInForm, CreateProfileForm, UserSearchForm, RSVPForm
+from .forms import EventForm, SignInForm, UserSearchForm, RSVPForm
 from .models import Attendance, Event, Reservation
 from core.models import UserProfile
 from django.contrib.auth.models import User
@@ -92,23 +92,8 @@ def pass_link(request, event_id, user_id, student_id):
 
 
 @staff_member_required
-def create_profile(request, student_id):
-    if request.method == "POST":
-        form = CreateProfileForm(request.POST)
-        if form.is_valid():
-            net_id = form.cleaned_data["net_id"]
-            first = form.cleaned_data["first_name"]
-            last = form.cleaned_data["last_name"]
-            UserProfile.create_extended_user(net_id=net_id, comet_card_serial_number=student_id, first=first, last=last)
-            return redirect("sign_in")
-    else:
-        form = CreateProfileForm()
-
-    return render(request, "create_profile.html", {"form": form})
-
-
-@staff_member_required
 def lookup_user(request, event_id, student_id=None):
+    layout_data = get_layout_data(request)
     if student_id:
         print("student id found")
         users = User.objects.filter(userprofile__comet_card_serial_number__isnull=True)
@@ -132,7 +117,7 @@ def lookup_user(request, event_id, student_id=None):
         table = LinkUserTable(users, event_id=event_id, student_id=student_id)
     else:
         table = UserTable(users, event_id=event_id)
-    return render(request, "lookup_user.html", {"users": users, "form": form, "table": table})
+    return render(request, "lookup_user.html", {**layout_data, "users": users, "form": form, "table": table})
 
 
 def rsvp(request, event_id):

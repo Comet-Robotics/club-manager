@@ -3,6 +3,64 @@
 {% block title %}Event Overview{% endblock %}
 {%block head%}
 
+<script>
+async function copyRSVPLink() {
+    const button = document.getElementById('copyRSVPButton');
+    const rsvpUrl = window.location.origin + '/events/{{event.id}}/rsvp/';
+    
+    try {
+        await navigator.clipboard.writeText(rsvpUrl);
+        
+        // Update button text and style to show success
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i>Copied!';
+        button.classList.add('copied');
+        
+        // Re-initialize lucide icons for the new check icon
+        lucide.createIcons();
+        
+        // Reset button after 2 seconds
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.classList.remove('copied');
+            lucide.createIcons();
+        }, 2000);
+        
+    } catch (err) {
+        console.error('Failed to copy: ', err);
+        
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = rsvpUrl;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            document.execCommand('copy');
+            
+            // Update button text to show success
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i>Copied!';
+            button.classList.add('copied');
+            
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+                button.classList.remove('copied');
+                lucide.createIcons();
+            }, 2000);
+            
+        } catch (fallbackErr) {
+            console.error('Fallback copy failed: ', fallbackErr);
+            alert('Copy failed. Please manually copy the RSVP link: ' + rsvpUrl);
+        }
+        
+        document.body.removeChild(textArea);
+    }
+}
+</script>
 {%endblock%}
 {% block content %}
 <main class="main-content">
@@ -17,10 +75,14 @@
                 <i data-lucide="edit" class="w-4 h-4"></i>
                 Edit Event
             </a>
-            <a href="#" class="sign-in-button">
+            <a href="{% url 'sign_in' event_id=event.id %}" class="sign-in-button">
                 <i data-lucide="log-in" class="w-4 h-4"></i>
                 Sign In
             </a>
+            <button onclick="copyRSVPLink()" class="sign-in-button copy-rsvp-button" id="copyRSVPButton">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+                Copy RSVP Link
+            </button>
         </div>
     </div>
     
