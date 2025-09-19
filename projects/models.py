@@ -31,7 +31,7 @@ class Project(models.Model):
     description = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    managers = models.ManyToManyField(User, related_name="projects_managing")
+    managers = models.ManyToManyField(User, related_name="projects_managing", blank=True)
 
     def __str__(self):
         return self.name
@@ -64,8 +64,8 @@ class Team(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     parent_team = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
-    members = models.ManyToManyField(User, related_name="teams_in")
-    leads = models.ManyToManyField(User, related_name="teams_leading")
+    members = models.ManyToManyField(User, related_name="teams_in", blank=True)
+    leads = models.ManyToManyField(User, related_name="teams_leading", blank=True)
     emoji = models.CharField(max_length=3, null=True, blank=True)
 
     def __str__(self):
