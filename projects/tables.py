@@ -18,6 +18,7 @@ class EventTable(tables.Table):
 
 
 class MemberTable(tables.Table):
+    # TODO: Implement this
     # delete = tables.TemplateColumn(
     #     '<a class="button button-outline" href="{% url "edit_form" record.id %}">Edit</a>',
     #     orderable=False,
@@ -25,6 +26,7 @@ class MemberTable(tables.Table):
 
     class Meta:
         model = User
+        # TODO: Show roles in the table
         fields = ("id", "username", "first_name", "last_name")
 
     def __init__(self, *args, **kwargs):
