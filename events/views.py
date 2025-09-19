@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.http import Http404
 
 from core.utilities import get_layout_data
-from .forms import EventForm, SignInForm, CreateProfileForm, UserSearchForm, RSVPForm
+from .forms import EventForm, SignInForm, UserSearchForm, RSVPForm
 from .models import UserIdentification, Attendance, Event, Reservation
 from core.models import UserProfile
 from django.contrib.auth.models import User
@@ -92,21 +92,6 @@ def pass_link(request, event_id, user_id, student_id):
     return redirect("sign_in", event_id=event_id)
 
 
-@staff_member_required
-def create_profile(request, student_id):
-    layout_data = get_layout_data(request)
-    if request.method == "POST":
-        form = CreateProfileForm(request.POST)
-        if form.is_valid():
-            net_id = form.cleaned_data["net_id"]
-            first = form.cleaned_data["first_name"]
-            last = form.cleaned_data["last_name"]
-            UserIdentification.create_extended_user(net_id=net_id, student_id=student_id, first=first, last=last)
-            return redirect("sign_in")
-    else:
-        form = CreateProfileForm()
-
-    return render(request, "create_profile.html", {**layout_data, "form": form})
 
 
 @staff_member_required
