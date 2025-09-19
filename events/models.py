@@ -1,9 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
-from payments.models import Product, PurchasedProduct
-from common.utils import validate_staff
-from computedfields.models import ComputedFieldsModel, computed
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 from projects.models import Project, Team
