@@ -18,6 +18,7 @@ from drf_spectacular.utils import extend_schema
 
 from events.models import Event
 
+
 class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsOwnerOrStaff, DeleteNotAllowed]
     serializer_class = UserSerializer
@@ -28,7 +29,6 @@ class ProductViewSet(viewsets.ModelViewSet):
     permission_classes = [ReadOnlyView]
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
-
 
 
 class EventViewSet(viewsets.ModelViewSet):
@@ -127,5 +127,3 @@ class WhoAmIView(APIView):
             return Response({"isAuthenticated": False}, status=status.HTTP_403_FORBIDDEN)
 
         return Response({"username": request.user.username, "id": request.user.id, "isAuthenticated": True})
-
-
