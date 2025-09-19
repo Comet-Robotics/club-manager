@@ -39,10 +39,6 @@ def profile_view(request):
 
 @login_required
 def account_view(request):
-    # NOTE: temporarily restricting page access in production until the corresponding page is implemented
-    if not settings.DEBUG:
-        return HttpResponse("This page is under construction - only available in DEBUG mode.")
-
     user = request.user
     user_form = UserForm(instance=user)
     profile_form = UserProfileForm(instance=user.userprofile)
