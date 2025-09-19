@@ -37,6 +37,12 @@ class SignInForm(forms.Form):
     )
 
 
+class CreateProfileForm(forms.Form):
+    first_name = forms.CharField(label="First Name", max_length=100)
+    last_name = forms.CharField(label="Last Name", max_length=100)
+    net_id = NetIDField(label="Net ID", max_length=20)
+
+
 class UserSearchForm(forms.Form):
     search = forms.CharField(
         label="Search",
