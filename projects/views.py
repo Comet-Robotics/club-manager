@@ -100,7 +100,7 @@ class MembersView(CanManageProjectMixin, MultiTableMixin, TemplateView):
         project = Project.objects.get(pk=project_id)
         teams = project.all_teams()
 
-        tables = [MemberTable(team.get_unique_users(), table_name=team.name, team_id=team.id) for team in teams]
+        tables = [MemberTable(team.get_unique_users(), table_name=str(team), team_id=team.id) for team in teams]
         return tables
 
     def get_context_data(self, **kwargs):
