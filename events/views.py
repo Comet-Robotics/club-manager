@@ -151,8 +151,25 @@ def rsvp(request, event_id):
                 user = User.objects.create(username=net_id, first_name=first, last_name=last)
             if not Reservation.objects.filter(user=user, event=event).exists():
                 reserved = Reservation.objects.create(event=event, user=user)
-            return redirect(event.url)
-            # return render(request, 'rsvp.html', {'form': form, 'user': user, 'event': event})
+                # Show success confirmation with redirect
+                return render(request, "rsvp.html", {
+                    **layout_data, 
+                    "event": event, 
+                    "form": form, 
+                    "success": True, 
+                    "user": user,
+                    "redirect_url": event.url
+                })
+            else:
+                # User already has a reservation
+                return render(request, "rsvp.html", {
+                    **layout_data, 
+                    "event": event, 
+                    "form": form, 
+                    "already_rsvped": True, 
+                    "user": user,
+                    "redirect_url": event.url
+                })
     else:
         form = RSVPForm()
     return render(request, "rsvp.html", {**layout_data, "event": event, "form": form})
