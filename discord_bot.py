@@ -14,12 +14,9 @@ from discord.ext import pages
 django.setup()
 
 from django.core.mail import send_mail
-from django.db import models
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
 from accounts.models import AccountLink
-from core.models import User, UserProfile
+from core.models import ServerSettings, User, UserProfile
 from common.asyncutils import *
 from common.utils import is_valid_net_id
 from django.utils import timezone
@@ -83,6 +80,11 @@ PRIVILEGED_ROLE_IDS = {
     settings.DISCORD_PROJECT_MANAGER_ROLE_ID,
     settings.DISCORD_TEAM_LEAD_ROLE_ID,
 }
+
+server_settings = ServerSettings.objects.first()
+if server_settings is None:
+    raise Exception("Server settings not found")
+ORG_NAME = server_settings.organization_name
 
 # -------- Utility methods --------
 
@@ -187,7 +189,7 @@ async def on_ready():
     print(f"{bot.user} is ready and online!")
 
 
-@bot.slash_command(description="Link your Discord account to your Comet Robotics account")
+@bot.slash_command(description="Link your Discord account to your Club Manager account")
 @discord.option(name="net_id", description="Your UT Dallas Net ID", required=True, min_length=9, max_length=9)
 async def link(ctx: discord.ApplicationContext, net_id):
     await ctx.respond("Processing...", ephemeral=True, delete_after=3.0)
@@ -232,7 +234,7 @@ async def link(ctx: discord.ApplicationContext, net_id):
 
     if discord_id_is_linked:
         await ctx.respond(
-            "Your Discord account is already linked to a Comet Robotics account. Ping an officer if this looks wrong.",
+            f"Your Discord account is already linked to a {ORG_NAME} account. Ping an officer if this looks wrong.",
             ephemeral=True,
         )
         return
@@ -249,17 +251,17 @@ async def link(ctx: discord.ApplicationContext, net_id):
 
     def send_the_email():
         send_mail(
-            "Link your Discord to your Comet Robotics account",
+            f"Link your Discord to your {ORG_NAME} account",
             f"""
 Hello {user.first_name},
 
-You have requested to link your Discord account with your Comet Robotics account.
+You have requested to link your Discord account with your {ORG_NAME} account.
 
 Full Name: {user.first_name} {user.last_name}
 Discord Name: {author_name}
 Net ID: {net_id}
 
-If the above information is correct, click on the below link to connect your Discord account to your Comet Robotics account.
+If the above information is correct, click on the below link to connect your Discord account to your {ORG_NAME} account.
 
 {settings.PUBLIC_URL}/accounts/link/{account_link.uuid}
 
@@ -273,14 +275,14 @@ Thanks!
             html_message=f"""
 <h2>Hello {user.first_name},</h2>
 
-<p>You have requested to link your Discord account with your Comet Robotics account.</p>
+<p>You have requested to link your Discord account with your {ORG_NAME} account.</p>
 
 <p>Full Name: {user.first_name} {user.last_name}<br>
 Discord Name: {author_name}<br>
 Net ID: {net_id}</p>
 
 
-<p>If the above information is correct, click the button below or the link to connect your Discord account to your Comet Robotics account.</p>
+<p>If the above information is correct, click the button below or the link to connect your Discord account to your {ORG_NAME} account.</p>
 
 <a href="{settings.PUBLIC_URL}/accounts/link/{account_link.uuid}"><button style="border: solid #950000 3px;padding: 1em; border-radius: 10px; background-color:#bf1e2e; color: white;"><strong>Link Account</strong></button></a>
 
@@ -296,14 +298,14 @@ Net ID: {net_id}</p>
 
     embed = discord.Embed(
         title="Email sent!",
-        description=f"Check your email (`{email}`) and click the link to connect your Discord account to your Comet Robotics account.",
+        description=f"Check your email (`{email}`) and click the link to connect your Discord account to your {ORG_NAME} account.",
         color=discord.Color.red(),
     )
 
     await ctx.respond(":tada:", embed=embed, ephemeral=True)
 
 
-@bot.slash_command(description="View your Comet Robotics profile")
+@bot.slash_command(description=f"View your {ORG_NAME} profile")
 @discord.option(
     name="net_id",
     description="Net ID of the account to view. Defaults to your own.",
@@ -379,7 +381,7 @@ async def profile(ctx: discord.ApplicationContext, net_id: str | None, discord_u
         user_profile = await get_profile_async(discord_id=str(discord_user_id))
         if user_profile is None:
             await ctx.respond(
-                "You don't have a linked Comet Robotics account. Use the `/link` command to connect your Comet Robotics account to your Discord account.",
+                f"You don't have a linked {ORG_NAME} account. Use the `/link` command to connect your {ORG_NAME} account to your Discord account.",
                 ephemeral=True,
             )
             return
@@ -489,7 +491,7 @@ async def attendances(ctx: discord.ApplicationContext):
     user_profile: UserProfile | None = await get_profile_async(discord_id=str(user.id))
     if user_profile is None:
         await ctx.respond(
-            "You don't have a linked Comet Robotics account. Use the `/link` command to connect your Comet Robotics account to your Discord account.",
+            f"You don't have a linked {ORG_NAME} account. Use the `/link` command to connect your {ORG_NAME} account to your Discord account.",
             ephemeral=True,
         )
         return
@@ -522,7 +524,7 @@ async def version(ctx: discord.ApplicationContext):
         await ctx.respond(f"An error occurred while fetching version information: {str(e)}", ephemeral=True)
 
 
-@bot.slash_command(description="Pay your member dues to become a Comet Robotics member")
+@bot.slash_command(description="Pay your member dues to become a member")
 async def pay(ctx: discord.ApplicationContext):
     def get_payment_links():
         try:
@@ -547,12 +549,12 @@ async def pay(ctx: discord.ApplicationContext):
 
     if payment_links is None:
         await ctx.respond(
-            "You're not linked yet! Use `/link` with your NetID to link your Discord account to your Comet Robotics account, then try again.",
+            f"You're not linked yet! Use `/link` with your NetID to link your Discord account to your {ORG_NAME} account, then try again.",
             ephemeral=True,
         )
         return
 
-    embed = discord.Embed(title="Become a Comet Robotics Member", description=payment_links, color=discord.Color.red())
+    embed = discord.Embed(title="Become a Member", description=payment_links, color=discord.Color.red())
     embed.set_footer(text="Click on the links to pay for the respective terms.")
 
     await ctx.respond(embed=embed, ephemeral=True)
@@ -702,7 +704,7 @@ async def camera(ctx: discord.ApplicationContext):
 
     valid_members = await get_current_member_discord_ids()
     if ctx.author.id not in valid_members:
-        await message.edit_original_response(content=f"You are not registered as a member of Comet Robotics!")
+        await message.edit_original_response(content=f"You are not registered as a member of {ORG_NAME}!")
     else:
         # url = "http://eric1:8080/stream" # TODO: probably /snapshot instead of /stream
         url = "http://192.168.1.64:8080/snapshot"
