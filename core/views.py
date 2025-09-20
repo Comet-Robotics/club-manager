@@ -56,7 +56,9 @@ def account_view(request):
         saved = True
 
     layout_data = get_layout_data(request)
-    return render(request, "account.html", {**layout_data, "profile_form": profile_form, "user_form": user_form, "saved": saved})
+    return render(
+        request, "account.html", {**layout_data, "profile_form": profile_form, "user_form": user_form, "saved": saved}
+    )
 
 
 @user_passes_test(lambda u: u.is_superuser)
