@@ -36,18 +36,21 @@ SECRET_KEY = str(os.getenv("SECRET_KEY"))
 DEBUG = bool(int(os.getenv("DEBUG", "0")))
 
 CSRF_COOKIE_SAMESITE = "Strict"
-SESSION_COOKIE_SAMESITE = "Strict"
+SESSION_COOKIE_SAMESITE = "None"
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 ALLOWED_HOSTS = []
 CSRF_TRUSTED_ORIGINS = []
 
 if PUBLIC_URL:
     parsed_url = urlparse(PUBLIC_URL)
     ALLOWED_HOSTS += [parsed_url.hostname]
+    CSRF_TRUSTED_ORIGINS += [PUBLIC_URL]
     if parsed_url.hostname == "127.0.0.1":
         ALLOWED_HOSTS += ["localhost"]
-    CSRF_TRUSTED_ORIGINS += [PUBLIC_URL]
+        CSRF_TRUSTED_ORIGINS += [PUBLIC_URL.replace("127.0.0.1", "localhost")]
 else:
     print("Warning: PUBLIC_URL not set. Things might break.")
 
