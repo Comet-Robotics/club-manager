@@ -45,6 +45,8 @@ CSRF_TRUSTED_ORIGINS = []
 if PUBLIC_URL:
     parsed_url = urlparse(PUBLIC_URL)
     ALLOWED_HOSTS += [parsed_url.hostname]
+    if parsed_url.hostname == "127.0.0.1":
+        ALLOWED_HOSTS += ["localhost"]
     CSRF_TRUSTED_ORIGINS += [PUBLIC_URL]
 else:
     print("Warning: PUBLIC_URL not set. Things might break.")
