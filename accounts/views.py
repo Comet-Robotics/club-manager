@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from django.views import View
 from .models import AccountLink
 from core.models import UserProfile
@@ -54,6 +55,57 @@ class LinkSuccessView(View):
 
     def get(self, request):
         return render(request, self.template_name)
+
+
+@login_required
+def discord_oauth_view(request):
+    code = request.GET.get("code")
+    if not code:
+        return redirect("profile")
+    
+    if not request.user.is_authenticated:
+        return redirect("index")
+
+    data = {
+        "client_id": settings.DISCORD_CLIENT_ID,
+        "client_secret": settings.DISCORD_CLIENT_SECRET,
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": settings.DISCORD_REDIRECT_URI,
+        "scope": "identify",
+    }
+
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+
+    # Exchange code for access token
+    token_response = requests.post("https://discord.com/api/oauth2/token", data=data, headers=headers)
+    if token_response.status_code != 200:
+        return redirect("profile")
+
+    token_json = token_response.json()
+    access_token = token_json.get("access_token")
+    if not access_token:
+        return redirect("profile")
+
+    # Use access token to get user info
+    user_response = requests.get(
+        "https://discord.com/api/users/@me", headers={"Authorization": f"Bearer {access_token}"}
+    )
+    if user_response.status_code != 200:
+        return redirect("profile")
+
+    user_json = user_response.json()
+    print(user_json)
+    discord_id = user_json.get("id")
+    if not discord_id:
+        return redirect("profile")
+
+    # Link Discord ID to user's profile
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    user_profile.discord_id = discord_id
+    user_profile.save()
+
+    return redirect("link_success")
 
 
 class DiscordUser(TypedDict):

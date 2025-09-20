@@ -200,6 +200,10 @@ API_SECRET = str(os.getenv("API_SECRET"))
 DISCORD_API_PORT = int(os.getenv("DISCORD_API_PORT", 2468))
 BOT_API_HOST = str(os.getenv("BOT_API_HOST"))
 
+DISCORD_CLIENT_ID = str(os.getenv("DISCORD_CLIENT_ID"))
+DISCORD_CLIENT_SECRET = str(os.getenv("DISCORD_CLIENT_SECRET"))
+DISCORD_REDIRECT_URI = str(os.getenv("DISCORD_REDIRECT_URI"))
+
 # Discord Integration settings
 DISCORD_TOKEN = str(os.getenv("DISCORD_TOKEN"))
 DISCORD_SERVER_ID = int(os.getenv("DISCORD_SERVER_ID", 0))

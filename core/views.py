@@ -8,8 +8,7 @@ from events.models import Attendance
 from django.views.generic import ListView
 from .forms import ServerSettingsLogoForm, UserProfileForm, UserForm, ServerSettingsForm
 from projects.models import Team
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import login_required, user_passes_test
 
 
 def initials(name: str) -> str:
@@ -57,7 +56,7 @@ def account_view(request):
 
     layout_data = get_layout_data(request)
     return render(
-        request, "account.html", {**layout_data, "profile_form": profile_form, "user_form": user_form, "saved": saved}
+        request, "account.html", {**layout_data, "profile_form": profile_form, "user_form": user_form, "saved": saved, "discord_client_id": settings.DISCORD_CLIENT_ID, "discord_redirect_uri": settings.DISCORD_REDIRECT_URI}
     )
 
 

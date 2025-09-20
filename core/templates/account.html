@@ -32,7 +32,6 @@
         </div>
     </section>
 
-    {% comment %} <!-- TODO Linked Accounts -->
     <section class="section">
         <h2 class="section-title">Linked Accounts</h2>
         <div class="accounts-grid">
@@ -42,7 +41,7 @@
                     <p class="card-description">Connect your Discord account</p>
                 </div>
                 <div class="card-content">
-                    <button class="button button-primary">LINK ACCOUNT</button>
+                    <a href="https://discord.com/api/oauth2/authorize?client_id={{ discord_client_id }}&redirect_uri={{ discord_redirect_uri|urlencode }}&response_type=code&scope=identify" class="button button-primary">LINK ACCOUNT</a>
                 </div>
             </div>
             <div class="account-card">
@@ -63,7 +62,7 @@
                 </div>
             </div>
         </div>
-    </section>    {% endcomment %}
+    </section>
 
     <section class="section">
         <h2 class="section-title">About me</h2>
