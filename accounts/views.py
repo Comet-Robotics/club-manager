@@ -1,3 +1,5 @@
+from urllib.parse import urlencode
+from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpResponseServerError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views import View
@@ -6,6 +8,7 @@ from core.models import UserProfile
 from clubManager import settings
 import requests
 from typing import TypedDict
+import secrets
 
 
 class LinkSocialView(View):
@@ -58,13 +61,32 @@ class LinkSuccessView(View):
 
 
 @login_required
+def discord_redirect_view(request):
+    state = secrets.token_urlsafe(16)
+    request.session["discord_oauth_state"] = state
+    query_params = {
+        "response_type": "code",
+        "client_id": settings.DISCORD_CLIENT_ID,
+        "scope": "identify",
+        "redirect_uri": settings.DISCORD_REDIRECT_URI,
+        "prompt": "none",
+        "state": state,
+    }
+    discord_oauth_url = (
+        f"https://discord.com/api/oauth2/authorize?{urlencode(query_params)}"
+    )
+    return redirect(discord_oauth_url)
+
+@login_required
 def discord_oauth_view(request):
     code = request.GET.get("code")
     if not code:
-        return redirect("profile")
+        return HttpResponseBadRequest("Missing OAuth code")
 
-    if not request.user.is_authenticated:
-        return redirect("index")
+    state_sent = request.GET.get("state")
+    state_stored = request.session.pop("discord_oauth_state", None)
+    if not state_sent or state_sent != state_stored:
+        return HttpResponseForbidden("Missing or invalid state parameter")
 
     data = {
         "client_id": settings.DISCORD_CLIENT_ID,
@@ -80,25 +102,25 @@ def discord_oauth_view(request):
     # Exchange code for access token
     token_response = requests.post("https://discord.com/api/oauth2/token", data=data, headers=headers)
     if token_response.status_code != 200:
-        return redirect("profile")
+        return HttpResponseServerError("Failed to obtain access token from Discord")
 
     token_json = token_response.json()
     access_token = token_json.get("access_token")
     if not access_token:
-        return redirect("profile")
+        return HttpResponseServerError("No access token received from Discord")
 
     # Use access token to get user info
     user_response = requests.get(
         "https://discord.com/api/users/@me", headers={"Authorization": f"Bearer {access_token}"}
     )
     if user_response.status_code != 200:
-        return redirect("profile")
+        return HttpResponseServerError("Failed to fetch user info from Discord")
 
     user_json = user_response.json()
     print(user_json)
     discord_id = user_json.get("id")
     if not discord_id:
-        return redirect("profile")
+        return HttpResponseServerError("No user ID received from Discord")
 
     # Link Discord ID to user's profile
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)

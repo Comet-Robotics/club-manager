@@ -41,7 +41,7 @@
                     <p class="card-description">Connect your Discord account</p>
                 </div>
                 <div class="card-content">
-                    <a href="https://discord.com/api/oauth2/authorize?client_id={{ discord_client_id }}&redirect_uri={{ discord_redirect_uri|urlencode }}&response_type=code&scope=identify" class="button button-primary">LINK ACCOUNT</a>
+                    <a href="{% url 'discord_redirect' %}" target="_blank" class="button button-primary">LINK ACCOUNT</a>
                 </div>
             </div>
             <div class="account-card">
