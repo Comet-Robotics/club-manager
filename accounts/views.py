@@ -72,10 +72,9 @@ def discord_redirect_view(request):
         "prompt": "none",
         "state": state,
     }
-    discord_oauth_url = (
-        f"https://discord.com/api/oauth2/authorize?{urlencode(query_params)}"
-    )
+    discord_oauth_url = f"https://discord.com/api/oauth2/authorize?{urlencode(query_params)}"
     return redirect(discord_oauth_url)
+
 
 @login_required
 def discord_oauth_view(request):
