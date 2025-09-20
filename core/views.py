@@ -56,7 +56,16 @@ def account_view(request):
 
     layout_data = get_layout_data(request)
     return render(
-        request, "account.html", {**layout_data, "profile_form": profile_form, "user_form": user_form, "saved": saved, "discord_client_id": settings.DISCORD_CLIENT_ID, "discord_redirect_uri": settings.DISCORD_REDIRECT_URI}
+        request,
+        "account.html",
+        {
+            **layout_data,
+            "profile_form": profile_form,
+            "user_form": user_form,
+            "saved": saved,
+            "discord_client_id": settings.DISCORD_CLIENT_ID,
+            "discord_redirect_uri": settings.DISCORD_REDIRECT_URI,
+        },
     )
 
 

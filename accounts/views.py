@@ -62,7 +62,7 @@ def discord_oauth_view(request):
     code = request.GET.get("code")
     if not code:
         return redirect("profile")
-    
+
     if not request.user.is_authenticated:
         return redirect("index")
 
