@@ -12,16 +12,20 @@ from asgiref.sync import sync_to_async
 
 
 async def add_member_role(discord_id: int):
-    async with aiohttp.request(
-        "POST",
-        f"{settings.BOT_API_HOST}/give-member-role",
-        json={"member_id": discord_id},
-        headers={"Authorization": f"Bearer {settings.API_SECRET}"},
-    ) as resp:
-        if resp.status != 200:
-            print(f"Failed to add member role to {discord_id}: status code {resp.status} {resp.reason}")
-            return False
-        return True
+    try:
+        async with aiohttp.request(
+            "POST",
+            f"{settings.BOT_API_HOST}/give-member-role",
+            json={"member_id": discord_id},
+            headers={"Authorization": f"Bearer {settings.API_SECRET}"},
+        ) as resp:
+            if resp.status != 200:
+                print(f"Failed to add member role to {discord_id}: status code {resp.status} {resp.reason}")
+                return False
+            return True
+    except Exception as e:
+        print(f"Failed to connect to bot api: {e}")
+        return False
 
 
 # Add member role when discord id is added (user linked or id manually added)
