@@ -42,6 +42,7 @@ def account_view(request):
     user = request.user
     user_form = UserForm(instance=user)
     profile_form = UserProfileForm(instance=user.userprofile)
+    saved = False
 
     if request.method == "POST":
         if "user" in request.POST:
@@ -52,9 +53,10 @@ def account_view(request):
             profile_form = UserProfileForm(request.POST, instance=user.userprofile)
             if profile_form.is_valid():
                 profile_form.save()
+        saved = True
 
     layout_data = get_layout_data(request)
-    return render(request, "account.html", {**layout_data, "profile_form": profile_form, "user_form": user_form})
+    return render(request, "account.html", {**layout_data, "profile_form": profile_form, "user_form": user_form, "saved": saved})
 
 
 @user_passes_test(lambda u: u.is_superuser)

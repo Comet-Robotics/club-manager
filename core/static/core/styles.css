@@ -878,3 +878,40 @@ td a:not(.button):visited {
 td a:not(.button):focus {
     outline: 2px solid var(--primary);
 }
+
+/* Alerts */
+.alert {
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border: 1px solid transparent;
+}
+
+.alert-success {
+    background-color: #e6f9ed;
+    color: #15803d;
+    border-color: #bbf7d0;
+}
+
+.alert-error {
+    background-color: #fbeaea;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+.alert-warning {
+    background-color: #fffbe6;
+    color: #b45309;
+    border-color: #fde68a;
+}
+
+.alert-info {
+    background-color: #e6f4ff;
+    color: #2563eb;
+    border-color: #bfdbfe;
+}
