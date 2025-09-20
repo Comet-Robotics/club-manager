@@ -1,4 +1,4 @@
-import traceback
+import aiohttp
 from asgiref.sync import sync_to_async
 import os
 import time
@@ -27,12 +27,21 @@ import io
 import subprocess
 import socket
 import random
-import requests
 from operator import itemgetter
 import asyncio
 
 from fastapi import FastAPI, HTTPException, Header
 import uvicorn
+
+import logging
+
+logger = logging.getLogger("discord")
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="a")
+handler.setFormatter(
+    logging.Formatter("[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s")
+)
+logger.addHandler(handler)
 
 LIST = [
     "Madina Halal Grill",
@@ -187,6 +196,7 @@ async def get_current_member_discord_ids():
 @bot.event
 async def on_ready():
     print(f"{bot.user} is ready and online!")
+    logger.info(f"{bot.user} is ready and online!")
 
 
 @bot.slash_command(description="Link your Discord account to your Club Manager account")
@@ -614,6 +624,7 @@ async def givememberroles(ctx: discord.ApplicationContext):
         return
 
     message = await ctx.respond("Processing...")
+    logger.debug("Starting the role addition...")
     ids_to_add = await get_current_member_discord_ids()
 
     start_time = time.time()
@@ -621,13 +632,14 @@ async def givememberroles(ctx: discord.ApplicationContext):
     async def add_role_to_member(discord_id: int):
         member = guild.get_member(discord_id)
         if not member:
-            print(f"Could not find member with id {discord_id}")
+            logger.warning(f"Could not find member with id {discord_id}")
             return False
         try:
-            await member.add_roles(member_role)
+            if member_role not in member.roles:
+                await member.add_roles(member_role)
             return True
         except Exception as e:
-            print(f"Failed to add role to member {discord_id}: {e}")
+            logger.warning(f"Failed to add role to member {discord_id}: {e}")
             return False
 
     tasks = [add_role_to_member(discord_id) for discord_id in ids_to_add]
@@ -636,7 +648,7 @@ async def givememberroles(ctx: discord.ApplicationContext):
 
     end_time = time.time()
 
-    print(f"Added role to {len(ids_to_add)} users.")
+    logger.info(f"Added role to {len(ids_to_add)} users.")
     success_message = f"Member role addition success! Added member role to {removed_count} users. (Time taken: {end_time - start_time:.2f} seconds.)"
     if isinstance(message, discord.Interaction):
         await message.edit_original_response(content=success_message)
@@ -654,6 +666,7 @@ async def purgememberroles(ctx: discord.ApplicationContext):
         return
 
     message = await ctx.respond("Processing...")
+    logger.debug("Starting the role removal...")
 
     removed_count = 0
     discord_members = guild.members
@@ -664,10 +677,11 @@ async def purgememberroles(ctx: discord.ApplicationContext):
 
     async def remove_role_from_member(discord_member: discord.Member):
         try:
-            await discord_member.remove_roles(member_role)
+            if member_role in discord_member.roles:
+                await discord_member.remove_roles(member_role)
             return True
         except Exception as e:
-            print(f"Failed to remove role from member {discord_member.id}: {e}")
+            logger.warning(f"Failed to remove role from member {discord_member.id}: {e}")
             return False
 
     tasks = [remove_role_from_member(member) for member in members_to_remove]
@@ -675,7 +689,7 @@ async def purgememberroles(ctx: discord.ApplicationContext):
     removed_count = sum(1 for result in results if result is True)
     end_time = time.time()
 
-    print(f"Purged role for {removed_count} users.")
+    logger.info(f"Purged role for {removed_count} users.")
     success_message = f"Member role purge success! Removed member role for {removed_count} users. (Time taken: {end_time - start_time:.2f} seconds.)"
     if isinstance(message, discord.Interaction):
         await message.edit_original_response(content=success_message)
@@ -709,10 +723,16 @@ async def camera(ctx: discord.ApplicationContext):
         # url = "http://eric1:8080/stream" # TODO: probably /snapshot instead of /stream
         url = "http://192.168.1.64:8080/snapshot"
         try:
-            img = discord.File(io.BytesIO(requests.get(url).content), "stream.jpg")
+            async with aiohttp.request("GET", url) as resp:
+                if resp.status != 200:
+                    await message.edit_original_response(content="Camera is currently offline.")
+                    return
+            img = discord.File(io.BytesIO(await resp.read()), "stream.jpg")
             await message.edit_original_response(content="", file=img)
         except Exception as e:
-            await message.edit_original_response(content=traceback.format_exc())
+            await message.edit_original_response(content="An error occurred.")
+            logger.error("Error fetching camera image:")
+            logger.exception(e)
 
 
 async def main():
@@ -728,4 +748,8 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(main())
+    except KeyboardInterrupt:
+        logger.info("Bot shutting down...")
