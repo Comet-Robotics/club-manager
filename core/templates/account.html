@@ -11,6 +11,27 @@
     {% include "partials/alert.html" with type="success" message="Your changes have been saved." %}
     {% endif %}
 
+    <h1 class="page-title">Account Settings</h1>
+
+    <section class="section">
+        <h2 class="section-title">Contact Information</h2>
+        <div class="accounts-grid">
+            <div class="account-card">
+                <div class="card-header">
+                    <h3> Information</h3>
+                    <p class="card-description"></p>
+                </div>
+                <div class="card-content">
+                    <form method="POST">
+                        {% csrf_token %}
+                        {{ user_form }}
+                        <button type="submit" class="button button-primary" name="user">Save</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
     {% comment %} <!-- TODO Linked Accounts -->
     <section class="section">
         <h2 class="section-title">Linked Accounts</h2>
@@ -43,26 +64,6 @@
             </div>
         </div>
     </section>    {% endcomment %}
-
-
-    <section class="section">
-        <h2 class="section-title">Contact Information</h2>
-        <div class="accounts-grid">
-            <div class="account-card">
-                <div class="card-header">
-                    <h3> Information</h3>
-                    <p class="card-description"></p>
-                </div>
-                <div class="card-content">
-                    <form method="POST">
-                        {% csrf_token %}
-                        {{ user_form }}
-                        <button type="submit" class="button button-primary" name="user">Save</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <section class="section">
         <h2 class="section-title">About me</h2>

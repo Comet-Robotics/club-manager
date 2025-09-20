@@ -204,6 +204,14 @@ img {
 }
 
 
+.page-title {
+    color: var(--primary);
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    letter-spacing: 0.01em;
+}
+
 
 /* Section Styles */
 .section {
