@@ -53,13 +53,16 @@
                     </div>
                 </div>
                 {% elif message == 'nomember' %}
-                <div class="result-card result-error">
+                <div class="result-card result-warning">
                     <div class="result-icon">
                         <i data-lucide="alert-triangle"></i>
                     </div>
                     <div class="result-content">
-                        <h3>Membership Required</h3>
-                        <p>You need to pay member dues to attend this event.</p>
+                        <h3>Member has not paid dues yet! Checked in:</h3>
+                        <div class="user-info">
+                            <p class="user-name">{{ user.first_name }} {{ user.last_name }}</p>
+                            <p class="user-id">ID: {{ user.username }}</p>
+                        </div>
                     </div>
                 </div>
                 {% else %}
