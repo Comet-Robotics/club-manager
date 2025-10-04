@@ -197,7 +197,7 @@ async def on_ready():
     logger.info(f"{bot.user} is ready and online!")
 
 
-@bot.slash_command(description="Link your Discord account to your Club Manager account")
+@bot.slash_command(description=f"Link your Discord account to your {ORG_NAME} account")
 @discord.option(name="net_id", description="Your UT Dallas Net ID", required=True, min_length=9, max_length=9)
 async def link(ctx: discord.ApplicationContext, net_id):
     await ctx.respond("Processing...", ephemeral=True, delete_after=3.0)
