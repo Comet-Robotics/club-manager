@@ -18,6 +18,8 @@ from drf_spectacular.utils import extend_schema
 from payments.models import Product
 from events.models import Event
 
+from events.models import Event
+
 
 class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsOwnerOrStaff, DeleteNotAllowed]
