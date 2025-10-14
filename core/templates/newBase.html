@@ -95,9 +95,9 @@
                             <a href="{% url 'admin:index' %}" class="nav-link">Django Admin</a>
                             </div>
                         </div>
-                        {%if FEATURE_FLAGS.AUTO_SERVER_SETTINGS_INIT%}
+                        {%if FEATURE_FLAGS.AUTO_SERVER_SETTINGS_INIT and not settings.initial_setup_completed %}
                         {% include "partials/alert.html" with type="warning" message="Hey friend! Go to Server Settings to finish setting up Club Manager :)" note="By the way, you only see this as a Club Manager superuser - others won't see this." %}
-                        <!--TODO: THIS NEEDS A CONDITION-->
+
                         {% endif %}
                         {% endif %}
                     </div>
