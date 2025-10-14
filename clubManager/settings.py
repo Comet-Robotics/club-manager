@@ -219,17 +219,17 @@ def strtobool(val):
     'val' is anything else.
     """
     val = val.lower()
-    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+    if val in ("y", "yes", "t", "true", "on", "1"):
         return 1
-    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+    elif val in ("n", "no", "f", "false", "off", "0"):
         return 0
     else:
         raise ValueError("invalid truth value %r" % (val,))
-        
+
 
 FEATURE_FLAGS = {
-  # enabled: ServerSettings are auto created when needed, displays configuration prompts to superusers on new instances
-  # disabled: ServerSettings needs to be manually created in Django Admin, users will encounter Django errors if this is not done
-  # - @jasonappah, 10/14/2025
-  "AUTO_SERVER_SETTINGS_INIT": strtobool(os.environ.get("FLAG_AUTO_SERVER_SETTINGS_INIT", 'off'))
+    # enabled: ServerSettings are auto created when needed, displays configuration prompts to superusers on new instances
+    # disabled: ServerSettings needs to be manually created in Django Admin, users will encounter Django errors if this is not done
+    # - @jasonappah, 10/14/2025
+    "AUTO_SERVER_SETTINGS_INIT": strtobool(os.environ.get("FLAG_AUTO_SERVER_SETTINGS_INIT", "off"))
 }

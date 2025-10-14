@@ -18,8 +18,18 @@ def get_layout_data(request: HttpRequest) -> LayoutData:
     if not isinstance(user, (AnonymousUser, User)):
         raise Exception("User must be an instance of User or AnonymousUser")
     accessible_projects = Project.get_projects_user_can_manage(user) if user and isinstance(user, User) else []
-    
+
     if FEATURE_FLAGS["AUTO_SERVER_SETTINGS_INIT"]:
-      return LayoutData(user=user, settings=ServerSettings.objects.get_or_create()[0], accessible_projects=accessible_projects, FEATURE_FLAGS=FEATURE_FLAGS)
+        return LayoutData(
+            user=user,
+            settings=ServerSettings.objects.get_or_create()[0],
+            accessible_projects=accessible_projects,
+            FEATURE_FLAGS=FEATURE_FLAGS,
+        )
     else:
-      return LayoutData(user=user, settings=ServerSettings.objects.get(), accessible_projects=accessible_projects, FEATURE_FLAGS=FEATURE_FLAGS)
+        return LayoutData(
+            user=user,
+            settings=ServerSettings.objects.get(),
+            accessible_projects=accessible_projects,
+            FEATURE_FLAGS=FEATURE_FLAGS,
+        )
