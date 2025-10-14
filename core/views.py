@@ -70,7 +70,7 @@ def server_settings_logo_form_view(request):
     if form.is_valid():
         form.save()
 
-    return redirect("server_settings")
+    return redirect("club_settings")
 
 
 @user_passes_test(lambda u: u.is_superuser)
