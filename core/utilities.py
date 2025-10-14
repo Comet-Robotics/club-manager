@@ -16,4 +16,4 @@ def get_layout_data(request: HttpRequest) -> LayoutData:
     if not isinstance(user, (AnonymousUser, User)):
         raise Exception("User must be an instance of User or AnonymousUser")
     accessible_projects = Project.get_projects_user_can_manage(user) if user and isinstance(user, User) else []
-    return LayoutData(user=user, settings=ServerSettings.objects.get(), accessible_projects=accessible_projects)
+    return LayoutData(user=user, settings=ServerSettings.objects.get_or_create()[0], accessible_projects=accessible_projects)
