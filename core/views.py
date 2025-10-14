@@ -68,6 +68,7 @@ def server_settings_logo_form_view(request):
     settings = ServerSettings.objects.get()
     form = ServerSettingsLogoForm(request.POST, request.FILES, instance=settings)
     if form.is_valid():
+        form.instance.initial_setup_completed = True
         form.save()
 
     return redirect("club_settings")
@@ -79,6 +80,7 @@ def server_settings_view(request):
     if request.method == "POST":
         form = ServerSettingsForm(request.POST, instance=layout_data["settings"])
         if form.is_valid():
+            form.instance.initial_setup_completed = True
             form.save()
     else:
         form = ServerSettingsForm(instance=layout_data["settings"])

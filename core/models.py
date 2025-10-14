@@ -15,6 +15,7 @@ class ServerSettings(models.Model):
     organization_name = models.CharField(default="Your Organization")
     accent_color_hex = ColorField(default="#4BC0FF")
     logo = models.ImageField(upload_to="logos")
+    initial_setup_completed = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = "server configuration"
