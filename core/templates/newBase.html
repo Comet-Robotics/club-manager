@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <!-- TODO: make nav more responsive (on mobile, move nav into hamburger menu - nav will cover full screen when opened, like a modal) -->
  {% comment %} TODO: Support anonymous users {% endcomment %}
 
@@ -95,6 +96,7 @@
                             </div>
                         </div>
                         {% include "partials/alert.html" with type="warning" message="Hey friend! Go to Server Settings to finish setting up Club Manager :)" note="By the way, you only see this as a Club Manager superuser - others won't see this." %}
+                        <!--TODO: THIS NEEDS A CONDITION-->
                         {% endif %}
                     </div>
                 </nav>
