@@ -210,3 +210,10 @@ DISCORD_TEAM_LEAD_ROLE_ID = int(os.getenv("DISCORD_TEAM_LEAD_ROLE_ID", 0))
 DISCORD_MEMBER_ROLE_ID = int(os.getenv("DISCORD_MEMBER_ROLE_ID", 0))
 
 ENABLE_SQUARE_PAYMENTS = bool(int(os.getenv("ENABLE_SQUARE_PAYMENTS", 0)))
+
+FEATURE_FLAGS = {
+  # enabled: ServerSettings are auto created when needed, displays configuration prompts to superusers on new instances
+  # disabled: ServerSettings needs to be manually created in Django Admin, users will encounter Django errors if this is not done
+  # - @jasonappah, 10/14/2025
+  "AUTO_SERVER_SETTINGS_INIT": bool(os.environ.get("FLAG_AUTO_SERVER_SETTINGS_INIT", False))
+}
