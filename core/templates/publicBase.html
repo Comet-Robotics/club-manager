@@ -17,7 +17,9 @@
         <header class="header">
             <div class="header-left">
                 <div class="logo-container">
-                    <img src="{{settings.logo.url}}" alt="Logo" class="logo">
+                  {%if settings.logo%}  
+                  <img src="{{settings.logo.url}}" alt="Logo" class="logo">
+                  {%endif%}
                 </div>
                 <div class="header-separator"></div>
                 <h1>{{settings.organization_name}}</h1>
