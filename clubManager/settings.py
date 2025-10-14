@@ -211,9 +211,25 @@ DISCORD_MEMBER_ROLE_ID = int(os.getenv("DISCORD_MEMBER_ROLE_ID", 0))
 
 ENABLE_SQUARE_PAYMENTS = bool(int(os.getenv("ENABLE_SQUARE_PAYMENTS", 0)))
 
+
+def strtobool(val):
+    """Convert a string representation of truth to true (1) or false (0).
+    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
+    'val' is anything else.
+    """
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return 1
+    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return 0
+    else:
+        raise ValueError("invalid truth value %r" % (val,))
+        
+
 FEATURE_FLAGS = {
   # enabled: ServerSettings are auto created when needed, displays configuration prompts to superusers on new instances
   # disabled: ServerSettings needs to be manually created in Django Admin, users will encounter Django errors if this is not done
   # - @jasonappah, 10/14/2025
-  "AUTO_SERVER_SETTINGS_INIT": bool(os.environ.get("FLAG_AUTO_SERVER_SETTINGS_INIT", False))
+  "AUTO_SERVER_SETTINGS_INIT": strtobool(os.environ.get("FLAG_AUTO_SERVER_SETTINGS_INIT", 'off'))
 }
