@@ -895,7 +895,7 @@ td a:not(.button):focus {
     font-weight: 500;
     margin-bottom: 1.5rem;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 0.75rem;
     border: 1px solid transparent;
 }

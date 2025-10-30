@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <!-- TODO: make nav more responsive (on mobile, move nav into hamburger menu - nav will cover full screen when opened, like a modal) -->
  {% comment %} TODO: Support anonymous users {% endcomment %}
 
@@ -21,7 +22,9 @@
         <header class="header">
             <div class="header-left">
                 <div class="logo-container">
-                    <img src="{{settings.logo.url}}" alt="Logo" class="logo">
+                  {%if settings.logo%}  
+                  <img src="{{settings.logo.url}}" alt="Logo" class="logo">
+                  {%endif%}
                 </div>
                 <div class="header-separator"></div>
                 <h1>{{settings.organization_name}} Portal</h1>
@@ -92,6 +95,10 @@
                             <a href="{% url 'admin:index' %}" class="nav-link">Django Admin</a>
                             </div>
                         </div>
+                        {%if FEATURE_FLAGS.AUTO_SERVER_SETTINGS_INIT and not settings.initial_setup_completed %}
+                        {% include "partials/alert.html" with type="warning" message="Hey friend! Go to Server Settings to finish setting up Club Manager :)" note="By the way, you only see this as a Club Manager superuser - others won't see this." %}
+
+                        {% endif %}
                         {% endif %}
                     </div>
                 </nav>
