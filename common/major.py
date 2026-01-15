@@ -11,6 +11,7 @@ __all__ = ["get_majors", "get_major_from_netid"]
 
 MAJORS_JSON_PATH = Path(__file__).parent / "majors.json"
 
+
 @functools.lru_cache()
 def get_majors() -> dict[str, str]:
     """Fetches the list of majors from disk. Caches the list for fast retrieval.
@@ -21,6 +22,7 @@ def get_majors() -> dict[str, str]:
 
     with open(MAJORS_JSON_PATH, "r") as f:
         return json.load(f)
+
 
 def get_major_from_netid(netid: str) -> str | None:
     """Gets the major short code from the directory for a particular NetID.
