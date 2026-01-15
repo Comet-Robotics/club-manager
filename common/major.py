@@ -5,53 +5,22 @@ import time
 from clubManager.settings import dirs
 import json
 from datetime import datetime, timedelta
+from pathlib import Path
 
 __all__ = ["get_majors", "get_major_from_netid"]
 
-DIRECTORY_TRIES = 5
-MAJORS_CACHE_PATH = dirs.site_cache_path / "majors.json"
-MAJOR_CACHE_MAX_AGE = timedelta(weeks=4)
-
+MAJORS_JSON_PATH = Path(__file__).parent / "majors.json"
 
 @functools.lru_cache()
 def get_majors() -> dict[str, str]:
-    """Fetches the list of majors from the directory dropdown filter. Caches the list for fast retrieval.
+    """Fetches the list of majors from disk. Caches the list for fast retrieval.
 
     Returns:
         dict[str, str]: The dictionary of major short codes to major full text.
     """
 
-    print("Trying to fetch majors from cache...")
-    if MAJORS_CACHE_PATH.exists():
-        with open(MAJORS_CACHE_PATH, "r") as f:
-            cache_data = json.loads(f.read())
-        if datetime.fromisoformat(cache_data["last_updated"]) + MAJOR_CACHE_MAX_AGE > datetime.now():
-            return cache_data["majors"]
-        else:
-            print("Cached majors are outdated. Fetching from directory...")
-
-    for i in range(DIRECTORY_TRIES):
-        print(f"Trying to fetch major... ({i + 1}/{DIRECTORY_TRIES})")
-        try:
-            r = requests.get("https://www.utdallas.edu/directory/")
-            soup = bs4.BeautifulSoup(r.text, "html.parser")
-            dirMajor = soup.find(id="dirMajor")
-            if dirMajor:
-                break
-        except Exception as e:
-            print("ERROR when fetching majors:", e)
-        print("Waiting before attempting fetch majors...")
-        time.sleep(3)
-    else:
-        print("WARNING: Failed to fetch majors.")
-        return dict()
-    options = {option["value"]: option.string for option in dirMajor.find_all("option")}
-    del options["All"]
-    now = datetime.now()
-    with open(MAJORS_CACHE_PATH, "w") as f:
-        f.write(json.dumps({"majors": options, "last_updated": now.isoformat()}))
-    return options
-
+    with open(MAJORS_JSON_PATH, "r") as f:
+        return json.load(f)
 
 def get_major_from_netid(netid: str) -> str | None:
     """Gets the major short code from the directory for a particular NetID.
@@ -64,7 +33,10 @@ def get_major_from_netid(netid: str) -> str | None:
     """
     try:
         r = requests.get(
-            f"https://websvcs.utdallas.edu/directory/includes/directories.class.php?dirType=displayname&dirSearch={netid}&dirAffil=All&dirDept=All&dirMajor=All&dirSchool=All"
+            f"https://websvcs.utdallas.edu/directory/includes/directories.class.php?dirType=displayname&dirSearch={netid}&dirAffil=All&dirDept=All&dirMajor=All&dirSchool=All",
+            headers={
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+            },
         )
     except Exception as e:
         print(f"WARNING: major_from_netid request failed: ", e)
