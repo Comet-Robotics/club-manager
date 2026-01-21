@@ -1,5 +1,6 @@
 [Unit]
 Description=Discord bot for Comet Robotics
+Wants=gunicorn.service
 
 [Service]
 User=root
