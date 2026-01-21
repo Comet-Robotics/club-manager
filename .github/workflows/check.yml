@@ -35,5 +35,7 @@ jobs:
         run: cp .env.example .env
       - name: Run lint
         run: pipenv run ./scripts/lint.sh
+      - name: Check for outstanding migrations
+        run: pipenv run python manage.py makemigrations --check --dry-run
       # - name: Run tests
       #   run: pipenv run python manage.py test
