@@ -35,6 +35,9 @@ jobs:
         run: cp .env.example .env
       - name: Run lint
         run: pipenv run ./scripts/lint.sh
+      # Check if there are any outstanding Django migrations that need to be created
+      # This command exits with code 1 if there are outstanding migrations
+      # Note: Database connection warnings are expected and do not affect the check
       - name: Check for outstanding migrations
         run: pipenv run python manage.py makemigrations --check --dry-run
       # - name: Run tests
