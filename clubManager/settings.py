@@ -237,7 +237,6 @@ def resolve_feature_flags(flags_with_defaults: dict[str, bool]) -> dict[str, boo
     resolved_flags = {}
     flags_using_defaults: set[str] = set()
     for flag, default_value in flags_with_defaults.items():
-
         env_var_name = f"FLAG_{flag}"
         value_from_env = os.environ.get(env_var_name)
         try:
@@ -247,7 +246,7 @@ def resolve_feature_flags(flags_with_defaults: dict[str, bool]) -> dict[str, boo
         except ValueError:
             flags_using_defaults.add(flag)
             value_as_bool = default_value
-        
+
         resolved_flags[flag] = value_as_bool
 
     print(f"Feature flags using default values: {flags_using_defaults}")
@@ -259,10 +258,12 @@ Club Manager uses a trunk-based development workflow, meaning that all new funct
 
 To configure feature flags at deploy time via environment variables, take the name of the flag and prepend "FLAG_" to it, and set it to a truthy or falsy string value. for example, the flag "AUTO_SERVER_SETTINGS_INIT" would be enabled with the environment variable "FLAG_AUTO_SERVER_SETTINGS_INIT" set to "true".
 """
-FEATURE_FLAGS = resolve_feature_flags({
-    # enabled: ServerSettings are auto created when needed, displays configuration prompts to superusers on new instances
-    # disabled: ServerSettings needs to be manually created in Django Admin, users will encounter Django errors if this is not done
-    # - @jasonappah, 10/14/2025 - default off
-    # - @jasonappah, 01/19/2026 - set default to True
-    "AUTO_SERVER_SETTINGS_INIT": True
-})
+FEATURE_FLAGS = resolve_feature_flags(
+    {
+        # enabled: ServerSettings are auto created when needed, displays configuration prompts to superusers on new instances
+        # disabled: ServerSettings needs to be manually created in Django Admin, users will encounter Django errors if this is not done
+        # - @jasonappah, 10/14/2025 - default off
+        # - @jasonappah, 01/19/2026 - set default to True
+        "AUTO_SERVER_SETTINGS_INIT": True
+    }
+)
