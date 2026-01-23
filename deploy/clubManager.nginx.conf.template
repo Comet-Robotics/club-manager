@@ -12,4 +12,8 @@ server {
     location /static/ {
     	alias /var/www/static/;
     }
+
+    location /media/ {
+    	alias "${MEDIA_PATH}/";
+    }
 }
