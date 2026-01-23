@@ -3,6 +3,7 @@ from django.views import View
 from .models import AccountLink
 from core.models import UserProfile
 from clubManager import settings
+from core.utilities import get_layout_data
 import requests
 from typing import TypedDict
 
@@ -11,6 +12,7 @@ class LinkSocialView(View):
     template_name = "link_social.html"
 
     def get(self, request, uuid):
+        layout_data = get_layout_data(request)
         account_link = get_object_or_404(AccountLink, uuid=uuid)
         user = account_link.user
         link_type = account_link.link_type
@@ -28,6 +30,7 @@ class LinkSocialView(View):
             request,
             self.template_name,
             {
+                **layout_data,
                 "user": user,
                 "link_type": link_type,
                 "social_id": social_id,
@@ -53,7 +56,8 @@ class LinkSuccessView(View):
     template_name = "link_success.html"
 
     def get(self, request):
-        return render(request, self.template_name)
+        layout_data = get_layout_data(request)
+        return render(request, self.template_name, {**layout_data})
 
 
 class DiscordUser(TypedDict):

@@ -17,20 +17,32 @@
         font-size: 2rem;
       }
     }
-
   </style>
-  <div class="flex min-h-screen bg-textDark w-screen text-white flex-col text-center">
-    <div class="flex flex-col bg-primary w-full p-12 gap-4 items-center justify-center">
-      <a href="https://cometrobotics.org"><img src="https://cometrobotics.org/_astro/wordmark.CC_C52SA_Z2rEHwX.avif" class="mb-6 w-32" alt="Comet Robotics Logo"></a>
+  <div
+    class="flex min-h-screen bg-textDark w-screen text-white flex-col text-center"
+  >
+    <div
+      class="flex flex-col bg-primary w-full p-12 gap-4 items-center justify-center"
+    >
+      {%if settings.logo%}
+      <img src="{{settings.logo.url}}" class="mb-6 w-32" alt="Logo" />
+      {%endif%}
       <h1 class="font-mashine text-white text-lg">Payments</h1>
       <h2 class="font-unbounded text-white text-3xl">{{product_name}}</h2>
       <!-- TODO: allow username to not be a net id -->
       <p>Enter your Net ID below to begin processing your payment!</p>
     </div>
-    <div class="flex flex-col bg-textDark w-full p-12 gap-4 items-center justify-center">
-      <form method="post" class="flex flex-col gap-2 items-center justify-center">
+    <div
+      class="flex flex-col bg-textDark w-full p-12 gap-4 items-center justify-center"
+    >
+      <form
+        method="post"
+        class="flex flex-col gap-2 items-center justify-center"
+      >
         {% csrf_token %} {{ form.as_p }}
-        <button class="btn w-max btn-outline btn-neutral" type="submit">Continue</button>
+        <button class="btn w-max btn-outline btn-neutral" type="submit">
+          Continue
+        </button>
       </form>
       {% if message %}
       <div role="alert" class="alert alert-info">
@@ -39,6 +51,5 @@
       {% endif %}
     </div>
   </div>
-
 </body>
 {% endblock %}

@@ -13,6 +13,7 @@ from django.db import transaction
 from pathlib import Path
 from .utilities import can_purchase_product, calculate_cost_with_square_fee
 from clubManager import settings
+from core.utilities import get_layout_data
 
 if settings.ENABLE_SQUARE_PAYMENTS:
     config_path = Path("config.ini")
@@ -48,11 +49,13 @@ class PaymentSuccessView(View):
     template_name = "payment_success.html"
 
     def get(self, request, payment_id):
+        layout_data = get_layout_data(request)
         payment = get_object_or_404(Payment, id=payment_id)
         return render(
             request,
             self.template_name,
             {
+                **layout_data,
                 "product_name": payment.purchased_products.first().product.name,
                 "payment": payment,
             },
@@ -63,11 +66,13 @@ class ChooseUserView(View):
     template_name = "choose_user.html"
 
     def get(self, request, product_id):
+        layout_data = get_layout_data(request)
         product = get_object_or_404(Product, id=product_id)
         form = PaymentSignInForm()
-        return render(request, self.template_name, {"form": form, "product_name": product.name})
+        return render(request, self.template_name, {**layout_data, "form": form, "product_name": product.name})
 
     def post(self, request, product_id):
+        layout_data = get_layout_data(request)
         form = PaymentSignInForm(request.POST)
         product = get_object_or_404(Product, id=product_id)
         if form.is_valid():
@@ -80,6 +85,7 @@ class ChooseUserView(View):
                     request,
                     self.template_name,
                     {
+                        **layout_data,
                         "form": form,
                         "message": "User not found",
                         "product_name": product.name,
@@ -91,7 +97,7 @@ class ChooseUserView(View):
                 return render(
                     request,
                     self.template_name,
-                    {"form": form, "message": message, "product_name": product.name},
+                    {**layout_data, "form": form, "message": message, "product_name": product.name},
                 )
             else:
                 if payment_choice == "square_api":
@@ -109,13 +115,14 @@ class ChooseUserView(View):
                     return redirect("payment_success", payment_id=purchased_product.payment.id)
                 else:
                     raise Exception("Invalid payment choice")
-        return render(request, self.template_name, {"form": form, "product_name": product.name})
+        return render(request, self.template_name, {**layout_data, "form": form, "product_name": product.name})
 
 
 def product_payment(request, product_id, user_id):
     if settings.ENABLE_SQUARE_PAYMENTS == False:
         return HttpResponse("Payments are currently disabled.", status=403)
 
+    layout_data = get_layout_data(request)
     product = get_object_or_404(Product, id=product_id)
     fees = calculate_cost_with_square_fee(product.amount_cents)
 
@@ -126,6 +133,7 @@ def product_payment(request, product_id, user_id):
         request,
         "product_payment.html",
         {
+            **layout_data,
             "product": product,
             "user_id": user_id,
             "process_fee": process_fee,

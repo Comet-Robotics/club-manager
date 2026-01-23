@@ -29,7 +29,8 @@
               mashine: "Mashine, sans-serif",
             },
             colors: {
-              primary: "#bf1e2e",
+              primary:
+                "{{ settings.accent_color_hex | default_if_none:'#bf1e23' }}",
               text: "#d9d9d9",
               textDark: "#1e1e1e",
             },
