@@ -176,7 +176,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = os.getenv("STATIC_ROOT")
-MEDIA_ROOT = dirs.user_data_path / "media"
+MEDIA_ROOT = dirs.site_data_path / "media"
 MEDIA_URL = "/media/"
 
 # Default primary key field type
