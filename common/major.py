@@ -1,10 +1,7 @@
 import bs4
 import functools
 import requests
-import time
-from clubManager.settings import dirs
 import json
-from datetime import datetime, timedelta
 from pathlib import Path
 
 __all__ = ["get_majors", "get_major_from_netid"]
