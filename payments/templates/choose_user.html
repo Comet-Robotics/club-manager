@@ -12,6 +12,17 @@
       margin-top: 1rem;
     }
 
+    /* Fix input text visibility - override inherited white text */
+    form input[type="text"],
+    form input[type="email"],
+    form input[type="password"],
+    form input[type="number"],
+    form select,
+    form textarea {
+      color: #1f2937;
+      background-color: #ffffff;
+    }
+
     @media (max-width: 1000px) {
       html {
         font-size: 2rem;
