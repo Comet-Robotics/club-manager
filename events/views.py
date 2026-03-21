@@ -236,18 +236,21 @@ def club_events_view(request):
 
 def convert_attendance_instance_to_flat_dict(attendance: Attendance):
     attendance_dict = model_to_dict(attendance)
-    user_dict = model_to_dict(attendance.user, fields=["username", "first_name", "last_name"]) if attendance.user else {}
+    user_dict = (
+        model_to_dict(attendance.user, fields=["username", "first_name", "last_name"]) if attendance.user else {}
+    )
     return attendance_dict | user_dict
+
 
 @staff_member_required
 def event_attendance_export(request, event_id):
     """Export attendance for a specific event as a CSV file."""
     event = get_object_or_404(Event, pk=event_id)
     attendances = Attendance.objects.filter(event=event).select_related("user")
-  
+
     sample_attendance_dict = convert_attendance_instance_to_flat_dict(attendances[0])
     fieldnames = sample_attendance_dict.keys()
-    
+
     csv = StringIO()
     writer = DictWriter(csv, fieldnames=fieldnames)
     writer.writeheader()
@@ -258,4 +261,4 @@ def event_attendance_export(request, event_id):
     now = timezone.now().strftime("%Y-%m-%d_%H-%M-%S")
     response["Content-Disposition"] = f'attachment; filename="{event.event_name}_attendance_{now}.csv"'
     response["Content-Type"] = "text/csv"
-    return response 
+    return response

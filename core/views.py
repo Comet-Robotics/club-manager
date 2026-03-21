@@ -43,7 +43,9 @@ def profile_view(request, user_id=None):
     terms = [term for term, _ in user.userprofile.get_membership_terms()]
     formatted_terms = [initials(term.name) for term in terms]
 
-    return render(request, "profile.html", {**layout_data, "teams": teams, "terms": formatted_terms, "profile_user": user})
+    return render(
+        request, "profile.html", {**layout_data, "teams": teams, "terms": formatted_terms, "profile_user": user}
+    )
 
 
 @login_required
@@ -105,7 +107,9 @@ class AttendanceListView(ListView):
 
     def get_queryset(self):
         user_id = self.request.GET.get("user_id")
-        if user_id and (self.request.user.is_staff or self.request.user.is_superuser or int(user_id) == self.request.user.id):
+        if user_id and (
+            self.request.user.is_staff or self.request.user.is_superuser or int(user_id) == self.request.user.id
+        ):
             return Attendance.objects.order_by("-timestamp").filter(user_id=user_id)
         return Attendance.objects.order_by("-timestamp").filter(user=self.request.user)
 
