@@ -72,4 +72,10 @@ Optional context:
         </div>
         {% endfor %}
     </div>
+    <br>
+    <a href="{% url 'event_attendance_export' event_id=event.id %}" download>
+    <button class="sign-in-button">  
+      Export Attendance CSV
+    </button>
+    </a>
 </div>
