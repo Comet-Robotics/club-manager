@@ -66,7 +66,7 @@ class Attendance(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self):
-        return str(self.event) + " - " + str(self.timestamp)
+        return str(self.user) + " - " + str(self.event) + " - " + str(self.timestamp)
 
 
 class Reservation(models.Model):
