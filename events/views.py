@@ -99,7 +99,6 @@ LOOKUP_USER_LIMIT = 25
 def lookup_user(request, event_id, student_id=None):
     layout_data = get_layout_data(request)
     if student_id:
-        print("student id found")
         base_users = User.objects.filter(userprofile__comet_card_serial_number__isnull=True)
     else:
         base_users = User.objects.all()
@@ -116,9 +115,10 @@ def lookup_user(request, event_id, student_id=None):
                     | Q(last_name__icontains=query)
                     | Q(userprofile__comet_card_serial_number__icontains=query)
                     | Q(username__icontains=query)
-                )[:LOOKUP_USER_LIMIT]
+                )
             else:
-                users = base_users[:LOOKUP_USER_LIMIT]
+                users = base_users
+            users = users[:LOOKUP_USER_LIMIT]
     else:
         form = UserSearchForm()
 
