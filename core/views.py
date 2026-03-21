@@ -1,15 +1,17 @@
-from django.shortcuts import redirect, render
-from django.http import HttpResponse, HttpResponseRedirect
-from django.views.decorators.http import require_GET
 from django.conf import settings
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.models import User
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import redirect, render
+from django.views.decorators.http import require_GET
+from django.views.generic import ListView
+
 from core.models import ServerSettings
 from core.utilities import get_layout_data
 from events.models import Attendance
-from django.views.generic import ListView
-from .forms import ServerSettingsLogoForm, UserProfileForm, UserForm, ServerSettingsForm
 from projects.models import Team
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.decorators import user_passes_test
+
+from .forms import ServerSettingsForm, ServerSettingsLogoForm, UserForm, UserProfileForm
 
 
 def initials(name: str) -> str:
@@ -28,13 +30,20 @@ def initials(name: str) -> str:
 
 
 @login_required
-def profile_view(request):
+def profile_view(request, user_id=None):
     layout_data = get_layout_data(request)
-    teams = Team.get_teams_associated_with_user(request.user)
-    terms = [term for term, purchased_product in request.user.userprofile.get_membership_terms()]
+    user: User = request.user
+
+    if user_id and (request.user.is_staff or request.user.is_superuser or user_id == request.user.id):
+        user = User.objects.get(pk=user_id)
+        if not user:
+            return HttpResponse("User not found", status=404)
+
+    teams = Team.get_teams_associated_with_user(user)
+    terms = [term for term, _ in user.userprofile.get_membership_terms()]
     formatted_terms = [initials(term.name) for term in terms]
 
-    return render(request, "profile.html", {**layout_data, "teams": teams, "terms": formatted_terms})
+    return render(request, "profile.html", {**layout_data, "teams": teams, "terms": formatted_terms, "profile_user": user})
 
 
 @login_required
