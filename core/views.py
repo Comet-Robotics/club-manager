@@ -104,6 +104,9 @@ class AttendanceListView(ListView):
     context_object_name = "attendances"
 
     def get_queryset(self):
+        user_id = self.request.GET.get("user_id")
+        if user_id and (self.request.user.is_staff or self.request.user.is_superuser or int(user_id) == self.request.user.id):
+            return Attendance.objects.order_by("-timestamp").filter(user_id=user_id)
         return Attendance.objects.order_by("-timestamp").filter(user=self.request.user)
 
 

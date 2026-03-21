@@ -66,7 +66,7 @@
                 <script>
                 loadAttendanceList(1)
                 function loadAttendanceList(page) {
-                  fetch("{% url 'attendance_list' %}?page=" + page)
+                  fetch("{% url 'attendance_list' %}?user_id={{profile_user.id}}&page=" + page)
                       .then(response => response.text())
                       .then(html => {
                           const list = document.getElementById("attendance-list")
