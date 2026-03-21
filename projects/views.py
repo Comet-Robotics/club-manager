@@ -50,7 +50,7 @@ class EventView(CanManageProjectMixin, SingleTableView):
 
     def get_queryset(self):
         project_id = self.kwargs["project_id"]
-        return Event.objects.filter(project_id=project_id)
+        return Event.objects.filter(project_id=project_id).order_by("-event_date")
 
 
 def update_team_members(request: HttpRequest, team_id: int):
