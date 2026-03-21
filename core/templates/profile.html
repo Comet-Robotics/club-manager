@@ -18,9 +18,9 @@
                     </div>
                     <div class="vertical-text">IDENTIFICATION CARD</div>
                     <div class="card-content">
-                        <h3 class="card-name">{{user.first_name|upper}} {{user.last_name|upper}}</h3>
+                        <h3 class="card-name">{{profile_user.first_name|upper}} {{profile_user.last_name|upper}}</h3>
                         <div class="card-role">MEMBER</div>
-                        <div class="card-id">#{{user.id|stringformat:"04d"}}</div>
+                        <div class="card-id">#{{profile_user.id|stringformat:"04d"}}</div>
                         <div class="card-org">{{settings.organization_name|upper}}</div>
                     </div>
                 </div>
@@ -66,7 +66,7 @@
                 <script>
                 loadAttendanceList(1)
                 function loadAttendanceList(page) {
-                  fetch("{% url 'attendance_list' %}?page=" + page)
+                  fetch("{% url 'attendance_list' %}?user_id={{profile_user.id}}&page=" + page)
                       .then(response => response.text())
                       .then(html => {
                           const list = document.getElementById("attendance-list")

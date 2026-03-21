@@ -1,5 +1,10 @@
+from django.forms.models import model_to_dict
+from django.utils import timezone
+from io import StringIO
+from csv import DictWriter
 from django.shortcuts import get_object_or_404, render, redirect
-from django.http import Http404
+from django.http import Http404, HttpResponse
+from django.db.models import Q
 
 from core.utilities import get_layout_data
 from .forms import EventForm, SignInForm, UserSearchForm, RSVPForm
@@ -91,25 +96,33 @@ def pass_link(request, event_id, user_id, student_id):
     return redirect("sign_in", event_id=event_id)
 
 
+LOOKUP_USER_LIMIT = 25
+
+
 @staff_member_required
 def lookup_user(request, event_id, student_id=None):
     layout_data = get_layout_data(request)
     if student_id:
-        print("student id found")
-        users = User.objects.filter(userprofile__comet_card_serial_number__isnull=True)
+        base_users = User.objects.filter(userprofile__comet_card_serial_number__isnull=True)
     else:
-        users = User.objects.all()
+        base_users = User.objects.all()
+
+    users = User.objects.none()
 
     if request.method == "POST":
         form = UserSearchForm(request.POST)
         if form.is_valid():
             query = form.cleaned_data["search"]
-            users = (
-                users.filter(first_name__icontains=query)
-                | users.filter(last_name__icontains=query)
-                | users.filter(userprofile__comet_card_serial_number__icontains=query)
-                | users.filter(username__icontains=query)
-            )
+            if query:
+                users = base_users.filter(
+                    Q(first_name__icontains=query)
+                    | Q(last_name__icontains=query)
+                    | Q(userprofile__comet_card_serial_number__icontains=query)
+                    | Q(username__icontains=query)
+                )
+            else:
+                users = base_users
+            users = users[:LOOKUP_USER_LIMIT]
     else:
         form = UserSearchForm()
 
@@ -219,3 +232,30 @@ def club_events_view(request):
     club_events = Event.objects.filter(project__isnull=True).order_by("-event_date")
     table = EventTable(club_events)
     return render(request, "club_events.html", {**layout_data, "table": table})
+
+
+def convert_attendance_instance_to_flat_dict(attendance: Attendance):
+    attendance_dict = model_to_dict(attendance)
+    user_dict = model_to_dict(attendance.user, fields=["username", "first_name", "last_name"]) if attendance.user else {}
+    return attendance_dict | user_dict
+
+@staff_member_required
+def event_attendance_export(request, event_id):
+    """Export attendance for a specific event as a CSV file."""
+    event = get_object_or_404(Event, pk=event_id)
+    attendances = Attendance.objects.filter(event=event).select_related("user")
+  
+    sample_attendance_dict = convert_attendance_instance_to_flat_dict(attendances[0])
+    fieldnames = sample_attendance_dict.keys()
+    
+    csv = StringIO()
+    writer = DictWriter(csv, fieldnames=fieldnames)
+    writer.writeheader()
+    for attendance in attendances:
+        writer.writerow(convert_attendance_instance_to_flat_dict(attendance))
+
+    response = HttpResponse(csv.getvalue(), content_type="text/csv")
+    now = timezone.now().strftime("%Y-%m-%d_%H-%M-%S")
+    response["Content-Disposition"] = f'attachment; filename="{event.event_name}_attendance_{now}.csv"'
+    response["Content-Type"] = "text/csv"
+    return response 

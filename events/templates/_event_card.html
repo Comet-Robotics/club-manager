@@ -1,0 +1,81 @@
+{% comment %}
+Event Card Partial
+==================
+Displays an event card with stats and attendance info.
+
+Required context:
+  - event: The event object to display
+
+Optional context:
+  - show_edit_actions: If True, shows Edit Event and Copy RSVP Link buttons (default: False)
+  - highlight_border: If True, adds primary color border (default: False)
+{% endcomment %}
+
+<div class="event-card"{% if highlight_border %} style="border: var(--primary) 2px solid;"{% endif %}>
+    <div class="event-header">
+        <div>
+            <h2 class="event-title">{{ event.event_name }}</h2>
+            <div class="event-date">{{ event.event_date|date:"F j, Y • g:i A" }} - {{ event.end_time|date:"g:i A" }}</div>
+        </div>
+        <div class="event-actions">
+            {% if show_edit_actions %}
+            <a href="{% url 'event_editor_view' event_id=event.id %}" class="edit-button">
+                <i data-lucide="edit" class="w-4 h-4"></i>
+                Edit Event
+            </a>
+            {% endif %}
+            <a href="{% url 'sign_in' event_id=event.id %}" class="sign-in-button">
+                <i data-lucide="log-in" class="w-4 h-4"></i>
+                Sign In
+            </a>
+            {% if show_edit_actions %}
+            <button onclick="copyRSVPLink()" class="sign-in-button copy-rsvp-button" id="copyRSVPButton">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+                Copy RSVP Link
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Event Stats -->
+    <div class="event-stats">
+        <div class="stat-card">
+            <div class="stat-value">{{ event.get_attendance }}</div>
+            <div class="stat-label">Members Present</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ event.get_attendance_rate|floatformat:2 }}%</div>
+            <div class="stat-label">Attendance Rate</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ event.get_expected_attendees }}</div>
+            <div class="stat-label">Expected Members</div>
+        </div>
+    </div>
+    
+    <!-- Current Attendance -->
+    <h3 class="section-title">Recent Event Sign-ins</h3>
+    <div class="attendance-list">
+        {% for attendance in event.get_attendees|slice:":4" %}
+        <div class="attendance-item">
+            <div class="attendance-info">
+                <div class="status-dot"></div>
+                <div>
+                    <div>{{ attendance.user.first_name }} {{ attendance.user.last_name }}</div>
+                    <div class="attendance-time">Signed in at {{ attendance.timestamp|date:"g:i A" }}</div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="attendance-item">
+            <div>No members have signed in yet.</div>
+        </div>
+        {% endfor %}
+    </div>
+    <br>
+    <a href="{% url 'event_attendance_export' event_id=event.id %}" download>
+    <button class="sign-in-button">  
+      Export Attendance CSV
+    </button>
+    </a>
+</div>

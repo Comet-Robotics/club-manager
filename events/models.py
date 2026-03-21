@@ -69,6 +69,7 @@ class Attendance(models.Model):
         return str(self.user) + " - " + str(self.event) + " - " + str(self.timestamp)
 
 
+
 class Reservation(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(default=timezone.now)
