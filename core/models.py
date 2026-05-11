@@ -110,7 +110,7 @@ class UserProfile(models.Model):
 
         return term, purchased_product.first()
 
-    def is_member_for_terms(self, terms: list[Term] | None = None) -> list[tuple[Term, PurchasedProduct | None]]:
+    def is_member_for_terms(self, terms: list[Term]) -> list[tuple[Term, PurchasedProduct | None]]:
         if len(terms) == 0:
             raise ValueError("term cannot be an empty list")
         
