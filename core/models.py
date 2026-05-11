@@ -114,8 +114,6 @@ class UserProfile(models.Model):
 
     def is_member_for_terms(self, terms: Iterable[Term]) -> list[tuple[Term, PurchasedProduct]]:
         terms = list(terms)
-        if len(terms) == 0:
-            raise ValueError("term cannot be an empty list")
 
         purchased_products = PurchasedProduct.objects.filter(
             payment__user=self.user, product__term__in=terms, payment__is_successful=True
