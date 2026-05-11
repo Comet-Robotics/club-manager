@@ -30,7 +30,7 @@ def sign_in(request, event_id):
                 user_profile = UserProfile.objects.get(comet_card_serial_number=student_id)
                 if user_profile:
                     user = user_profile.user
-                    valid_payment = user_profile.is_member()[1]
+                    valid_payment = user_profile.is_active_member()
                     form = SignInForm()
                     status, created = Attendance.objects.get_or_create(event=current_event, user=user)
                     if created:
