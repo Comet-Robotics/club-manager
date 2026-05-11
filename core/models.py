@@ -92,7 +92,6 @@ class UserProfile(models.Model):
         return [(product.product.term, product) for product in purchased_products]
 
 
-    @staticmethod
     @deprecated("Use is_member_for_terms instead")
     def is_member(self, for_term: Term | None = None) -> tuple[Term, PurchasedProduct | None]:
         """
@@ -111,7 +110,6 @@ class UserProfile(models.Model):
 
         return term, purchased_product.first()
 
-    @staticmethod
     def is_member_for_terms(self, terms: list[Term] | None = None) -> list[tuple[Term, PurchasedProduct | None]]:
         if len(terms) == 0:
             raise ValueError("term cannot be an empty list")
