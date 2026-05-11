@@ -174,7 +174,7 @@ async def respond_user_attendances(interaction: discord.Interaction, user_profil
     await paginator.respond(interaction, ephemeral=True)
 
 
-async def get_current_member_discord_ids():
+async def get_active_member_discord_ids():
     def run() -> list[int]:
         profiles = UserProfile.objects.exclude(discord_id__isnull=True)
         valid_ids: list[int] = []
@@ -636,7 +636,7 @@ async def givememberroles(ctx: discord.ApplicationContext):
 
     message = await ctx.respond("Processing...")
     logger.debug("Starting the role addition...")
-    ids_to_add = await get_current_member_discord_ids()
+    ids_to_add = await get_active_member_discord_ids()
 
     start_time = time.time()
 
@@ -681,7 +681,7 @@ async def purgememberroles(ctx: discord.ApplicationContext):
 
     removed_count = 0
     discord_members = guild.members
-    valid_members = await get_current_member_discord_ids()
+    valid_members = await get_active_member_discord_ids()
 
     start_time = time.time()
     members_to_remove = [member for member in discord_members if member.id not in valid_members]
@@ -727,7 +727,7 @@ async def camera(ctx: discord.ApplicationContext):
     message = await ctx.respond("Processing...", ephemeral=True)
     assert isinstance(message, discord.Interaction)
 
-    valid_members = await get_current_member_discord_ids()
+    valid_members = await get_active_member_discord_ids()
     if ctx.author.id not in valid_members:
         await message.edit_original_response(content=f"You are not registered as a member of {ORG_NAME}!")
     else:
