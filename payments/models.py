@@ -44,7 +44,7 @@ class Term(models.Model):
     product: Product = models.OneToOneField(Product, on_delete=models.CASCADE)
 
     @staticmethod
-    @deprecated("Use one of the undeprecated term query utilities (need to implement) which have explicit handling for term overlaps instead")
+    @deprecated("Use one of the undeprecated term query utilities (get_active_terms, get_active_term_with_earliest_end_date, get_active_term_with_latest_start_date) which have explicit handling for term overlaps instead")
     def get_current_term() -> "Term" | None:
         # TODO: this needs to return a QuerySet instead of a single object and/or throw if the query returns multiple objects
         return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).first()
@@ -56,6 +56,40 @@ class Term(models.Model):
         Returns a QuerySet of all active terms (terms whose start_date is in the past and end_date is in the future).
         """
         return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now())
+
+
+    @staticmethod
+    def get_active_term_with_earliest_end_date() -> "Term" | None:
+        """
+        Returns the active term with the earliest end date.
+
+        Example: Given a Spring 2026 term for 2025-12-01 to 2026-08-31, and a Fall 2026 term for 2026-05-01 to 2027-01-31, this function will return different results depending on the current date. 
+
+        - In Spring 2026: returns Spring 2026 term, since that is the only active term.
+        - During Spring 2026 and Fall 2026 overlap period: returns Spring 2026 term. While both Spring 2026 and Fall 2026 terms are active, the Spring 2026 term wins as it has the earliest end date.
+        - In Fall 2026 but after the overlap period: returns Fall 2026 term, since that is the only active term.
+
+        Suggested use-cases:
+        - generating election voting rosters based on the current term
+        - determining if a user needs to pay dues upon event check-in
+        """
+        return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).order_by("end_date").first()
+
+    @staticmethod
+    def get_active_term_with_latest_start_date() -> "Term" | None:
+        """
+        Returns the active term with the latest start date.
+
+        Example: Given a Spring 2026 term for 2025-12-01 to 2026-08-31, and a Fall 2026 term for 2026-05-01 to 2027-01-31, this function will return different results depending on the current date. 
+
+        - In Spring 2026: returns Spring 2026 term, since that is the only active term.
+        - During Spring 2026 and Fall 2026 overlap period: returns Fall 2026 term
+        - In Fall 2026 but after the overlap period: returns Fall 2026 term
+
+        Recommended use-cases:
+        - Selecting a term for member due payment - it is most advantageous to select the term with the latest start date since in theory, this allows the user to remain a member for a longer period of time. If you joined the club in May 2026, why pay dues for the Spring 2026 term when you can pay for the Fall 2026 term and be counted as a member for the remainder of the Spring 2026 term, and the entirety of the Fall 2026 term?
+        """
+        return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).order_by("-start_date").first()
 
     def __str__(self):
         return self.name
