@@ -50,7 +50,6 @@ class Term(models.Model):
         "Use one of the undeprecated term query utilities (get_active_terms, get_active_term_with_earliest_end_date, get_active_term_with_latest_start_date) which have explicit handling for term overlaps instead"
     )
     def get_current_term() -> "Term | None":
-        # TODO: this needs to return a QuerySet instead of a single object and/or throw if the query returns multiple objects
         return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).first()
 
     @staticmethod
@@ -92,11 +91,7 @@ class Term(models.Model):
         - Do not use this to answer "is this user a member today?" For that, check whether the user has paid for any term returned by `get_active_terms()`.
         - Do not use this to choose which dues product a renewing member should be prompted to buy. For that, use `get_active_term_with_latest_start_date()`.
         """
-        return (
-            Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now())
-            .order_by("end_date")
-            .first()
-        )
+        return Term.get_active_terms().order_by("end_date").first()
 
     @staticmethod
     def get_active_term_with_latest_start_date() -> "Term | None":
@@ -118,11 +113,7 @@ class Term(models.Model):
         Gotchas:
         - Do not use this by itself to answer "is this user a member today?" For that, check whether the user has paid for any term returned by `get_active_terms()`.
         """
-        return (
-            Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now())
-            .order_by("-start_date")
-            .first()
-        )
+        return Term.get_active_terms().order_by("-start_date").first()
 
     def __str__(self):
         return self.name
