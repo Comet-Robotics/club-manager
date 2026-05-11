@@ -1,42 +1,44 @@
-import aiohttp
-from asgiref.sync import sync_to_async
 import os
 import time
+from functools import reduce
+from typing import cast
 
+import aiohttp
+from asgiref.sync import sync_to_async
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "clubManager.settings")
-from clubManager import settings
-
-import django
 import discord
+import django
 from discord.ext import pages
+
+from clubManager import settings
 
 django.setup()
 
+import asyncio
+import io
+import logging
+import random
+import socket
+import subprocess
+from datetime import datetime
+from datetime import time as dttime
+from operator import itemgetter
+
+import uvicorn
 from django.core.mail import send_mail
+from django.utils import timezone
+from fastapi import FastAPI, Header, HTTPException
 
 from accounts.models import AccountLink
-from core.models import ServerSettings, User, UserProfile
 from common.asyncutils import *
 from common.utils import is_valid_net_id
-from django.utils import timezone
+from core.models import ServerSettings, User, UserProfile
 from events.models import Attendance
 from payments.models import Term
-from datetime import datetime, time as dttime
-import io
-import subprocess
-import socket
-import random
-from operator import itemgetter
-import asyncio
-
-from fastapi import FastAPI, HTTPException, Header
-import uvicorn
-
-import logging
 
 logger = logging.getLogger("discord")
-logger.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
+logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="a")
 handler.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s"))
 logger.addHandler(handler)
@@ -176,13 +178,17 @@ async def respond_user_attendances(interaction: discord.Interaction, user_profil
 
 async def get_active_member_discord_ids():
     def run() -> list[int]:
-        profiles = UserProfile.objects.exclude(discord_id__isnull=True)
-        valid_ids: list[int] = []
-        for profile in profiles:
-            # TODO: running O(n) queries for each profile is not ideal. we can get this all done with one quicker query...
-            if profile.is_active_member():
-                if profile.discord_id is not None:
-                    valid_ids.append(int(profile.discord_id))
+        active_terms = Term.get_active_terms()
+        member_queries = [term.get_members() for term in active_terms]
+        if len(member_queries) == 0:
+            return []
+
+        active_term_purchased_product_query = reduce(lambda x, y: x | y, member_queries).filter(
+            payment__user__userprofile__discord_id__isnull=False
+        ).select_related("payment__user__userprofile")
+
+        valid_ids = [int(cast(UserProfile, pp.payment.user.userprofile).discord_id) for pp in active_term_purchased_product_query]
+
         return valid_ids
 
     return await sync_to_async(run)()
