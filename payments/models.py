@@ -1,3 +1,4 @@
+from typing_extensions import deprecated
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -43,7 +44,9 @@ class Term(models.Model):
     product: Product = models.OneToOneField(Product, on_delete=models.CASCADE)
 
     @staticmethod
+    @deprecated("Use one of the undeprecated term query utilities (need to implement) which have explicit handling for term overlaps instead")
     def get_current_term() -> "Term" | None:
+        # TODO: this needs to return a QuerySet instead of a single object and/or throw if the query returns multiple objects
         return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).first()
 
     def __str__(self):

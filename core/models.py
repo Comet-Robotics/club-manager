@@ -1,3 +1,4 @@
+from typing_extensions import deprecated
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
@@ -90,6 +91,9 @@ class UserProfile(models.Model):
 
         return [(product.product.term, product) for product in purchased_products]
 
+
+    @staticmethod
+    @deprecated("Use is_member_for_terms instead")
     def is_member(self, for_term: Term | None = None) -> tuple[Term, PurchasedProduct | None]:
         """
         Returns a tuple with the Term and PurchasedProduct object for the current member if the user is a member for the given term, or a tuple with the given Term and None if they are not a member.
@@ -106,6 +110,17 @@ class UserProfile(models.Model):
         )
 
         return term, purchased_product.first()
+
+    @staticmethod
+    def is_member_for_terms(self, terms: list[Term] | None = None) -> list[tuple[Term, PurchasedProduct | None]]:
+        if len(terms) == 0:
+            raise ValueError("term cannot be an empty list")
+        
+        purchased_products = PurchasedProduct.objects.filter(
+            payment__user=self.user, product__term__in=terms, payment__is_successful=True
+        )
+
+        return [(product.product.term, product) for product in purchased_products]
 
     @staticmethod
     def create_extended_user(net_id, comet_card_serial_number, first, last):
