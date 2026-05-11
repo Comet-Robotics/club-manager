@@ -42,7 +42,8 @@ class Term(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     product: Product = models.OneToOneField(Product, on_delete=models.CASCADE)
 
-    def get_current_term():
+    @staticmethod
+    def get_current_term() -> Term | None:
         return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).first()
 
     def __str__(self):
