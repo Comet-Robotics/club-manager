@@ -176,14 +176,11 @@ async def respond_user_attendances(interaction: discord.Interaction, user_profil
 
 async def get_current_member_discord_ids():
     def run() -> list[int]:
-        active_terms = Term.get_active_terms()
         profiles = UserProfile.objects.exclude(discord_id__isnull=True)
         valid_ids: list[int] = []
         for profile in profiles:
             # TODO: running O(n) queries for each profile is not ideal. we can get this all done with one quicker query...
-            active_terms_as_member = profile.is_member_for_terms(active_terms)
-            is_member_in_active_term = len(active_terms_as_member) > 0
-            if is_member_in_active_term:
+            if profile.is_active_member():
                 if profile.discord_id is not None:
                     valid_ids.append(int(profile.discord_id))
         return valid_ids
@@ -352,27 +349,40 @@ async def profile(ctx: discord.ApplicationContext, net_id: str | None, discord_u
 
         # Membership Status
         def get_membership_status(user_profile: UserProfile):
-            current_term, current_payment = user_profile.is_member()
+            today = timezone.now().date()
+            active_memberships = user_profile.get_active_membership_terms()
+            active_term_names = [term.name for term, _ in active_memberships]
             body = "**Current Membership:** " + (
-                "Not a member" if not current_payment else f"Active for {current_term.name}"
+                "Not a member" if not active_term_names else f"Active for {', '.join(active_term_names)}"
             )
 
-            past_terms = Term.objects.filter(end_date__lte=timezone.now())
-            future_terms = Term.objects.filter(start_date__gte=timezone.now()).exclude(pk=current_term.pk)
+            renewal_term = Term.get_active_term_with_latest_start_date()
+            has_paid_renewal_term = bool(user_profile.is_member_for_terms([renewal_term])) if renewal_term else False
+            if active_memberships and renewal_term and not has_paid_renewal_term:
+                body += f"\n**Renewal needed:** Pay dues for {renewal_term.name}"
 
-            paid_future_terms = [term for term in future_terms if user_profile.is_member(term)[1]]
+            past_terms = Term.objects.filter(end_date__lt=today)
+            future_terms = Term.objects.filter(start_date__gt=today)
+
+            paid_future_terms = [term for term in future_terms if user_profile.is_member_for_terms([term])]
             if len(paid_future_terms) > 0:
                 body += f"\n**Dues paid for future term(s)**: {', '.join([t.name for t in paid_future_terms])}"
 
-            paid_past_terms = [term.name for term in past_terms if user_profile.is_member(term)[1]]
+            paid_past_terms = [term.name for term in past_terms if user_profile.is_member_for_terms([term])]
             past_terms_info = ", ".join(paid_past_terms) if len(paid_past_terms) > 0 else "No past memberships"
 
             body += f"\n**Past Memberships:** {past_terms_info}"
 
+            due_paying_url = (
+                f"{settings.PUBLIC_URL}/payments/{renewal_term.product.id}/pay"
+                if renewal_term and not has_paid_renewal_term
+                else None
+            )
+
             return (
                 body,
-                f"{settings.PUBLIC_URL}/payments/{current_term.product.id}/pay" if not current_payment else None,
-                current_term.name,
+                due_paying_url,
+                renewal_term.name if renewal_term else "dues",
             )
 
         membership_status, due_paying_url, term_name = await sync_to_async(get_membership_status)(user_profile)
@@ -550,7 +560,7 @@ async def pay(ctx: discord.ApplicationContext):
         payment_links = [
             (
                 f"[Pay for {term.name}]({settings.PUBLIC_URL}/payments/{term.product.id}/pay/)"
-                + (" (you've already paid this term's dues)" if user.is_member(term)[1] else "")
+                + (" (you've already paid this term's dues)" if user.is_member_for_terms([term]) else "")
             )
             for term in active_terms
         ]
@@ -608,7 +618,7 @@ async def give_member_role(data: dict, authorization: str = Header(None)):
 async def on_member_join(member: discord.Member):
     def is_profile_valid():
         profile = UserProfile.objects.filter(discord_id=str(member.id)).first()
-        return profile and profile.is_member()[1]
+        return profile and profile.is_active_member()
 
     profile_valid = await sync_to_async(is_profile_valid)()
     if profile_valid:
