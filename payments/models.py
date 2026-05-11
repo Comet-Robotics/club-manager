@@ -53,7 +53,18 @@ class Term(models.Model):
     @staticmethod
     def get_active_terms() -> models.QuerySet["Term"]:
         """
+        Use this to answer "is this user a member today?"
+
         Returns a QuerySet of all active terms (terms whose start_date is in the past and end_date is in the future).
+
+        During an overlap period, this returns both the expiring term and the renewing term.
+
+        Suggested use-cases:
+        - determining whether a user is allowed to participate as a current member
+        - Discord member role sync
+        - event check-in membership validity
+        - current member exports
+        - voter eligibility checks before applying attendance requirements
         """
         return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now())
 
@@ -61,6 +72,8 @@ class Term(models.Model):
     @staticmethod
     def get_active_term_with_earliest_end_date() -> "Term" | None:
         """
+        Use this when older-term rules should continue to govern until the older term expires.
+
         Returns the active term with the earliest end date.
 
         Example: Given a Spring 2026 term for 2025-12-01 to 2026-08-31, and a Fall 2026 term for 2026-05-01 to 2027-01-31, this function will return different results depending on the current date. 
@@ -70,14 +83,20 @@ class Term(models.Model):
         - In Fall 2026 but after the overlap period: returns Fall 2026 term, since that is the only active term.
 
         Suggested use-cases:
-        - generating election voting rosters based on the current term
-        - determining if a user needs to pay dues upon event check-in
+        - generating election voting rosters tied to the expiring academic term, where the renewing term should not replace the older term yet
+        - checking eligibility for processes that intentionally remain attached to the soonest-expiring active term during an overlap period
+
+        Gotchas:
+        - Do not use this to answer "is this user a member today?" For that, check whether the user has paid for any term returned by `get_active_terms()`.
+        - Do not use this to choose which dues product a renewing member should be prompted to buy. For that, use `get_active_term_with_latest_start_date()`.
         """
         return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).order_by("end_date").first()
 
     @staticmethod
     def get_active_term_with_latest_start_date() -> "Term" | None:
         """
+        Use this to answer "which active dues term should this user pay for now?"
+
         Returns the active term with the latest start date.
 
         Example: Given a Spring 2026 term for 2025-12-01 to 2026-08-31, and a Fall 2026 term for 2026-05-01 to 2027-01-31, this function will return different results depending on the current date. 
@@ -88,6 +107,10 @@ class Term(models.Model):
 
         Recommended use-cases:
         - Selecting a term for member due payment - it is most advantageous to select the term with the latest start date since in theory, this allows the user to remain a member for a longer period of time. If you joined the club in May 2026, why pay dues for the Spring 2026 term when you can pay for the Fall 2026 term and be counted as a member for the remainder of the Spring 2026 term, and the entirety of the Fall 2026 term?
+        - membership renewal warnings displayed on event check-ins during an overlap period: a Spring-only member should be warned to pay Fall dues, while a Fall member should not be warned
+
+        Gotchas:
+        - Do not use this by itself to answer "is this user a member today?" For that, check whether the user has paid for any term returned by `get_active_terms()`.
         """
         return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).order_by("-start_date").first()
 
