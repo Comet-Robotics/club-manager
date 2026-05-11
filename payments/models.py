@@ -49,6 +49,14 @@ class Term(models.Model):
         # TODO: this needs to return a QuerySet instead of a single object and/or throw if the query returns multiple objects
         return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).first()
 
+
+    @staticmethod
+    def get_active_terms() -> models.QuerySet["Term"]:
+        """
+        Returns a QuerySet of all active terms (terms whose start_date is in the past and end_date is in the future).
+        """
+        return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now())
+
     def __str__(self):
         return self.name
 
