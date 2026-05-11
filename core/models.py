@@ -112,6 +112,9 @@ class UserProfile(models.Model):
         return term, purchased_product.first()
 
     def is_member_for_terms(self, terms: Iterable[Term]) -> list[tuple[Term, PurchasedProduct]]:
+        """
+        Returns a list of (Term, PurchasedProduct) tuples for the given terms where the user is a member. If the user was not a member for any of the given terms, returns an empty list.
+        """
         terms = list(terms)
 
         purchased_products = PurchasedProduct.objects.filter(
