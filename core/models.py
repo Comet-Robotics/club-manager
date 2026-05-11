@@ -108,7 +108,6 @@ class UserProfile(models.Model):
 
         return [(product.product.term, product) for product in purchased_products]
 
-
     @deprecated("Use is_member_for_terms instead")
     def is_member(self, for_term: Term | None = None) -> tuple[Term, PurchasedProduct | None]:
         """
