@@ -552,7 +552,7 @@ async def pay(ctx: discord.ApplicationContext):
             user = UserProfile.objects.get(discord_id=str(ctx.author.id))
         except:
             return None
-        active_terms = Term.objects.filter(end_date__gte=timezone.now())
+        active_terms = Term.get_active_terms()
         if not active_terms:
             # ctx.respond("No active terms available for payment.",  ephemeral=True)  # TODO: move to separate func to await
             pass
