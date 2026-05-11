@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing_extensions import deprecated
-from django.db import models
+from computedfields.models import ComputedFieldsModel, computed
 from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-
-from computedfields.models import ComputedFieldsModel, computed
+from typing_extensions import deprecated
 
 from common.utils import validate_staff
 
@@ -114,6 +113,15 @@ class Term(models.Model):
         - Do not use this by itself to answer "is this user a member today?" For that, check whether the user has paid for any term returned by `get_active_terms()`.
         """
         return Term.get_active_terms().order_by("-start_date").first()
+
+    def get_members(self):
+        """
+        Returns a QuerySet of all PurchasedProducts for this term with a successful payment associated with this term's Product, allowing you to query all the users with a valid membership for this term.
+        """
+
+        return PurchasedProduct.objects.filter(payment__is_successful=True, product=self.product).select_related(
+            "payment__user"
+        )
 
     def __str__(self):
         return self.name
