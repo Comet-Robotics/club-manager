@@ -176,11 +176,14 @@ async def respond_user_attendances(interaction: discord.Interaction, user_profil
 
 async def get_current_member_discord_ids():
     def run() -> list[int]:
-        current_term = Term.get_current_term()
+        active_terms = Term.get_active_terms()
         profiles = UserProfile.objects.exclude(discord_id__isnull=True)
         valid_ids: list[int] = []
         for profile in profiles:
-            if profile.is_member(current_term)[1]:
+            # TODO: running O(n) queries for each profile is not ideal. we can get this all done with one quicker query...
+            active_terms_as_member = profile.is_member_for_terms(active_terms)
+            is_member_in_active_term = len(active_terms_as_member) > 0
+            if is_member_in_active_term:
                 if profile.discord_id is not None:
                     valid_ids.append(int(profile.discord_id))
         return valid_ids
