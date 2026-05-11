@@ -183,11 +183,15 @@ async def get_active_member_discord_ids():
         if len(member_queries) == 0:
             return []
 
-        active_term_purchased_product_query = reduce(lambda x, y: x | y, member_queries).filter(
-            payment__user__userprofile__discord_id__isnull=False
-        ).select_related("payment__user__userprofile")
+        active_term_purchased_product_query = (
+            reduce(lambda x, y: x | y, member_queries)
+            .filter(payment__user__userprofile__discord_id__isnull=False)
+            .select_related("payment__user__userprofile")
+        )
 
-        valid_ids = [int(cast(UserProfile, pp.payment.user.userprofile).discord_id) for pp in active_term_purchased_product_query]
+        valid_ids = [
+            int(cast(UserProfile, pp.payment.user.userprofile).discord_id) for pp in active_term_purchased_product_query
+        ]
 
         return valid_ids
 
