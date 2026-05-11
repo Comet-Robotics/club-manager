@@ -1,3 +1,5 @@
+from typing import Iterable
+
 from typing_extensions import deprecated
 from django.db import models
 from django.contrib.auth.models import User
@@ -110,15 +112,36 @@ class UserProfile(models.Model):
 
         return term, purchased_product.first()
 
-    def is_member_for_terms(self, terms: list[Term]) -> list[tuple[Term, PurchasedProduct | None]]:
+    def is_member_for_terms(self, terms: Iterable[Term]) -> list[tuple[Term, PurchasedProduct]]:
+        terms = list(terms)
         if len(terms) == 0:
             raise ValueError("term cannot be an empty list")
-        
+
         purchased_products = PurchasedProduct.objects.filter(
             payment__user=self.user, product__term__in=terms, payment__is_successful=True
         )
 
         return [(product.product.term, product) for product in purchased_products]
+
+    def get_active_membership_terms(self) -> list[tuple[Term, PurchasedProduct]]:
+        """
+        Returns paid memberships for any currently active term.
+
+        Use this to answer "which active memberships does this user have today?"
+        """
+        active_terms = Term.get_active_terms()
+        if not active_terms.exists():
+            return []
+
+        return self.is_member_for_terms(active_terms)
+
+    def is_active_member(self) -> bool:
+        """
+        Returns whether the user has paid dues for any currently active term.
+
+        Use this to answer "is this user a member today?"
+        """
+        return len(self.get_active_membership_terms()) > 0
 
     @staticmethod
     def create_extended_user(net_id, comet_card_serial_number, first, last):
