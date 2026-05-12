@@ -46,7 +46,7 @@ class Term(models.Model):
 
     @staticmethod
     @deprecated(
-        "Use one of the undeprecated term query utilities (get_active_terms, get_active_term_with_earliest_end_date, get_active_term_with_latest_start_date) which have explicit handling for term overlaps instead"
+        "Use one of the undeprecated term query utilities (get_active_terms, get_active_term_with_earliest_end_date, get_active_term_with_latest_end_date) which have explicit handling for term overlaps instead.get_active_term_with_latest_end_date"
     )
     def get_current_term() -> "Term | None":
         return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).first()
@@ -88,31 +88,35 @@ class Term(models.Model):
 
         Gotchas:
         - Do not use this to answer "is this user a member today?" For that, check whether the user has paid for any term returned by `get_active_terms()`.
-        - Do not use this to choose which dues product a renewing member should be prompted to buy. For that, use `get_active_term_with_latest_start_date()`.
+        - Do not use this to choose which dues product a renewing member should be prompted to buy. For that, use `get_active_term_with_latest_end_date()`.
         """
         return Term.get_active_terms().order_by("end_date").first()
 
     @staticmethod
-    def get_active_term_with_latest_start_date() -> "Term | None":
+    def get_active_term_with_latest_end_date() -> "Term | None":
         """
         Use this to answer "which active dues term should this user pay for now?"
 
-        Returns the active term with the latest start date.
+        Returns the active term with the latest end date.
+
+        This selects by end date because the goal is to choose the term that keeps the user a member for the longest period of time from today.
 
         Example: Given a Spring 2026 term for 2025-12-01 to 2026-08-31, and a Fall 2026 term for 2026-05-01 to 2027-01-31, this function will return different results depending on the current date.
 
         - In Spring 2026: returns Spring 2026 term, since that is the only active term.
-        - During Spring 2026 and Fall 2026 overlap period: returns Fall 2026 term
-        - In Fall 2026 but after the overlap period: returns Fall 2026 term
+        - During Spring 2026 and Fall 2026 overlap period: returns Fall 2026 term, since it has the latest end date.
+        - In Fall 2026 but after the overlap period: returns Fall 2026 term, since that is the only active term.
 
         Recommended use-cases:
-        - Selecting a term for member due payment - it is most advantageous to select the term with the latest start date since in theory, this allows the user to remain a member for a longer period of time. If you joined the club in May 2026, why pay dues for the Spring 2026 term when you can pay for the Fall 2026 term and be counted as a member for the remainder of the Spring 2026 term, and the entirety of the Fall 2026 term?
+        - Selecting a term for member due payment - it is most advantageous to select the term with the latest end date because this allows the user to remain a member for the longest period of time. If you joined the club in May 2026, why pay dues for the Spring 2026 term when you can pay for the Fall 2026 term and be counted as a member for the remainder of the Spring 2026 term, and the entirety of the Fall 2026 term?
         - membership renewal warnings displayed on event check-ins during an overlap period: a Spring-only member should be warned to pay Fall dues, while a Fall member should not be warned
 
         Gotchas:
         - Do not use this by itself to answer "is this user a member today?" For that, check whether the user has paid for any term returned by `get_active_terms()`.
         """
-        return Term.get_active_terms().order_by("-start_date").first()
+        # sorting by `-start_date` serves as a tie-breaker. in the off chance that two active terms end on the same date, this ensures that we always prefer the "newer" term (by start date) when coverage length is equal.
+        # should be rarely needed but keeps this function deterministic.
+        return Term.get_active_terms().order_by("-end_date", "-start_date").first()
 
     def get_members(self):
         """
