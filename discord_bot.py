@@ -360,26 +360,36 @@ async def profile(ctx: discord.ApplicationContext, net_id: str | None, discord_u
         # Membership Status
         def get_membership_status(user_profile: UserProfile):
             today = timezone.now().date()
-            active_memberships = user_profile.get_active_membership_terms()
-            active_term_names = [term.name for term, _ in active_memberships]
+
+            def paid_terms_from(terms):
+                terms = list(terms)
+                paid_term_ids = {term.id for term, _ in user_profile.is_member_for_terms(terms)}
+                return [term for term in terms if term.id in paid_term_ids]
+
+            def term_names(terms):
+                return ", ".join(term.name for term in terms)
+
+            active_terms = Term.get_active_terms().order_by("start_date", "end_date", "name")
+            active_membership_terms = paid_terms_from(active_terms)
             body = "**Current Membership:** " + (
-                "Not a member" if not active_term_names else f"Active for {', '.join(active_term_names)}"
+                "Not a member" if not active_membership_terms else f"Active for {term_names(active_membership_terms)}"
             )
 
             renewal_term = Term.get_active_term_with_latest_end_date()
             has_paid_renewal_term = bool(user_profile.is_member_for_terms([renewal_term])) if renewal_term else False
-            if active_memberships and renewal_term and not has_paid_renewal_term:
-                body += f"\n**Renewal needed:** Pay dues for {renewal_term.name}"
+            if renewal_term and not has_paid_renewal_term:
+                due_status_label = "Renewal needed" if active_membership_terms else "Dues needed"
+                body += f"\n**{due_status_label}:** Pay dues for {renewal_term.name}"
 
-            past_terms = Term.objects.filter(end_date__lt=today)
-            future_terms = Term.objects.filter(start_date__gt=today)
+            past_terms = Term.objects.filter(end_date__lt=today).order_by("-end_date", "-start_date", "name")
+            future_terms = Term.objects.filter(start_date__gt=today).order_by("start_date", "end_date", "name")
 
-            paid_future_terms = [term for term in future_terms if user_profile.is_member_for_terms([term])]
+            paid_future_terms = paid_terms_from(future_terms)
             if len(paid_future_terms) > 0:
-                body += f"\n**Dues paid for future term(s)**: {', '.join([t.name for t in paid_future_terms])}"
+                body += f"\n**Dues paid for future term(s)**: {term_names(paid_future_terms)}"
 
-            paid_past_terms = [term.name for term in past_terms if user_profile.is_member_for_terms([term])]
-            past_terms_info = ", ".join(paid_past_terms) if len(paid_past_terms) > 0 else "No past memberships"
+            paid_past_terms = paid_terms_from(past_terms)
+            past_terms_info = term_names(paid_past_terms) if len(paid_past_terms) > 0 else "No past memberships"
 
             body += f"\n**Past Memberships:** {past_terms_info}"
 
