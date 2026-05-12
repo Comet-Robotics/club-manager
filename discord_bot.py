@@ -366,7 +366,7 @@ async def profile(ctx: discord.ApplicationContext, net_id: str | None, discord_u
                 "Not a member" if not active_term_names else f"Active for {', '.join(active_term_names)}"
             )
 
-            renewal_term = Term.get_active_term_with_latest_start_date()
+            renewal_term = Term.get_active_term_with_latest_end_date()
             has_paid_renewal_term = bool(user_profile.is_member_for_terms([renewal_term])) if renewal_term else False
             if active_memberships and renewal_term and not has_paid_renewal_term:
                 body += f"\n**Renewal needed:** Pay dues for {renewal_term.name}"
