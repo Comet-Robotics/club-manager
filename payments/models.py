@@ -67,7 +67,8 @@ class Term(models.Model):
         - current member exports
         - voter eligibility checks before applying attendance requirements
         """
-        return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now())
+        today = timezone.now().date()
+        return Term.objects.filter(start_date__lte=today, end_date__gte=today)
 
     @staticmethod
     def get_active_term_with_earliest_end_date() -> "Term | None":
