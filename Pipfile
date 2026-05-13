@@ -30,12 +30,13 @@ django-multiselectfield = "*"
 django-colorfield = "*"
 platformdirs = "*"
 fastapi = {extras = ["standard"], version = "*"}
+django-stubs-ext = "*"
+types-ujson = "*"
 
 [dev-packages]
 types-beautifulsoup4 = "*"
 types-requests = "*"
 django-types = "*"
-django-stubs-ext = "*"
 ruff = "*"
 pylint = "*"
 pylint-django = "*"

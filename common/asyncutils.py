@@ -28,10 +28,10 @@ get_profile_async = sync_to_async(get_profile)
 def get_or_create_profile(**kwargs):
     try:
         return UserProfile.objects.get_or_create(**kwargs)[0]
-    except Exception as e:
+    except Exception:
         import traceback
 
-        traceback.print_exc(e)
+        traceback.print_exc()
         return None
 
 

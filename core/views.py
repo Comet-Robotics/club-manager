@@ -111,7 +111,10 @@ class AttendanceListView(ListView):
             self.request.user.is_staff or self.request.user.is_superuser or int(user_id) == self.request.user.id
         ):
             return Attendance.objects.order_by("-timestamp").filter(user_id=user_id)
-        return Attendance.objects.order_by("-timestamp").filter(user=self.request.user)
+        u = self.request.user
+        if u.is_authenticated:
+            return Attendance.objects.order_by("-timestamp").filter(user=u)
+        return Attendance.objects.none()
 
 
 @require_GET

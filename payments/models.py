@@ -1,4 +1,6 @@
+# mypy: disable-error-code="var-annotated"
 from django.db import models
+from django.db.models.functions import Now
 from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils import timezone
@@ -40,10 +42,11 @@ class Term(models.Model):
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    product: Product = models.OneToOneField(Product, on_delete=models.CASCADE)
+    product = models.OneToOneField(Product, on_delete=models.CASCADE)
 
+    @staticmethod
     def get_current_term():
-        return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).first()
+        return Term.objects.filter(start_date__lte=Now(), end_date__gte=Now()).first()
 
     def __str__(self):
         return self.name
@@ -97,11 +100,9 @@ class PurchasedProduct(models.Model):
     A PurchasedProduct is an object representing a product that a user has purchased.
     """
 
-    product: Product = models.ForeignKey(Product, on_delete=models.CASCADE, null=False)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=False)
     quantity = models.IntegerField(default=1, validators=[MinValueValidator(1)], null=False)
-    payment: Payment = models.ForeignKey(
-        Payment, on_delete=models.CASCADE, related_name="purchased_products", null=False
-    )
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name="purchased_products", null=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -33,7 +33,7 @@ jobs:
         run: pipenv install --dev
       - name: Create .env file
         run: cp .env.example .env
-      - name: Run lint
+      - name: Run lint and type checking
         run: pipenv run ./scripts/lint.sh
       # Check if there are any outstanding Django migrations that need to be created
       # This command exits with code 1 if there are outstanding migrations
