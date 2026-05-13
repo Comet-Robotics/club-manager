@@ -86,3 +86,4 @@ ignore_missing_imports=true
 [tool.django-stubs]
 django_settings_module = "clubManager.settings"
 ignore_missing_model_attributes = true
+

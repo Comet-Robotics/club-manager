@@ -13,6 +13,11 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 import tempfile
+
+import django_stubs_ext
+
+django_stubs_ext.monkeypatch()
+
 from dotenv import load_dotenv
 from platformdirs import PlatformDirs
 from urllib.parse import urlparse
