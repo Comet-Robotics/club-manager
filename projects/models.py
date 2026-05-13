@@ -129,7 +129,7 @@ class Team(models.Model):
         if Project.user_can_manage_project(user, team.project):
             return True
 
-        team_to_check = team
+        team_to_check: Team | None = team
         while team_to_check:
             if user in team_to_check.leads.all():
                 return True
