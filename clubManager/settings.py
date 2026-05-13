@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 import tempfile
+from typing import Union
 
 import django_stubs_ext
 
@@ -22,18 +23,19 @@ from dotenv import load_dotenv
 from platformdirs import PlatformDirs
 from urllib.parse import urlparse
 
+
+class _CIDirs:
+    def __init__(self) -> None:
+        self._tmp = Path(tempfile.mkdtemp())
+
+    @property
+    def site_data_path(self) -> Path:
+        return self._tmp
+
+
 # Use temp directory in CI environments to avoid permission issues with platformdirs
 if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
-
-    class _CIDirs:
-        def __init__(self):
-            self._tmp = Path(tempfile.mkdtemp())
-
-        @property
-        def site_data_path(self):
-            return self._tmp
-
-    dirs = _CIDirs()
+    dirs: Union[_CIDirs, PlatformDirs] = _CIDirs()
 else:
     dirs = PlatformDirs(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True)
 
