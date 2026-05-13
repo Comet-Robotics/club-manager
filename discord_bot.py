@@ -9,7 +9,7 @@ from clubManager import settings
 
 import django
 import discord
-from discord.ext import pages
+from discord.ext import pages  # type: ignore[attr-defined]
 
 django.setup()
 
@@ -477,17 +477,11 @@ class ProfileEditView(discord.ui.Modal):
         # self.add_item(self.last_name)
 
     async def callback(self, interaction: discord.Interaction):
-        making_new_profile = self.user_profile is None
-
         def run():
-            if making_new_profile:
-                user, created_user = User.objects.get_or_create(username=self.net_id.value)
-                self.user_profile = UserProfile.objects.create(user=user)
-
-            if self.user_profile:
-                self.user_profile.user.first_name = self.first_name.value or ""
-                self.user_profile.user.last_name = self.last_name.value or ""
-                self.user_profile.user.save()
+            assert self.user_profile is not None
+            self.user_profile.user.first_name = self.first_name.value or ""
+            self.user_profile.user.last_name = self.last_name.value or ""
+            self.user_profile.user.save()
 
         await interaction.response.defer(ephemeral=True)
         await sync_to_async(run)()
