@@ -102,9 +102,7 @@ class PurchasedProduct(models.Model):
 
     product = models.ForeignKey(Product, on_delete=models.CASCADE, null=False)
     quantity = models.IntegerField(default=1, validators=[MinValueValidator(1)], null=False)
-    payment = models.ForeignKey(
-        Payment, on_delete=models.CASCADE, related_name="purchased_products", null=False
-    )
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name="purchased_products", null=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
