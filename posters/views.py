@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 from django.db.models import Count
 from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404, redirect, render
@@ -35,7 +35,7 @@ def poster_stats(request: HttpRequest) -> JsonResponse:
         visits_count = poster.visits.count()
         data.append({"latitude": poster.latitude, "longitude": poster.longitude, "visits": visits_count})
 
-    data.sort(key=lambda o: o["visits"], reverse=True)
+    data.sort(key=lambda o: cast(int, o["visits"]), reverse=True)
 
     return JsonResponse(data, safe=False)
 
