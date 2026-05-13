@@ -365,15 +365,17 @@ async def profile(ctx: discord.ApplicationContext, net_id: str | None, discord_u
                 return ", ".join(sorted(names))
 
             active_terms = Term.get_active_terms().order_by("start_date", "end_date", "name")
-            active_term_names = {term.name for term, _ in user_profile.is_member_for_terms(active_terms)}
+            active_terms_as_member = [term for term, _ in user_profile.is_member_for_terms(active_terms)]
+
+            active_term_names = {term.name for term in active_terms_as_member}
             body = "**Current Membership:** " + (
                 "Not a member" if not active_term_names else f"Active for {term_names(active_term_names)}"
             )
 
             renewal_term = Term.get_active_term_with_latest_end_date()
-            has_paid_renewal_term = bool(user_profile.is_member_for_terms([renewal_term])) if renewal_term else False
+            has_paid_renewal_term = bool(renewal_term in active_terms_as_member) if renewal_term else False
             if renewal_term and not has_paid_renewal_term:
-                due_status_label = "Renewal needed" if active_term_names else "Dues needed"
+                due_status_label = "Renewal needed" if active_terms_as_member else "Dues needed"
                 body += f"\n**{due_status_label}:** Pay dues for {renewal_term.name}"
 
             past_terms = Term.objects.filter(end_date__lt=today).order_by("-end_date", "-start_date", "name")
