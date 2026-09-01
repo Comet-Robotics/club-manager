@@ -1,7 +1,6 @@
 import os
 import time
 from functools import reduce
-from typing import cast
 
 import aiohttp
 from asgiref.sync import sync_to_async
@@ -38,7 +37,7 @@ from events.models import Attendance
 from payments.models import Term
 
 logger = logging.getLogger("discord")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
 handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="a")
 handler.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s"))
 logger.addHandler(handler)
@@ -183,17 +182,14 @@ async def get_active_member_discord_ids():
         if len(member_queries) == 0:
             return []
 
-        active_term_purchased_product_query = (
+        active_member_discord_ids = (
             reduce(lambda x, y: x | y, member_queries)
             .filter(payment__user__userprofile__discord_id__isnull=False)
-            .select_related("payment__user__userprofile")
+            .values_list("payment__user__userprofile__discord_id", flat=True)
+            .distinct()
         )
 
-        valid_ids = [
-            int(cast(UserProfile, pp.payment.user.userprofile).discord_id) for pp in active_term_purchased_product_query
-        ]
-
-        return valid_ids
+        return [int(discord_id) for discord_id in active_member_discord_ids]
 
     return await sync_to_async(run)()
 
