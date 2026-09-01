@@ -46,7 +46,7 @@ class Term(models.Model):
 
     @staticmethod
     @deprecated(
-        "Use one of the undeprecated term query utilities (get_active_terms, get_active_term_with_earliest_end_date, get_active_term_with_latest_end_date) which have explicit handling for term overlaps instead.get_active_term_with_latest_end_date"
+        "Use one of the undeprecated term query utilities (get_active_terms, get_active_term_with_earliest_end_date, get_active_term_with_latest_end_date) which have explicit handling for term overlaps instead."
     )
     def get_current_term() -> "Term | None":
         return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).first()
