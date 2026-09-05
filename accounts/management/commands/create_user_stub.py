@@ -26,26 +26,18 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         user_stub = UserStub.create(
             net_id=options["net_id"],
-            after_registration_redirect_destination=options[
-                "after_registration_redirect_destination"
-            ],
+            after_registration_redirect_destination=options["after_registration_redirect_destination"],
             discord_user_id=options["discord_user_id"],
         )
-        
+
         self.stdout.write(
             self.style.SUCCESS(
-              f"Created user stub: {str(user_stub)} for user {user_stub.user.username}\n"
+                f"Created user stub: {str(user_stub)} for user {user_stub.user.username}\n"
                 f"Registration URL: {user_stub.get_registration_url()}"
             )
         )
 
-
         if options["notify"]:
             UserStub.notify(user_stub)
 
-            self.stdout.write(
-              self.style.SUCCESS(
-                "sent notification!"
-              )
-            )
-
+            self.stdout.write(self.style.SUCCESS("sent notification!"))
