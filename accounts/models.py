@@ -1,4 +1,4 @@
-from django.db import models, transaction
+from django.db import IntegrityError, models, transaction
 from django.contrib.auth.models import User
 import uuid
 
@@ -12,6 +12,26 @@ from clubManager import settings
 from core.models import ServerSettings, UserProfile
 from django.db.models.query import QuerySet
 from django.utils import timezone
+
+
+class RegistrationError(Exception):
+    """Base exception for a self-service account registration failure."""
+
+
+class RegistrationAlreadySentError(RegistrationError):
+    """A valid registration email has already been sent for this Net ID."""
+
+
+class AccountAlreadyExistsError(RegistrationError):
+    """The Net ID already belongs to a completed account."""
+
+
+class DiscordAccountAlreadyLinkedError(RegistrationError):
+    """The Discord account is already associated with another user."""
+
+
+class RegistrationEmailError(RegistrationError):
+    """The registration email could not be delivered."""
 
 
 def get_registration_expiration() -> datetime:
@@ -45,7 +65,6 @@ class UserStub(models.Model):
     Used when a user is in the middle of doing a self-service registration and has not completed the process yet. Users with an associated UserStub should not show up in any other part of the application other than the admin portal."""
 
     user_registration_key = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
-    # Security: this must be a validated site-relative path (for example, /pay/whatever).
     after_registration_redirect_destination = models.TextField(
         validators=[validate_after_registration_redirect_destination]
     )
@@ -71,15 +90,24 @@ class UserStub(models.Model):
         validate_after_registration_redirect_destination(after_registration_redirect_destination)
         _ = UserStub.purge_deletion_candidates()
         with transaction.atomic():
-            user = User.objects.create(username=net_id, is_active=False)
+            user, created = User.objects.get_or_create(username=net_id, defaults={"is_active": False})
+            if not created:
+                if UserStub.objects.filter(user=user, user__is_active=False).exists():
+                    raise RegistrationAlreadySentError
+                raise AccountAlreadyExistsError
+
             if discord_user_id is not None:
-                profile, created = UserProfile.objects.get_or_create(user=user)
+                profile, _ = UserProfile.objects.get_or_create(user=user)
                 profile.discord_id = discord_user_id
-                profile.save()
-            user_stub = UserStub.objects.create(
+                try:
+                    with transaction.atomic():
+                        profile.save()
+                except IntegrityError as error:
+                    raise DiscordAccountAlreadyLinkedError from error
+
+            return UserStub.objects.create(
                 user=user, after_registration_redirect_destination=after_registration_redirect_destination
             )
-            return user_stub
 
     def activate(self):
         after_registration_redirect_destination = self.after_registration_redirect_destination
@@ -91,12 +119,13 @@ class UserStub(models.Model):
 
     @staticmethod
     def notify(user_stub: "UserStub"):
-        server_settings = ServerSettings.objects.first()
-        if server_settings is None:
-            raise Exception("Server settings not found")
-        send_mail(
-            f"Create your {server_settings.organization_name} account",
-            f"""
+        try:
+            server_settings = ServerSettings.objects.first()
+            if server_settings is None:
+                raise Exception("Server settings not found")
+            send_mail(
+                f"Create your {server_settings.organization_name} account",
+                f"""
 Hey there!
 
 Let's finish creating your {server_settings.organization_name} account! Just click this link to finish up: {user_stub.get_registration_url()}
@@ -107,10 +136,10 @@ If this was not you, you can safely ignore this email.
 
 Thanks!
 """,
-            settings.EMAIL_FROM,
-            [f"{user_stub.user.username}@utdallas.edu"],
-            fail_silently=False,
-            html_message=f"""
+                settings.EMAIL_FROM,
+                [f"{user_stub.user.username}@utdallas.edu"],
+                fail_silently=False,
+                html_message=f"""
 <h2>Hey there!</h2>
 
 <p>Let's finish creating your {server_settings.organization_name} account! Click the button below or use the link to finish up.</p>
@@ -125,4 +154,6 @@ Thanks!
 
 <p>Thanks!</p>
 """,
-        )
+            )
+        except Exception as error:
+            raise RegistrationEmailError from error
