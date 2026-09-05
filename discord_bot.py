@@ -302,6 +302,14 @@ async def link(ctx: discord.ApplicationContext, net_id):
     user = await get_user_async(username=net_id)
 
     if user is None:
+        if not settings.FEATURE_FLAGS["DISCORD_ACCOUNT_REGISTRATION"]:
+            await ctx.respond(
+                "Your Net ID was not found in our database. Contact an officer to get an account set up.",
+                ephemeral=True,
+                delete_after=3.0,
+            )
+            return
+
         await ctx.respond(
             f"We couldn't find an account for `{net_id}`. Is this your correct Net ID? "
             "Confirm below and we'll email you a link to create your account.",
