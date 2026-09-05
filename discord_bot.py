@@ -230,8 +230,7 @@ class AccountCreationView(discord.ui.View):
         except RegistrationAlreadySentError:
             await interaction.edit_original_response(
                 content=(
-                    "Oh, looks like we've already sent you a registration email recently. "
-                    "Please check your email."
+                    "Oh, looks like we've already sent you a registration email recently. Please check your email."
                 ),
                 view=None,
             )
