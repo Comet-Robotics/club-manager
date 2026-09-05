@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create your account{% if settings %} | {{ settings.organization_name }}{% endif %}</title>
+</head>
+<body>
+    <main>
+        <h1>Create your account</h1>
+        {% if settings %}
+        <p>Choose a password to finish creating your {{ settings.organization_name }} account.</p>
+        {% else %}
+        <p>Choose a password to finish creating your account.</p>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+            <p>
+                {{ field.label_tag }}
+                {{ field }}
+                {{ field.errors }}
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+            </p>
+            {% endfor %}
+            <button type="submit">Create account</button>
+        </form>
+    </main>
+</body>
+</html>
