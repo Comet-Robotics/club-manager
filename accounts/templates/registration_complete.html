@@ -53,8 +53,8 @@
     .rsvp-container { align-items: flex-start; display: flex; justify-content: center; min-height: calc(100vh - 4rem); padding: 2rem 1rem; }
     .rsvp-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 1rem; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); max-width: 500px; overflow: hidden; width: 100%; }
     .rsvp-header { background: linear-gradient(135deg, var(--primary) 0%, color-mix(in hsl, var(--primary) 80%, black) 100%); color: #fff; padding: 2.5rem 2rem; text-align: center; }
-    .rsvp-icon { margin-bottom: 1rem; }
-    .rsvp-icon i { height: 3rem; opacity: 0.9; width: 3rem; }
+    .rsvp-icon { display: flex; justify-content: center; margin-bottom: 1rem; }
+    .rsvp-icon svg { height: 3rem; opacity: 0.9; width: 3rem; }
     .rsvp-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
     .rsvp-description { font-size: 0.875rem; line-height: 1.5; opacity: 0.85; }
     .rsvp-form-container { padding: 2rem; }
@@ -71,7 +71,7 @@
     .submit-button { align-items: center; background: var(--primary); border: none; border-radius: 0.5rem; color: #fff; cursor: pointer; display: flex; font-size: 1rem; font-weight: 600; gap: 0.5rem; justify-content: center; padding: 1rem 2rem; transition: all 0.2s ease; }
     .submit-button:hover { background: color-mix(in hsl, var(--primary) 90%, black); box-shadow: 0 4px 12px rgba(191, 30, 46, 0.3); transform: translateY(-2px); }
     .submit-button:active { transform: translateY(0); }
-    .submit-button i { height: 1.25rem; width: 1.25rem; }
+    .submit-button svg { height: 1.25rem; width: 1.25rem; }
     @media (max-width: 640px) { .rsvp-container { padding: 1rem; } .rsvp-header, .rsvp-form-container { padding: 1.5rem; } .form-row { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}
