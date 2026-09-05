@@ -12,7 +12,6 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Purged {user_stub_count} expired user stub(s) "
-                f"({deleted_count} object(s) deleted in total)."
+                f"Purged {user_stub_count} expired user stub(s) ({deleted_count} object(s) deleted in total)."
             )
         )
