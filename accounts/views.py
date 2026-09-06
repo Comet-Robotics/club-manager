@@ -1,11 +1,19 @@
 from django.contrib.auth import login
+from django.core.cache import cache
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.views import View
-from .models import AccountAlreadyExistsError, AccountLink, DiscordAccountAlreadyLinkedError, UserStub
-from .forms import RegistrationCompletionForm
+from .models import (
+    AccountAlreadyExistsError,
+    AccountLink,
+    DiscordAccountAlreadyLinkedError,
+    RegistrationAlreadySentError,
+    RegistrationEmailError,
+    UserStub,
+)
+from .forms import RegistrationCompletionForm, RegistrationRequestForm
 from core.models import ServerSettings, UserProfile
 from clubManager import settings
 from core.utilities import get_layout_data
@@ -113,6 +121,55 @@ class RegistrationCompleteView(View):
             )
         login(request, user)
         return redirect(redirect_destination or "profile")
+
+
+class RegistrationRequestView(View):
+    template_name = "registration_request.html"
+    confirmation_message = (
+        "If you are eligible to register, check your UTD email for a link to finish creating your account."
+    )
+
+    def render_form(self, request, form, **context):
+        return render(
+            request, self.template_name, {"form": form, "settings": ServerSettings.objects.first(), **context}
+        )
+
+    def get(self, request):
+        return self.render_form(request, RegistrationRequestForm())
+
+    @staticmethod
+    def is_rate_limited(request, net_id):
+        ip = request.META.get("REMOTE_ADDR", "unknown")
+        keys = (f"registration-request:ip:{ip}", f"registration-request:netid:{net_id}")
+        limits = (settings.REGISTRATION_REQUEST_IP_LIMIT, settings.REGISTRATION_REQUEST_NETID_LIMIT)
+        for key, limit in zip(keys, limits):
+            count = cache.get(key, 0)
+            if count >= limit:
+                return True
+        for key in keys:
+            cache.add(key, 0, settings.REGISTRATION_REQUEST_WINDOW_SECONDS)
+            cache.incr(key)
+        return False
+
+    def post(self, request):
+        form = RegistrationRequestForm(request.POST)
+        if not form.is_valid():
+            return self.render_form(request, form)
+        net_id = form.cleaned_data["net_id"]
+        if self.is_rate_limited(request, net_id):
+            return self.render_form(request, RegistrationRequestForm(), success=self.confirmation_message)
+        try:
+            user_stub = UserStub.create(net_id, "")
+            UserStub.notify(user_stub)
+        except (RegistrationAlreadySentError, AccountAlreadyExistsError):
+            pass
+        except RegistrationEmailError:
+            if "user_stub" in locals():
+                user_stub.delete()
+            return self.render_form(
+                request, form, error="We could not send your registration email. Please try again later."
+            )
+        return self.render_form(request, RegistrationRequestForm(), success=self.confirmation_message)
 
 
 class DiscordUser(TypedDict):
