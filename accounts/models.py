@@ -66,7 +66,7 @@ class UserStub(models.Model):
 
     user_registration_key = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
     after_registration_redirect_destination = models.TextField(
-        validators=[validate_after_registration_redirect_destination]
+        blank=True, null=True, validators=[validate_after_registration_redirect_destination]
     )
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
