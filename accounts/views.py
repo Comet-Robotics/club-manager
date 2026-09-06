@@ -1,5 +1,4 @@
 from django.contrib.auth import login
-from django.core.cache import cache
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
@@ -137,22 +136,11 @@ class RegistrationRequestView(View):
     def get(self, request):
         return self.render_form(request, RegistrationRequestForm())
 
-    @staticmethod
-    def is_rate_limited(request, net_id):
-        key = f"registration-request:netid:{net_id}"
-        if cache.get(key, 0) >= settings.REGISTRATION_REQUEST_NETID_LIMIT:
-            return True
-        cache.add(key, 0, settings.REGISTRATION_REQUEST_WINDOW_SECONDS)
-        cache.incr(key)
-        return False
-
     def post(self, request):
         form = RegistrationRequestForm(request.POST)
         if not form.is_valid():
             return self.render_form(request, form)
         net_id = form.cleaned_data["net_id"]
-        if self.is_rate_limited(request, net_id):
-            return self.render_form(request, RegistrationRequestForm(), success=self.confirmation_message)
         try:
             user_stub = UserStub.create(net_id, None)
             UserStub.notify(user_stub)
