@@ -154,7 +154,7 @@ class RegistrationRequestView(View):
         if self.is_rate_limited(request, net_id):
             return self.render_form(request, RegistrationRequestForm(), success=self.confirmation_message)
         try:
-            user_stub = UserStub.create(net_id, "")
+            user_stub = UserStub.create(net_id, None)
             UserStub.notify(user_stub)
         except (RegistrationAlreadySentError, AccountAlreadyExistsError):
             pass
