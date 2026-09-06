@@ -379,8 +379,9 @@ class RegistrationRequestViewTests(RegistrationTestCase):
     def test_valid_request_creates_stub_and_sends_email(self, notify):
         response = self.client.post(reverse("registration_request"), {"net_id": "abc123456"})
         self.assertContains(response, "check your UTD email")
-        self.assertTrue(UserStub.objects.filter(net_id="abc123456").exists())
         self.assertFalse(User.objects.filter(username="abc123456").exists())
+        user_stub = UserStub.objects.get(net_id="abc123456")
+        self.assertIsNone(user_stub.after_registration_redirect_destination)
         notify.assert_called_once()
 
     def test_invalid_net_id_does_not_create_stub(self):
