@@ -37,7 +37,7 @@ The current branch can create a registration stub from Discord or a management c
 - R4. The response after any validly-shaped registration attempt uses neutral wording so an unauthenticated requester cannot learn whether an account or active registration already exists.
 - R5. Failed email delivery does not leave a usable incomplete account behind, and the user receives a retry-safe error response.
 - R6. The page uses the RSVP page's card, header, field, button, error, and mobile styling vocabulary.
-- R7. The public endpoint applies server-side limits before creating a stub or sending mail: five attempts per canonical client IP and two per normalized NetID during a 15-minute fixed window, returning neutral throttling feedback when either limit is exhausted.
+- R7. The public endpoint applies a server-side limit of two attempts per normalized NetID during a 15-minute fixed window before creating a stub or sending mail, returning neutral throttling feedback when exhausted.
 - R8. The form labels its NetID input, associates and announces validation feedback, focuses the invalid input after a failed submission, and prevents repeated submission while a request is in progress.
 
 ### Key Flows
@@ -62,7 +62,7 @@ The current branch can create a registration stub from Discord or a management c
 - KTD1. **Reuse `UserStub.create()` and `UserStub.notify()` rather than duplicating lifecycle logic** (session-settled: user-directed — chosen over a new web-only registration implementation: the current branch is the required foundation). This preserves expiry, account conflict handling, email generation, and completion-page compatibility. Governs R3, R5.
 - KTD2. **Share the established `NetIDField` validation pattern for the public form.** It lowercases input and applies the project NetID format before model or mail work. Governs R2.
 - KTD3. **Return one neutral confirmation for successful and duplicate registration-shaped requests.** This limits unauthenticated account enumeration while preserving a usable retry message. Governs R4.
-- KTD4. **Rate-limit before stub creation and email delivery.** Use Django's configured cache with separately scoped client-IP and normalized-NetID keys; each atomic counter starts at one with the fixed 15-minute expiry and blocks on either exhausted key. Production must use a shared atomic cache, while the canonical client IP is `REMOTE_ADDR` unless an explicit trusted-proxy configuration supplies it. Keep all throttled responses neutral. Governs R7.
+- KTD4. **Rate-limit by normalized NetID before stub creation and email delivery.** Use Django's configured cache so each NetID counter starts at one with the fixed 15-minute expiry and blocks only repeated attempts for that NetID. This avoids denying multiple legitimate members who share a venue network. Keep throttled responses neutral. Governs R7.
 
 ### High-Level Technical Design
 
@@ -97,8 +97,8 @@ flowchart TB
 - **Goal:** Add the anonymous request endpoint that safely starts the existing registration flow.
 - **Requirements:** R1, R2, R3, R4, R5, R7, R8.
 - **Files:** `accounts/forms.py`, `accounts/views.py`, `accounts/urls.py`, `accounts/tests.py`, `clubManager/settings.py`.
-- **Approach:** Add a NetID-only form using the existing validator; add a class-based GET/POST view; define the two limits and cache alias in settings; enforce atomic cache-backed IP and NetID counters with a 15-minute expiry before calling `UserStub.create(net_id, "")` and `UserStub.notify`; use `REMOTE_ADDR` except for a deliberately configured trusted-proxy source; handle known duplicate exceptions with a neutral confirmation; clean up a newly created user when notification fails.
-- **Test scenarios:** A GET renders the public form; invalid NetIDs do not create a stub; a valid request creates a stub and notifies it; already-active and already-pending accounts render the neutral confirmation without sending another email; the sixth IP attempt and third NetID attempt in one window are blocked without creating a stub or sending mail; notification failure removes the new stub/user and returns a recoverable error; configuration tests document the production shared-cache and canonical-IP contract.
+- **Approach:** Add a NetID-only form using the existing validator; add a class-based GET/POST view; define the NetID limit in settings; enforce an atomic cache-backed NetID counter with a 15-minute expiry before calling `UserStub.create(net_id, "")` and `UserStub.notify`; handle known duplicate exceptions with a neutral confirmation; clean up a newly created user when notification fails.
+- **Test scenarios:** A GET renders the public form; invalid NetIDs do not create a stub; a valid request creates a stub and notifies it; already-active and already-pending accounts render the neutral confirmation without sending another email; the third attempt for one NetID in a window is blocked without creating a stub or sending mail while another NetID remains eligible; notification failure removes the new stub/user and returns a recoverable error.
 - **Verification:** Request tests mock mail-facing behavior and assert database state plus rendered response semantics.
 
 ### U2. RSVP-aligned initial registration page
