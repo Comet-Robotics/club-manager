@@ -7,7 +7,13 @@ from django.test import SimpleTestCase, TestCase
 from accounts.models import UserStub, validate_after_registration_redirect_destination
 
 
-class UserStubRedirectDestinationTests(SimpleTestCase):
+class UserStubRedirectDestinationTests(TestCase):
+    @patch("core.signals.handlers.get_major_from_netid", return_value=None)
+    def test_user_stub_allows_no_redirect_destination(self, _get_major_from_netid):
+        user_stub = UserStub.create("noredirect", None)
+
+        self.assertIsNone(user_stub.after_registration_redirect_destination)
+
     def test_allows_site_relative_destination(self):
         validate_after_registration_redirect_destination("/pay/whatever?invoice=123")
 
