@@ -139,16 +139,11 @@ class RegistrationRequestView(View):
 
     @staticmethod
     def is_rate_limited(request, net_id):
-        ip = request.META.get("REMOTE_ADDR", "unknown")
-        keys = (f"registration-request:ip:{ip}", f"registration-request:netid:{net_id}")
-        limits = (settings.REGISTRATION_REQUEST_IP_LIMIT, settings.REGISTRATION_REQUEST_NETID_LIMIT)
-        for key, limit in zip(keys, limits):
-            count = cache.get(key, 0)
-            if count >= limit:
-                return True
-        for key in keys:
-            cache.add(key, 0, settings.REGISTRATION_REQUEST_WINDOW_SECONDS)
-            cache.incr(key)
+        key = f"registration-request:netid:{net_id}"
+        if cache.get(key, 0) >= settings.REGISTRATION_REQUEST_NETID_LIMIT:
+            return True
+        cache.add(key, 0, settings.REGISTRATION_REQUEST_WINDOW_SECONDS)
+        cache.incr(key)
         return False
 
     def post(self, request):
