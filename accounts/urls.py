@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path("register/done", views.RegistrationSubmittedView.as_view(), name="registration_submitted"),
+    path("register", views.RegistrationRequestView.as_view(), name="registration_request"),
     path(
         "register/continue/<uuid:user_registration_key>",
         views.RegistrationCompleteView.as_view(),
