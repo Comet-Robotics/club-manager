@@ -201,7 +201,7 @@ SQUARE_APPLE_MERCHANT_ID = os.getenv("SQUARE_APPLE_MERCHANT_ID")
 
 # Email Settings
 EMAIL_USE_TLS = True
-_dev_only_email_from = 'dev@clubmanager.local'
+_dev_only_email_from = "dev@clubmanager.local"
 EMAIL_FROM = os.getenv("EMAIL_FROM", _dev_only_email_from)
 
 EMAIL_HOST = os.getenv("SMTP_SERVER")
@@ -227,8 +227,8 @@ if len(unset_email_config) > 0:
     EMAIL_BACKEND = "naomi.mail.backends.naomi.NaomiBackend"
     EMAIL_FILE_PATH = Path(tempfile.mkdtemp(prefix="comet-robotics-club-manager-dev-emails"))
 else:
-  print("Using SMTP email sending backend - config looks correct.")
-  EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    print("Using SMTP email sending backend - config looks correct.")
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
 API_SECRET = str(os.getenv("API_SECRET"))
 DISCORD_API_PORT = int(os.getenv("DISCORD_API_PORT", 2468))
