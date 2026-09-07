@@ -17,20 +17,8 @@ from dotenv import load_dotenv
 from platformdirs import PlatformDirs
 from urllib.parse import urlparse
 
-# Use temp directory in CI environments to avoid permission issues with platformdirs
-if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
 
-    class _CIDirs:
-        def __init__(self):
-            self._tmp = Path(tempfile.mkdtemp())
-
-        @property
-        def site_data_path(self):
-            return self._tmp
-
-    dirs = _CIDirs()
-else:
-    dirs = PlatformDirs(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True)
+dirs = PlatformDirs(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True)
 
 load_dotenv()
 
@@ -189,8 +177,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = "static/"
-STATIC_ROOT = os.getenv("STATIC_ROOT")
-MEDIA_ROOT = dirs.site_data_path / "media"
+STATIC_ROOT = str(Path(os.getenv("STATIC_ROOT", "./static")).resolve())
+
+MEDIA_ROOT = dirs.user_data_path / "media"
 MEDIA_URL = "/media/"
 
 # Default primary key field type

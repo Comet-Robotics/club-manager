@@ -13,6 +13,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         replacements = {
             "${MEDIA_PATH}": settings.MEDIA_ROOT.absolute().as_posix(),
+            "${STATIC_ROOT}": settings.STATIC_ROOT
         }
 
         try:
