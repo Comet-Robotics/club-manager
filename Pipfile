@@ -31,6 +31,7 @@ django-colorfield = "*"
 platformdirs = "*"
 fastapi = {extras = ["standard"], version = "*"}
 django-debug-toolbar = "*"
+django-naomi = "*"
 
 [dev-packages]
 types-beautifulsoup4 = "*"
