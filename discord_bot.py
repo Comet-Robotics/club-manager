@@ -201,7 +201,9 @@ async def get_current_member_discord_ids():
 
 
 class AccountCreationView(discord.ui.View):
-    def __init__(self, net_id: str, discord_user_id: int, after_registration_redirect_destination: str | None = None) -> None:
+    def __init__(
+        self, net_id: str, discord_user_id: int, after_registration_redirect_destination: str | None = None
+    ) -> None:
         super().__init__(timeout=300)
         self.net_id = net_id
         self.discord_user_id = str(discord_user_id)
@@ -367,6 +369,7 @@ class AccountCreationViewForPayCommand(discord.ui.View):
                 after_registration_redirect_destination=self.after_registration_redirect_destination,
             )
         )
+
 
 @bot.event
 async def on_ready():
