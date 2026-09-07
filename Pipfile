@@ -30,6 +30,7 @@ django-multiselectfield = "*"
 django-colorfield = "*"
 platformdirs = "*"
 fastapi = {extras = ["standard"], version = "*"}
+django-debug-toolbar = "*"
 
 [dev-packages]
 types-beautifulsoup4 = "*"
