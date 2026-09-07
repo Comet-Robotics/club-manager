@@ -56,20 +56,19 @@ class PaymentSuccessView(View):
 
         product: Product = payment.purchased_products.first().product
         user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
-        
+
         is_user_missing_discord_account_link = user_profile.discord_id is None
         is_payment_is_for_member_dues = product.term is not None
-        message = f"One last step: go to the {layout_data['settings'].organization_name or 'club'} Discord server and type /link in any channel, so we can give you access to member-only channels!" if is_user_missing_discord_account_link and is_payment_is_for_member_dues else None
+        message = (
+            f"One last step: go to the {layout_data['settings'].organization_name or 'club'} Discord server and type /link in any channel, so we can give you access to member-only channels!"
+            if is_user_missing_discord_account_link and is_payment_is_for_member_dues
+            else None
+        )
 
         return render(
             request,
             self.template_name,
-            {
-                **layout_data,
-                "product_name": product.name,
-                "payment": payment,
-                "message": message
-            },
+            {**layout_data, "product_name": product.name, "payment": payment, "message": message},
         )
 
 
