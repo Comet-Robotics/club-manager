@@ -10,7 +10,7 @@
                 <div class="rsvp-icon"><i data-lucide="user-round-plus"></i></div>
                 <h1 class="rsvp-title">Create your account</h1>
                 <p class="rsvp-description">
-                    {% if settings %}Choose your name and password to finish creating your {{ settings.organization_name }} account.{% else %}Choose your name and password to finish creating your account.{% endif %}
+                    Choose your name and password to finish creating your{% if settings %} {{ settings.organization_name }}{% endif %} account.
                 </p>
             </div>
 
