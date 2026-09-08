@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.conf import settings
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -44,6 +46,12 @@ class Term(models.Model):
 
     def get_current_term():
         return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).first()
+
+    def get_pay_path(self) -> str:
+        return reverse("choose_user", kwargs={"product_id": self.product_id})
+
+    def get_pay_url(self) -> str:
+        return f"{settings.PUBLIC_URL}{self.get_pay_path()}"
 
     def __str__(self):
         return self.name
