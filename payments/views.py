@@ -78,7 +78,7 @@ class ChooseUserView(View):
     def get(self, request, product_id):
         layout_data = get_layout_data(request)
         product = get_object_or_404(Product, id=product_id)
-        form = PaymentSignInForm()
+        form = PaymentSignInForm(initial={"username": request.user.username} if request.user else {})
         return render(request, self.template_name, {**layout_data, "form": form, "product_name": product.name})
 
     def post(self, request, product_id):
