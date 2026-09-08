@@ -284,17 +284,24 @@ class AccountCreationView(discord.ui.View):
 
 
 class AccountCreationModalForPayCommand(discord.ui.Modal):
-    def __init__(self, discord_user_id: int, after_registration_redirect_destination: str) -> None:
+    def __init__(self, discord_user_id: int, payment_terms: list[tuple[str, str]]) -> None:
         super().__init__(title="Set up your account")
         self.discord_user_id = str(discord_user_id)
-        self.after_registration_redirect_destination = after_registration_redirect_destination
+        self.available_term_names = [term_name for term_name, _ in payment_terms]
+        self.payment_destinations = {term_name.casefold(): destination for term_name, destination in payment_terms}
         self.net_id = discord.ui.InputText(
             label="UT Dallas NetID",
             placeholder="abc123456",
             min_length=9,
             max_length=9,
         )
+        self.term_name = discord.ui.InputText(
+            label="Term to pay dues for",
+            placeholder=payment_terms[0][0],
+            max_length=100,
+        )
         self.add_item(self.net_id)
+        self.add_item(self.term_name)
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user is None or str(interaction.user.id) != self.discord_user_id:
@@ -308,6 +315,13 @@ class AccountCreationModalForPayCommand(discord.ui.Modal):
             await interaction.response.send_message("Invalid NetID format.", ephemeral=True)
             return
 
+        after_registration_redirect_destination = self.payment_destinations.get(self.term_name.value.strip().casefold())
+        if after_registration_redirect_destination is None:
+            await interaction.response.send_message(
+                f"Enter one of these terms: {', '.join(self.available_term_names)}.", ephemeral=True
+            )
+            return
+
         await interaction.response.edit_message(
             content=(
                 f"Is `{net_id}` your correct NetID? Confirm below and we'll email you a link to set up your account."
@@ -315,38 +329,16 @@ class AccountCreationModalForPayCommand(discord.ui.Modal):
             view=AccountCreationView(
                 net_id,
                 interaction.user.id,
-                after_registration_redirect_destination=self.after_registration_redirect_destination,
+                after_registration_redirect_destination=after_registration_redirect_destination,
             ),
         )
-
-
-class DuesTermSelect(discord.ui.Select):
-    def __init__(self, payment_terms: list[tuple[str, str]]) -> None:
-        self.payment_terms = payment_terms
-        super().__init__(
-            placeholder="Choose a term",
-            options=[
-                discord.SelectOption(label=term_name, value=str(index))
-                for index, (term_name, _) in enumerate(payment_terms)
-            ],
-        )
-
-    async def callback(self, interaction: discord.Interaction):
-        if not isinstance(self.view, AccountCreationViewForPayCommand):
-            return
-
-        self.view.after_registration_redirect_destination = self.payment_terms[int(self.values[0])][1]
-        self.view.continue_to_registration.disabled = False
-        await interaction.response.edit_message(view=self.view)
 
 
 class AccountCreationViewForPayCommand(discord.ui.View):
     def __init__(self, discord_user_id: int, payment_terms: list[tuple[str, str]]) -> None:
         super().__init__(timeout=300)
         self.discord_user_id = str(discord_user_id)
-        self.after_registration_redirect_destination: str | None = None
-        self.add_item(DuesTermSelect(payment_terms))
-        self.continue_to_registration.disabled = True
+        self.payment_terms = payment_terms
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user is not None and str(interaction.user.id) == self.discord_user_id:
@@ -357,18 +349,9 @@ class AccountCreationViewForPayCommand(discord.ui.View):
         )
         return False
 
-    @discord.ui.button(label="Continue", style=discord.ButtonStyle.primary)
-    async def continue_to_registration(self, button, interaction: discord.Interaction):
-        if self.after_registration_redirect_destination is None:
-            await interaction.response.send_message("Choose a term first.", ephemeral=True)
-            return
-
-        await interaction.response.send_modal(
-            AccountCreationModalForPayCommand(
-                interaction.user.id,
-                after_registration_redirect_destination=self.after_registration_redirect_destination,
-            )
-        )
+    @discord.ui.button(label="Set up account", style=discord.ButtonStyle.primary)
+    async def set_up_account(self, button, interaction: discord.Interaction):
+        await interaction.response.send_modal(AccountCreationModalForPayCommand(interaction.user.id, self.payment_terms))
 
 
 @bot.event
@@ -776,7 +759,8 @@ async def pay(ctx: discord.ApplicationContext):
             return
 
         await ctx.respond(
-            "Welcome! Set up your account, then we'll get your dues sorted.",
+            "Welcome! Set up your account, then we'll get your dues sorted.\n"
+            f"Terms: {', '.join(term_name for term_name, _ in payment_terms)}",
             view=AccountCreationViewForPayCommand(ctx.author.id, payment_terms),
             ephemeral=True,
         )
