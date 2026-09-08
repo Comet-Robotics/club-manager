@@ -8,7 +8,7 @@ class PaymentSignInForm(forms.Form):
         ("cash", "In-Person Cash Payment"),
     ]
     if settings.ENABLE_SQUARE_PAYMENTS:
-        payment_choices.append(("square_api", "Credit Card/Debit Card (Online)"))
+        payment_choices.insert(0, ("square_api", "Credit Card/Debit Card (Online)"))
 
     username = NetIDField(
         label="Net ID",
