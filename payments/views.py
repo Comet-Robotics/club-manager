@@ -1,4 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
+
+from core.models import UserProfile
 from .forms import PaymentSignInForm
 import configparser
 from django.utils import timezone
@@ -51,14 +53,22 @@ class PaymentSuccessView(View):
     def get(self, request, payment_id):
         layout_data = get_layout_data(request)
         payment = get_object_or_404(Payment, id=payment_id)
+
+        product: Product = payment.purchased_products.first().product
+        user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+        is_user_missing_discord_account_link = user_profile.discord_id is None
+        is_payment_is_for_member_dues = product.term is not None
+        message = (
+            f"One last step: go to the {layout_data['settings'].organization_name or 'club'} Discord server and type /link in any channel, so we can give you access to member-only channels!"
+            if is_user_missing_discord_account_link and is_payment_is_for_member_dues
+            else None
+        )
+
         return render(
             request,
             self.template_name,
-            {
-                **layout_data,
-                "product_name": payment.purchased_products.first().product.name,
-                "payment": payment,
-            },
+            {**layout_data, "product_name": product.name, "payment": payment, "message": message},
         )
 
 
