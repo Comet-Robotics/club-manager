@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "multiselectfield",
     "colorfield",
+    "naomi",
 ]
 
 if DEBUG:
@@ -199,13 +200,35 @@ LOGIN_REDIRECT_URL = "/profile/"
 SQUARE_APPLE_MERCHANT_ID = os.getenv("SQUARE_APPLE_MERCHANT_ID")
 
 # Email Settings
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = str(os.getenv("SMTP_SERVER"))
-EMAIL_PORT = int(os.getenv("SMTP_PORT", 0))
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = str(os.getenv("SMTP_USER"))
-EMAIL_HOST_PASSWORD = str(os.getenv("SMTP_PASS"))
-EMAIL_FROM = str(os.getenv("EMAIL_FROM"))
+_dev_only_email_from = "dev@clubmanager.local"
+EMAIL_FROM = os.getenv("EMAIL_FROM", _dev_only_email_from)
+
+EMAIL_HOST = os.getenv("SMTP_SERVER")
+EMAIL_PORT = int(os.getenv("SMTP_PORT", -1))
+EMAIL_HOST_USER = os.getenv("SMTP_USER")
+EMAIL_HOST_PASSWORD = os.getenv("SMTP_PASS")
+
+unset_email_config = [
+    source_environment_variable
+    for (source_environment_variable, is_correctly_set) in {
+        "SMTP_SERVER": EMAIL_HOST is not None,
+        "SMTP_PORT": EMAIL_PORT != -1,
+        "SMTP_USER": EMAIL_HOST_USER is not None,
+        "SMTP_PASS": EMAIL_HOST_PASSWORD is not None,
+        "EMAIL_FROM": EMAIL_FROM != _dev_only_email_from,
+    }.items()
+    if is_correctly_set is False
+]
+
+if len(unset_email_config) > 0:
+    print("Defaulting to local only email backend because not all required environment variables are set correctly.")
+    print(f"These email environment variables are not currently set correctly: {unset_email_config}")
+    EMAIL_BACKEND = "naomi.mail.backends.naomi.NaomiBackend"
+    EMAIL_FILE_PATH = Path(tempfile.mkdtemp(prefix="comet-robotics-club-manager-dev-emails"))
+else:
+    print("Using SMTP email sending backend - config looks correct.")
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
 API_SECRET = str(os.getenv("API_SECRET"))
 DISCORD_API_PORT = int(os.getenv("DISCORD_API_PORT", 2468))
