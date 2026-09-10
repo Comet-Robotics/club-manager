@@ -262,7 +262,7 @@ class AccountCreationView(discord.ui.View):
         except RegistrationEmailError:
             logger.exception("Unable to send registration email for Net ID %s", self.net_id)
             try:
-                await sync_to_async(user_stub.user.delete)()
+                await sync_to_async(user_stub.delete)()
             except Exception:
                 logger.exception("Unable to clean up failed registration for Net ID %s", self.net_id)
             await interaction.edit_original_response(
