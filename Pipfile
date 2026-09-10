@@ -32,6 +32,8 @@ platformdirs = "*"
 fastapi = {extras = ["standard"], version = "*"}
 django-debug-toolbar = "*"
 django-naomi = "*"
+css-inline = "*"
+inscriptis = "*"
 
 [dev-packages]
 types-beautifulsoup4 = "*"

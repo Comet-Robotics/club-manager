@@ -15,6 +15,8 @@ django.setup()
 
 from django.core.mail import send_mail
 
+from core.emails import send_templated_email
+
 from accounts.models import AccountLink
 from core.models import ServerSettings, User, UserProfile
 from common.asyncutils import *
@@ -257,7 +259,26 @@ async def link(ctx: discord.ApplicationContext, net_id):
     email = f"{net_id}@utdallas.edu"
     await ctx.respond(f"Sending email to {email}...", ephemeral=True, delete_after=3.0)
 
+    link_url = f"{settings.PUBLIC_URL}/accounts/link/{account_link.uuid}"
+    account_details = {
+        "Full Name": f"{user.first_name} {user.last_name}",
+        "Discord Name": author_name,
+        "Net ID": net_id,
+    }
+
     def send_the_email():
+        if settings.FEATURE_FLAGS["NEW_TRANSACTIONAL_EMAIL_TEMPLATES"]:
+            send_templated_email(
+                "email/messages/discord_account_link.html",
+                {
+                    "first_name": user.first_name,
+                    "account_details": account_details,
+                    "link_url": link_url,
+                },
+                [email],
+            )
+            return
+
         send_mail(
             f"Link your Discord to your {ORG_NAME} account",
             f"""
@@ -271,7 +292,7 @@ Net ID: {net_id}
 
 If the above information is correct, click on the below link to connect your Discord account to your {ORG_NAME} account.
 
-{settings.PUBLIC_URL}/accounts/link/{account_link.uuid}
+{link_url}
 
 If the name is incorrect, reply to this email and we'll get back to you. If this was not you, you can safely ignore this email.
 
@@ -292,9 +313,9 @@ Net ID: {net_id}</p>
 
 <p>If the above information is correct, click the button below or the link to connect your Discord account to your {ORG_NAME} account.</p>
 
-<a href="{settings.PUBLIC_URL}/accounts/link/{account_link.uuid}"><button style="border: solid #950000 3px;padding: 1em; border-radius: 10px; background-color:#bf1e2e; color: white;"><strong>Link Account</strong></button></a>
+<a href="{link_url}"><button style="border: solid #950000 3px;padding: 1em; border-radius: 10px; background-color:#bf1e2e; color: white;"><strong>Link Account</strong></button></a>
 
-<br><br><a href="{settings.PUBLIC_URL}/accounts/link/{account_link.uuid}">{settings.PUBLIC_URL}/accounts/link/{account_link.uuid}</a>
+<br><br><a href="{link_url}">{link_url}</a>
 
 <p>If the name is incorrect, reply to this email and we'll get back to you. If this was not you, you can safely ignore this email.</p>
 
