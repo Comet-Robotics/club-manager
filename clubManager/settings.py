@@ -188,7 +188,7 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = str(Path(os.getenv("STATIC_ROOT", "./static")).resolve())
 
-MEDIA_ROOT = dirs.user_data_path / "media"
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT") or dirs.user_data_path / "media").resolve()
 MEDIA_URL = "/media/"
 
 # Default primary key field type
