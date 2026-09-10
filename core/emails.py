@@ -1,19 +1,5 @@
 """
 Rendering and sending for transactional email.
-
-Each email is one Django template under ``core/templates/email/messages/`` containing ordinary
-HTML, extending ``email/base.html`` for the header, footer, and stylesheet. Everything else is
-derived from that single render:
-
-* the **subject** is the ``<title>`` of the rendered document
-* the **HTML part** is the document with ``base.html``'s stylesheet inlined by css_inline,
-  because email clients largely ignore ``<style>`` blocks
-* the **plain text part** is what a browser would show as the rendered page's text, via inscriptis
-
-So there is no separate plain text template to keep in step, and no repeated ``style="..."``
-attributes. The one thing this asks of whoever writes a message template is that the copy read
-correctly in both parts - say "confirm below", never "click the button below" - and that layout
-tables are only used for layout, since inscriptis will faithfully reproduce a table as a table.
 """
 
 import re
@@ -32,11 +18,8 @@ from inscriptis.model.config import ParserConfig
 
 # Plain text bodies are wrapped, which is the width every mail client's plain text view is
 # designed around.
-PLAIN_TEXT_WIDTH = 72
+PLAIN_TEXT_EMAIL_CHARACTER_WRAP_WIDTH = 72
 
-# Images are the header logo, whose alt text is the organisation name. Without this the text part
-# of a logo-configured instance silently loses its heading - alt text is the textual equivalent of
-# an image, so it belongs in the text body.
 _TEXT_LAYOUT_CONFIG = ParserConfig(display_images=True, deduplicate_captions=True)
 
 # Marks the hidden inbox-preview line in base.html. A data attribute rather than a class so that
@@ -58,25 +41,17 @@ def render_email(message_template: str, context: dict) -> RenderedEmail:
     ``context`` should include an ``org`` mapping (see :func:`email_org_context`). This touches
     neither the database nor the email backend, so it is safe to call from tests.
     """
-    # Inline base.html's stylesheet. Conditional comments for Outlook survive this, and descendant
-    # selectors are resolved onto the elements they matched.
+    
     html = css_inline.inline(
         render_to_string(message_template, context),
         keep_style_tags=False,
-        # At-rules cannot be inlined onto an element, so keep them in a style block rather than
-        # dropping them - otherwise a future @media rule would vanish silently.
         keep_at_rules=True,
-        # A send must never make a network call. We have no external stylesheets, and this makes
-        # sure a stray <link> could not introduce one.
         load_remote_stylesheets=False,
     )
 
     document = BeautifulSoup(html, "html.parser")
     subject = document.title.get_text(strip=True) if document.title else ""
-
-    # The preheader is inbox-preview text, deliberately invisible in the message itself, so it has
-    # no business in the plain text body either. Removed from the parsed copy only - the HTML we
-    # send keeps it.
+    
     for preheader in document.select(f"[{PREHEADER_ATTRIBUTE}]"):
         preheader.decompose()
 
@@ -92,15 +67,11 @@ def _layout_as_text(html: str) -> str:
     lines = []
     for line in get_text(html, _TEXT_LAYOUT_CONFIG).splitlines():
         line = line.rstrip()
-        # inscriptis pads table cells apart with runs of spaces to preserve their columns.
-        # Re-wrapping such a line would destroy the alignment, so only prose gets wrapped.
         if re.search(r"\S {2,}\S", line):
             lines.append(line)
         else:
-            lines.extend(textwrap.wrap(line, PLAIN_TEXT_WIDTH, break_long_words=False, break_on_hyphens=False) or [""])
+            lines.extend(textwrap.wrap(line, PLAIN_TEXT_EMAIL_CHARACTER_WRAP_WIDTH, break_long_words=False, break_on_hyphens=False) or [""])
 
-    # Block elements each end their own line, so wherever two of them meet there is a run of blank
-    # lines to collapse.
     return re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip() + "\n"
 
 
@@ -126,8 +97,6 @@ def _contrasting_text_color(background_hex: str) -> str:
 
 def email_org_context() -> dict:
     """Build the ``org`` context that the email header, footer, and stylesheet render from."""
-    # Imported here because core.models imports from payments.models, and a module-level import
-    # would make core.emails unusable before the app registry is ready.
     from core.models import ServerSettings
 
     if settings.FEATURE_FLAGS["AUTO_SERVER_SETTINGS_INIT"]:
@@ -137,8 +106,6 @@ def email_org_context() -> dict:
 
     logo_url = None
     if server_settings.logo and settings.PUBLIC_URL:
-        # Email clients have no page to resolve a relative URL against, so assets need absolute
-        # ones.
         logo_url = f"{settings.PUBLIC_URL.rstrip('/')}{server_settings.logo.url}"
 
     return {
@@ -153,24 +120,20 @@ def email_org_context() -> dict:
 
 
 def _from_address(org_name: str) -> str:
-    """Put the organisation's name in front of EMAIL_FROM, if it isn't there already."""
+    """Put the organization's name in front of EMAIL_FROM, if it isn't there already."""
     display_name, address = parseaddr(settings.EMAIL_FROM)
     if not address:
         # Nothing parseable to work with - leave whatever was configured alone rather than
         # silently sending from a different address.
         return settings.EMAIL_FROM
-    # A bare address is a weaker sender signal than a named one, both to spam filters and to the
-    # person deciding whether the mail looks legitimate.
+    
     return formataddr((display_name or org_name, address))
 
 
 def _transactional_headers() -> dict[str, str]:
+    # Headers that tell mailboxes not to reply to this message and stops out-of-office replies from Exchange and Microsoft 365
     headers = {
-        # RFC 3834: tells conforming responders not to reply to this message.
         "Auto-Submitted": "auto-generated",
-        # Microsoft's equivalent, which is what actually stops out-of-office replies from Exchange
-        # and Microsoft 365 - where most of our recipients read their mail. Deliberately not "All",
-        # which would also suppress the non-delivery reports we want to see.
         "X-Auto-Response-Suppress": "OOF, AutoReply",
     }
 
@@ -191,13 +154,9 @@ def build_email(message_template: str, context: dict, to: list[str]) -> EmailMul
 
     message = EmailMultiAlternatives(
         subject=rendered.subject,
-        # Plain text is the message body and HTML is the alternative, which is what makes this
-        # multipart/alternative. HTML-only mail scores against us in every spam filter.
         body=rendered.text_body,
         from_email=_from_address(org["name"]),
         to=to,
-        # Replies should reach a person. Without this they go to the sending address, which for a
-        # relay like Mailtrap is unattended.
         reply_to=[org["contact_email"]] if org["contact_email"] else None,
         headers=_transactional_headers(),
     )

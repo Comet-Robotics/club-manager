@@ -1,12 +1,9 @@
 {% comment %}
-Shared chrome for every transactional email. Message templates under email/messages/ extend this
+Shared base for every transactional email. Message templates under email/messages/ extend this
 and fill in {% block subject %}, {% block preheader %}, {% block content %}, and optionally
 {% block footer_reason %}.
 
-Write ordinary HTML in a message template and style it with the classes below. core.emails inlines
-this stylesheet with premailer before sending, because email clients largely ignore <style>
-blocks - so there is no need for style="..." on anything, and no need for a second plain text
-template either: the text part is derived from the rendered HTML.
+Write ordinary HTML in a message template and style it with the classes below. No need for a second plain text template since the text part is derived from the rendered HTML.
 
 Conventions here are dictated by email clients rather than taste:
   * Tables for layout, with role="presentation" so screen readers skip them.
@@ -14,9 +11,8 @@ Conventions here are dictated by email clients rather than taste:
     avoids needing a media query at all.
   * Padding lives on <td> elements, since Outlook renders with Word's engine and ignores padding
     on inline elements.
-  * A real doctype and <html>/<head>/<body>. SpamAssassin's HTML_MIME_NO_HTML_TAG rule fires on
-    HTML parts with no <html> tag, which is what our old inline-string emails were missing.
-{% endcomment %}<!DOCTYPE html>
+{% endcomment %}
+<!DOCTYPE html>
 <html lang="en" xmlns:o="urn:schemas-microsoft-com:office:office">
   <head>
     <meta charset="utf-8" />
@@ -57,11 +53,6 @@ Conventions here are dictated by email clients rather than taste:
       .facts td { font-size: 15px; line-height: 24px; padding: 2px 16px 2px 0; color: #6b7280; white-space: nowrap; }
       .facts td.value { padding-right: 0; color: #18181b; font-weight: 600; }
 
-      {% comment %}
-        The call to action. border-radius simply does not apply in Outlook, which leaves a square
-        button - a fair trade for not carrying a block of VML around. The text colour is computed
-        from the accent colour's luminance in core.emails, so a light accent still reads.
-      {% endcomment %}
       .cta { margin: 0 0 20px 0; border-collapse: separate; }
       .cta td { background-color: {{ org.accent_color }}; border-radius: 6px; padding: 14px 28px; }
       .cta a { font-size: 15px; font-weight: 700; line-height: 20px;
@@ -75,7 +66,7 @@ Conventions here are dictated by email clients rather than taste:
 
       .preheader { display: none; max-height: 0; max-width: 0; overflow: hidden; opacity: 0;
                    font-size: 1px; line-height: 1px; color: #f4f4f5; }
-    </style>
+    <style>
   </head>
   <body>
     {% comment %}
@@ -106,7 +97,7 @@ Conventions here are dictated by email clients rather than taste:
               <td class="footer">
                 <p>
                   {% block footer_reason %}You received this email because someone used your email address on {{ org.name }}'s Club Manager.{% endblock %}
-                  It is a one-off account message rather than a mailing list, so there is nothing to unsubscribe from.
+                  This is a one-off account message rather than a mailing list, so there is nothing to unsubscribe from.
                 </p>
                 <p class="contact">
                   <strong>{{ org.name }}</strong>{% if org.mailing_address %}<br />{{ org.mailing_address|linebreaksbr }}{% endif %}

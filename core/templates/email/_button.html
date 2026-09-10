@@ -1,12 +1,9 @@
 {% comment %}
-A call to action, with the same URL spelled out underneath.
-
-Included rather than written inline because the table wrapper is the verbose part; styling comes
-from the .cta rules in base.html. The visible URL is not just a courtesy - it is what carries the
-link into the plain text part, since that is derived from this markup.
+A call to action button, with the same URL spelled out underneath.
 
 Usage: {% include "email/_button.html" with href=some_url label="Do the thing" %}
-{% endcomment %}<table class="cta" role="presentation" cellpadding="0" cellspacing="0" border="0">
+{% endcomment %}
+<table class="cta" role="presentation" cellpadding="0" cellspacing="0" border="0">
   <tr>
     <td align="center"><a href="{{ href }}">{{ label }}</a></td>
   </tr>

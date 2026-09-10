@@ -299,12 +299,8 @@ FEATURE_FLAGS = resolve_feature_flags(
         # - @jasonappah, 10/14/2025 - default off
         # - @jasonappah, 01/19/2026 - set default to True
         "AUTO_SERVER_SETTINGS_INIT": True,
-        # enabled: transactional emails are rendered from the templates in core/templates/email/,
-        #   as a well-formed HTML part alongside a plain text part
-        # disabled: transactional emails use the HTML strings that were previously inlined in the
-        #   code that sends them
-        # Flagged so that the deliverability change can be rolled back on its own if inbox
-        # placement gets worse rather than better - see issue #96.
+        # enabled: transactional emails are rendered from the templates in core/templates/email/
+        # disabled: transactional emails use HTML strings that are inlined in sending code
         # - @jasonappah, 09/10/2026 - default off
         "NEW_TRANSACTIONAL_EMAIL_TEMPLATES": False,
     }

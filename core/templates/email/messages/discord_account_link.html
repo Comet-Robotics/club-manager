@@ -1,9 +1,6 @@
 {% extends "email/base.html" %}
 {% comment %}
 Sent by the Discord bot's /link command. Context: first_name, account_details (dict), link_url.
-
-The plain text part of this email is derived from the HTML below, so the copy has to read correctly
-without a clickable button - hence "confirm it below" rather than "click the button below".
 {% endcomment %}
 
 {% block subject %}Link your Discord account to {{ org.name }}{% endblock %}

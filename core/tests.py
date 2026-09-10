@@ -141,7 +141,7 @@ class TransactionalEmailRenderingTests(SimpleTestCase):
 
     def test_text_body_keeps_the_org_name_when_the_header_is_a_logo(self):
         # With a logo configured the header is an <img> rather than text. A text conversion that
-        # drops images loses the organisation name off the top of the message entirely - which is
+        # drops images loses the organization name off the top of the message entirely - which is
         # what happened on the first real send.
         with_logo = {**ORG, "logo_url": "https://portal.example.org/media/logos/logo.png"}
         email = render_email(DISCORD_LINK_TEMPLATE, {**DISCORD_LINK_CONTEXT, "org": with_logo})
