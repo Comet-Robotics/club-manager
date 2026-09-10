@@ -1,0 +1,11 @@
+{% comment %}
+A call to action button, with the same URL spelled out underneath.
+
+Usage: {% include "email/_button.html" with href=some_url label="Do the thing" %}
+{% endcomment %}
+<table class="cta" role="presentation" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td align="center"><a href="{{ href }}">{{ label }}</a></td>
+  </tr>
+</table>
+<p class="fine">Or paste this link into your browser:<br /><a href="{{ href }}">{{ href }}</a></p>

@@ -1,0 +1,31 @@
+{% extends "email/base.html" %}
+{% comment %}
+Sent by the Discord bot's /link command. Context: first_name, account_details (dict), link_url.
+{% endcomment %}
+
+{% block subject %}Link your Discord account to {{ org.name }}{% endblock %}
+
+{% block preheader %}Confirm the request to connect Discord to your {{ org.name }} account.{% endblock %}
+
+{% block footer_reason %}You received this email because someone used your Net ID to request a Discord account link on {{ org.name }}'s Club Manager.{% endblock %}
+
+{% block content %}
+  <h1>Link your Discord account</h1>
+
+  <p>Hi {{ first_name }}, a request was made to connect a Discord account to your {{ org.name }} account. These are the details we were given:</p>
+
+  <table class="facts" role="presentation" cellpadding="0" cellspacing="0" border="0">
+    {% for label, value in account_details.items %}
+      <tr>
+        <td>{{ label }}</td>
+        <td class="value">{{ value }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+
+  <p>If that all looks right, confirm it below and the two accounts will be linked.</p>
+
+  {% include "email/_button.html" with href=link_url label="Link Discord account" %}
+
+  <p class="fine">If any of those details are wrong, reply to this email and an officer will follow up. If you did not make this request, you can ignore this message - nothing will change until the link above is used.</p>
+{% endblock %}

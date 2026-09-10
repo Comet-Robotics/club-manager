@@ -1,0 +1,114 @@
+{% comment %}
+Shared base for every transactional email. Message templates under email/messages/ extend this
+and fill in {% block subject %}, {% block preheader %}, {% block content %}, and optionally
+{% block footer_reason %}.
+
+Write ordinary HTML in a message template and style it with the classes below. No need for a second plain text template since the text part is derived from the rendered HTML.
+
+Conventions here are dictated by email clients rather than taste:
+  * Tables for layout, with role="presentation" so screen readers skip them.
+  * A fixed 600px column that collapses on narrow screens via width="100%" + max-width, which
+    avoids needing a media query at all.
+  * Padding lives on <td> elements, since Outlook renders with Word's engine and ignores padding
+    on inline elements.
+{% endcomment %}
+<!DOCTYPE html>
+<html lang="en" xmlns:o="urn:schemas-microsoft-com:office:office">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    {% comment %}Stops iOS Mail shrinking the message to fit, which breaks the fixed column.{% endcomment %}
+    <meta name="x-apple-disable-message-reformatting" />
+    {% comment %}Declaring a single scheme stops clients auto-inverting our colours badly.{% endcomment %}
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
+    {% comment %}core.emails takes the subject line from this element.{% endcomment %}
+    <title>{% block subject %}{% endblock %}</title>
+    <!--[if mso]>
+      <xml>
+        <o:OfficeDocumentSettings>
+          <o:PixelsPerInch>96</o:PixelsPerInch>
+        </o:OfficeDocumentSettings>
+      </xml>
+    <![endif]-->
+    <style>
+      body { margin: 0; padding: 0; width: 100%; background-color: #f4f4f5; -webkit-font-smoothing: antialiased; }
+      .shell { width: 100%; background-color: #f4f4f5; }
+      .gutter { padding: 24px 12px; }
+      .column { width: 600px; max-width: 600px; text-align: left;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+      .brand { padding: 0 4px 16px 4px; font-size: 18px; font-weight: 700; color: #18181b; }
+      .brand img { display: block; height: 40px; width: auto; border: 0; outline: none; text-decoration: none; }
+      .card { background-color: #ffffff; border: 1px solid #e4e4e7; border-radius: 8px; padding: 32px; }
+
+      h1 { margin: 0 0 16px 0; font-size: 22px; line-height: 30px; font-weight: 700; color: #18181b; }
+      p { margin: 0 0 16px 0; font-size: 15px; line-height: 24px; color: #3f3f46; }
+      p.fine { font-size: 13px; line-height: 20px; color: #6b7280; }
+      a { color: #3f3f46; text-decoration: underline; }
+      p.fine a { color: #6b7280; word-break: break-all; }
+
+      {% comment %}Label/value pairs. inscriptis reproduces this as aligned columns in the text part.{% endcomment %}
+      .facts { margin: 0 0 20px 0; }
+      .facts td { font-size: 15px; line-height: 24px; padding: 2px 16px 2px 0; color: #6b7280; white-space: nowrap; }
+      .facts td.value { padding-right: 0; color: #18181b; font-weight: 600; }
+
+      .cta { margin: 0 0 20px 0; border-collapse: separate; }
+      .cta td { background-color: {{ org.accent_color }}; border-radius: 6px; padding: 14px 28px; }
+      .cta a { font-size: 15px; font-weight: 700; line-height: 20px;
+               color: {{ org.accent_text_color }}; text-decoration: none; }
+
+      .footer { padding: 20px 8px 0 8px; font-size: 12px; line-height: 20px; color: #6b7280; }
+      .footer p { font-size: 12px; line-height: 20px; color: #6b7280; margin: 0 0 12px 0; }
+      .footer p.contact { margin: 0; }
+      .footer a { color: #6b7280; }
+      .footer strong { color: #52525b; }
+
+      .preheader { display: none; max-height: 0; max-width: 0; overflow: hidden; opacity: 0;
+                   font-size: 1px; line-height: 1px; color: #f4f4f5; }
+    <style>
+  </head>
+  <body>
+    {% comment %}
+      Preview text shown next to the subject in the inbox list, hidden in the message itself and
+      padded with zero-width characters so the client does not pull body copy in after it. The
+      data-preheader attribute is how core.emails knows to keep this out of the plain text part.
+    {% endcomment %}
+    <div class="preheader" data-preheader>
+      {% block preheader %}{% endblock %}
+      &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
+    </div>
+
+    <table class="shell" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td class="gutter" align="center">
+          <table class="column" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td class="brand">
+                {% if org.logo_url %}<img src="{{ org.logo_url }}" alt="{{ org.name }}" height="40" />{% else %}{{ org.name }}{% endif %}
+              </td>
+            </tr>
+
+            <tr>
+              <td class="card">{% block content %}{% endblock %}</td>
+            </tr>
+
+            <tr>
+              <td class="footer">
+                <p>
+                  {% block footer_reason %}You received this email because someone used your email address on {{ org.name }}'s Club Manager.{% endblock %}
+                  This is a one-off account message rather than a mailing list, so there is nothing to unsubscribe from.
+                </p>
+                <p class="contact">
+                  <strong>{{ org.name }}</strong>{% if org.mailing_address %}<br />{{ org.mailing_address|linebreaksbr }}{% endif %}
+                  {% if org.contact_email %}<br /><a href="mailto:{{ org.contact_email }}">{{ org.contact_email }}</a>{% endif %}
+                  {% if org.website_url %}<br /><a href="{{ org.website_url }}">{{ org.website_url }}</a>{% endif %}
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
