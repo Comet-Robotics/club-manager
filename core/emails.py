@@ -41,7 +41,7 @@ def render_email(message_template: str, context: dict) -> RenderedEmail:
     ``context`` should include an ``org`` mapping (see :func:`email_org_context`). This touches
     neither the database nor the email backend, so it is safe to call from tests.
     """
-    
+
     html = css_inline.inline(
         render_to_string(message_template, context),
         keep_style_tags=False,
@@ -51,7 +51,7 @@ def render_email(message_template: str, context: dict) -> RenderedEmail:
 
     document = BeautifulSoup(html, "html.parser")
     subject = document.title.get_text(strip=True) if document.title else ""
-    
+
     for preheader in document.select(f"[{PREHEADER_ATTRIBUTE}]"):
         preheader.decompose()
 
@@ -70,7 +70,12 @@ def _layout_as_text(html: str) -> str:
         if re.search(r"\S {2,}\S", line):
             lines.append(line)
         else:
-            lines.extend(textwrap.wrap(line, PLAIN_TEXT_EMAIL_CHARACTER_WRAP_WIDTH, break_long_words=False, break_on_hyphens=False) or [""])
+            lines.extend(
+                textwrap.wrap(
+                    line, PLAIN_TEXT_EMAIL_CHARACTER_WRAP_WIDTH, break_long_words=False, break_on_hyphens=False
+                )
+                or [""]
+            )
 
     return re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip() + "\n"
 
@@ -126,7 +131,7 @@ def _from_address(org_name: str) -> str:
         # Nothing parseable to work with - leave whatever was configured alone rather than
         # silently sending from a different address.
         return settings.EMAIL_FROM
-    
+
     return formataddr((display_name or org_name, address))
 
 
