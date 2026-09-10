@@ -28,10 +28,16 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from inscriptis import get_text
+from inscriptis.model.config import ParserConfig
 
 # Plain text bodies are wrapped, which is the width every mail client's plain text view is
 # designed around.
 PLAIN_TEXT_WIDTH = 72
+
+# Images are the header logo, whose alt text is the organisation name. Without this the text part
+# of a logo-configured instance silently loses its heading - alt text is the textual equivalent of
+# an image, so it belongs in the text body.
+_TEXT_LAYOUT_CONFIG = ParserConfig(display_images=True, deduplicate_captions=True)
 
 # Marks the hidden inbox-preview line in base.html. A data attribute rather than a class so that
 # it survives whatever the CSS inliner decides to do with the classes it has consumed.
@@ -84,7 +90,7 @@ def render_email(message_template: str, context: dict) -> RenderedEmail:
 def _layout_as_text(html: str) -> str:
     """Render ``html`` to text the way a browser would, then tidy it for a mail body."""
     lines = []
-    for line in get_text(html).splitlines():
+    for line in get_text(html, _TEXT_LAYOUT_CONFIG).splitlines():
         line = line.rstrip()
         # inscriptis pads table cells apart with runs of spaces to preserve their columns.
         # Re-wrapping such a line would destroy the alignment, so only prose gets wrapped.
