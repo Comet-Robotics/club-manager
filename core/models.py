@@ -16,6 +16,21 @@ class ServerSettings(models.Model):
     accent_color_hex = ColorField(default="#4BC0FF")
     logo = models.ImageField(upload_to="logos")
     initial_setup_completed = models.BooleanField(default=False)
+    contact_email = models.EmailField(
+        blank=True,
+        help_text="Address members should reach out to with questions. Used as the Reply-To on transactional emails "
+        "and shown in their footer. Leave blank to omit it.",
+    )
+    mailing_address = models.TextField(
+        blank=True,
+        help_text="Physical mailing address shown in the footer of transactional emails. Spam filters treat a missing "
+        "postal address as a signal that mail is not from a real organization, so setting this improves "
+        "deliverability. Leave blank to omit it.",
+    )
+    website_url = models.URLField(
+        blank=True,
+        help_text="Public website linked from the footer of transactional emails. Leave blank to omit it.",
+    )
 
     class Meta:
         verbose_name = "server configuration"
