@@ -4,7 +4,7 @@ from accounts.models import UserStub
 
 
 class Command(BaseCommand):
-    help = "Delete disabled users whose user-stub registration has expired."
+    help = "Delete expired user stubs. Never touches real user accounts."
 
     def handle(self, *args, **options):
         deleted_count, deleted_objects = UserStub.purge_deletion_candidates()
