@@ -62,24 +62,42 @@ class AccountLink(models.Model):
 
 class UserStub(models.Model):
     """
-    Used when a user is in the middle of doing a self-service registration and has not completed the process yet. Users with an associated UserStub should not show up in any other part of the application other than the admin portal."""
+    Tracks a self-service registration that has been started but not finished.
+
+    Deliberately does *not* create a `User` row. A `User` existing means "this is a
+    real account", and the rest of the app relies on that: every query that lists or
+    looks up users would otherwise need to learn to skip half-registered placeholders.
+    The Net ID is held here instead, and the unique constraint on it is what reserves
+    the name until the registration is either completed or expires.
+    """
 
     user_registration_key = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
+    net_id = models.CharField(max_length=150, unique=True)
+    pending_discord_id = models.CharField(max_length=200, null=True, blank=True, unique=True)
     after_registration_redirect_destination = models.TextField(
         blank=True, null=True, validators=[validate_after_registration_redirect_destination]
     )
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
 
     expires_at = models.DateTimeField(default=get_registration_expiration)
 
+    def __str__(self):
+        return f"registration for {self.net_id}"
+
     @staticmethod
     def _get_deletion_candidates() -> QuerySet["UserStub"]:
-        return UserStub.objects.filter(expires_at__lte=timezone.now(), user__is_active=False)
+        return UserStub.objects.filter(expires_at__lte=timezone.now())
 
     @staticmethod
     def purge_deletion_candidates():
+        """
+        Drop expired registrations.
+
+        This only ever deletes `UserStub` rows. `UserStub` holds no reference to
+        `User` in either direction, so an abandoned registration cannot take an
+        account - or the payments and reservations hanging off it - down with it.
+        """
         with transaction.atomic():
-            return User.objects.filter(pk__in=UserStub._get_deletion_candidates().values("user_id")).delete()
+            return UserStub._get_deletion_candidates().delete()
 
     @staticmethod
     def create(
@@ -88,31 +106,76 @@ class UserStub(models.Model):
         discord_user_id: str | None = None,
     ):
         validate_after_registration_redirect_destination(after_registration_redirect_destination)
+        net_id = net_id.lower()
         _ = UserStub.purge_deletion_candidates()
+
         with transaction.atomic():
-            user, created = User.objects.get_or_create(username=net_id, defaults={"is_active": False})
-            if not created:
-                if UserStub.objects.filter(user=user, user__is_active=False).exists():
-                    raise RegistrationAlreadySentError
+            if User.objects.filter(username=net_id).exists():
                 raise AccountAlreadyExistsError
 
-            if discord_user_id is not None:
+            if UserStub.objects.filter(net_id=net_id).exists():
+                raise RegistrationAlreadySentError
+
+            if discord_user_id is not None and UserProfile.objects.filter(discord_id=discord_user_id).exists():
+                raise DiscordAccountAlreadyLinkedError
+
+            try:
+                with transaction.atomic():
+                    return UserStub.objects.create(
+                        net_id=net_id,
+                        pending_discord_id=discord_user_id,
+                        after_registration_redirect_destination=after_registration_redirect_destination,
+                    )
+            except IntegrityError as error:
+                # Lost a race against a concurrent registration for the same Net ID or
+                # Discord account. Work out which unique constraint gave way.
+                if UserStub.objects.filter(net_id=net_id).exists():
+                    raise RegistrationAlreadySentError from error
+                raise DiscordAccountAlreadyLinkedError from error
+
+    def build_user(self) -> User:
+        """
+        An unsaved `User` for this registration, for a form to fill in before `activate`.
+
+        Nothing is written to the database until `activate` is called, so abandoning the
+        form here leaves no trace.
+        """
+        return User(username=self.net_id, is_active=True)
+
+    def activate(self, user: User) -> str | None:
+        """
+        Turn this registration into a real account and return where to send the user next.
+
+        `user` is the instance from `build_user` with names and password already set.
+        Creating the `User` and dropping this stub happen in one transaction, so a Net ID
+        is never held by both a stub and an account.
+        """
+        if user.username != self.net_id:
+            raise ValueError(f"Cannot activate the registration for {self.net_id} with a User for {user.username}.")
+
+        user.is_active = True
+
+        with transaction.atomic():
+            try:
+                with transaction.atomic():
+                    user.save()
+            except IntegrityError as error:
+                # Someone else claimed this Net ID while the form was open - the real
+                # account wins, and this registration is now moot.
+                raise AccountAlreadyExistsError from error
+
+            if self.pending_discord_id is not None:
                 profile, _ = UserProfile.objects.get_or_create(user=user)
-                profile.discord_id = discord_user_id
+                profile.discord_id = self.pending_discord_id
                 try:
                     with transaction.atomic():
                         profile.save()
                 except IntegrityError as error:
                     raise DiscordAccountAlreadyLinkedError from error
 
-            return UserStub.objects.create(
-                user=user, after_registration_redirect_destination=after_registration_redirect_destination
-            )
+            UserStub.objects.filter(pk=self.pk).delete()
 
-    def activate(self):
-        after_registration_redirect_destination = self.after_registration_redirect_destination
-        UserStub.objects.filter(pk=self.pk).delete()
-        return after_registration_redirect_destination
+        return self.after_registration_redirect_destination
 
     def get_registration_url(self):
         return f"{settings.PUBLIC_URL}/accounts/register/continue/{self.user_registration_key}"
@@ -137,7 +200,7 @@ If this was not you, you can safely ignore this email.
 Thanks!
 """,
                 settings.EMAIL_FROM,
-                [f"{user_stub.user.username}@utdallas.edu"],
+                [f"{user_stub.net_id}@utdallas.edu"],
                 fail_silently=False,
                 html_message=f"""
 <h2>Hey there!</h2>

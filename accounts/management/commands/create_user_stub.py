@@ -7,7 +7,7 @@ class Command(BaseCommand):
     help = "Create a user stub for an incomplete registration."
 
     def add_arguments(self, parser):
-        parser.add_argument("net_id", help="NetID to use as the user stub's username.")
+        parser.add_argument("net_id", help="NetID to reserve for the registration.")
         parser.add_argument(
             "--after-registration-redirect-destination",
             default="",
@@ -32,7 +32,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Created user stub: {str(user_stub)} for user {user_stub.user.username}\n"
+                f"Created user stub: {str(user_stub)} for Net ID {user_stub.net_id}\n"
                 f"Registration URL: {user_stub.get_registration_url()}"
             )
         )
