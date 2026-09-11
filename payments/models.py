@@ -1,10 +1,12 @@
-from django.db import models
-from django.contrib.auth.models import User
-from django.core.validators import MaxValueValidator, MinValueValidator
-from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
+from __future__ import annotations
 
 from computedfields.models import ComputedFieldsModel, computed
+from django.contrib.auth.models import User
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+from typing_extensions import deprecated
 
 from common.utils import validate_staff
 
@@ -42,8 +44,89 @@ class Term(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     product: Product = models.OneToOneField(Product, on_delete=models.CASCADE)
 
-    def get_current_term():
+    @staticmethod
+    @deprecated(
+        "Use one of the undeprecated term query utilities (get_active_terms, get_active_term_with_earliest_end_date, get_active_term_with_latest_end_date) which have explicit handling for term overlaps instead."
+    )
+    def get_current_term() -> "Term | None":
         return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).first()
+
+    @staticmethod
+    def get_active_terms() -> models.QuerySet["Term"]:
+        """
+        Use this to answer "is this user a member today?"
+
+        Returns a QuerySet of all active terms (terms whose start_date is in the past and end_date is in the future).
+
+        During an overlap period, this returns both the expiring term and the renewing term.
+
+        Suggested use-cases:
+        - determining whether a user is allowed to participate as a current member
+        - Discord member role sync
+        - event check-in membership validity
+        - current member exports
+        - voter eligibility checks before applying attendance requirements
+        """
+        today = timezone.now().date()
+        return Term.objects.filter(start_date__lte=today, end_date__gte=today)
+
+    @staticmethod
+    def get_active_term_with_earliest_end_date() -> "Term | None":
+        """
+        Use this when older-term rules should continue to govern until the older term expires.
+
+        Returns the active term with the earliest end date.
+
+        Example: Given a Spring 2026 term for 2025-12-01 to 2026-08-31, and a Fall 2026 term for 2026-05-01 to 2027-01-31, this function will return different results depending on the current date.
+
+        - In Spring 2026: returns Spring 2026 term, since that is the only active term.
+        - During Spring 2026 and Fall 2026 overlap period: returns Spring 2026 term. While both Spring 2026 and Fall 2026 terms are active, the Spring 2026 term wins as it has the earliest end date.
+        - In Fall 2026 but after the overlap period: returns Fall 2026 term, since that is the only active term.
+
+        Suggested use-cases:
+        - generating election voting rosters tied to the expiring academic term, where the renewing term should not replace the older term yet
+        - checking eligibility for processes that intentionally remain attached to the soonest-expiring active term during an overlap period
+
+        Gotchas:
+        - Do not use this to answer "is this user a member today?" For that, check whether the user has paid for any term returned by `get_active_terms()`.
+        - Do not use this to choose which dues product a renewing member should be prompted to buy. For that, use `get_active_term_with_latest_end_date()`.
+        """
+        return Term.get_active_terms().order_by("end_date").first()
+
+    @staticmethod
+    def get_active_term_with_latest_end_date() -> "Term | None":
+        """
+        Use this to answer "which active dues term should this user pay for now?"
+
+        Returns the active term with the latest end date.
+
+        This selects by end date because the goal is to choose the term that keeps the user a member for the longest period of time from today.
+
+        Example: Given a Spring 2026 term for 2025-12-01 to 2026-08-31, and a Fall 2026 term for 2026-05-01 to 2027-01-31, this function will return different results depending on the current date.
+
+        - In Spring 2026: returns Spring 2026 term, since that is the only active term.
+        - During Spring 2026 and Fall 2026 overlap period: returns Fall 2026 term, since it has the latest end date.
+        - In Fall 2026 but after the overlap period: returns Fall 2026 term, since that is the only active term.
+
+        Recommended use-cases:
+        - Selecting a term for member due payment - it is most advantageous to select the term with the latest end date because this allows the user to remain a member for the longest period of time. If you joined the club in May 2026, why pay dues for the Spring 2026 term when you can pay for the Fall 2026 term and be counted as a member for the remainder of the Spring 2026 term, and the entirety of the Fall 2026 term?
+        - membership renewal warnings displayed on event check-ins during an overlap period: a Spring-only member should be warned to pay Fall dues, while a Fall member should not be warned
+
+        Gotchas:
+        - Do not use this by itself to answer "is this user a member today?" For that, check whether the user has paid for any term returned by `get_active_terms()`.
+        """
+        # sorting by `-start_date` serves as a tie-breaker. in the off chance that two active terms end on the same date, this ensures that we always prefer the "newer" term (by start date) when coverage length is equal.
+        # should be rarely needed but keeps this function deterministic.
+        return Term.get_active_terms().order_by("-end_date", "-start_date").first()
+
+    def get_members(self):
+        """
+        Returns a QuerySet of all PurchasedProducts for this term with a successful payment associated with this term's Product, allowing you to query all the users with a valid membership for this term.
+        """
+
+        return PurchasedProduct.objects.filter(payment__is_successful=True, product=self.product).select_related(
+            "payment__user"
+        )
 
     def __str__(self):
         return self.name

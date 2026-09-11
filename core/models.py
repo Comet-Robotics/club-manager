@@ -1,3 +1,6 @@
+from typing import Iterable
+
+from typing_extensions import deprecated
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
@@ -105,6 +108,7 @@ class UserProfile(models.Model):
 
         return [(product.product.term, product) for product in purchased_products]
 
+    @deprecated("Use is_member_for_terms instead")
     def is_member(self, for_term: Term | None = None) -> tuple[Term, PurchasedProduct | None]:
         """
         Returns a tuple with the Term and PurchasedProduct object for the current member if the user is a member for the given term, or a tuple with the given Term and None if they are not a member.
@@ -121,6 +125,38 @@ class UserProfile(models.Model):
         )
 
         return term, purchased_product.first()
+
+    def is_member_for_terms(self, terms: Iterable[Term]) -> list[tuple[Term, PurchasedProduct]]:
+        """
+        Returns a list of (Term, PurchasedProduct) tuples for the given terms where the user is a member. If the user was not a member for any of the given terms, returns an empty list.
+        """
+        terms = list(terms)
+
+        purchased_products = PurchasedProduct.objects.filter(
+            payment__user=self.user, product__term__in=terms, payment__is_successful=True
+        )
+
+        return [(product.product.term, product) for product in purchased_products]
+
+    def get_active_membership_terms(self) -> list[tuple[Term, PurchasedProduct]]:
+        """
+        Returns paid memberships for any currently active term.
+
+        Use this to answer "which active memberships does this user have today?"
+        """
+        active_terms = Term.get_active_terms()
+        if not active_terms.exists():
+            return []
+
+        return self.is_member_for_terms(active_terms)
+
+    def is_active_member(self) -> bool:
+        """
+        Returns whether the user has paid dues for any currently active term.
+
+        Use this to answer "is this user a member today?"
+        """
+        return len(self.get_active_membership_terms()) > 0
 
     @staticmethod
     def create_extended_user(net_id, comet_card_serial_number, first, last):

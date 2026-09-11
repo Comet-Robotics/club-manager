@@ -14,6 +14,6 @@ with open("members.csv", "w") as f:
     writer = csv.writer(f)
     writer.writerow(("LastName", "FirstName", "Email"))
     for user in User.objects.all():
-        if not user.userprofile.is_member()[1]:
+        if not user.userprofile.is_active_member():
             continue
         writer.writerow((user.last_name, user.first_name, user.username + "@utdallas.edu"))
