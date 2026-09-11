@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+
+from core.emails import send_templated_email
 from django.utils.http import url_has_allowed_host_and_scheme
 
 from clubManager import settings
@@ -177,6 +179,9 @@ class UserStub(models.Model):
 
         return self.after_registration_redirect_destination
 
+    def email_address(self) -> str:
+        return f"{self.net_id}@utdallas.edu"
+
     def get_registration_url(self):
         return f"{settings.PUBLIC_URL}/accounts/register/continue/{self.user_registration_key}"
 
@@ -186,6 +191,19 @@ class UserStub(models.Model):
             server_settings = ServerSettings.objects.first()
             if server_settings is None:
                 raise Exception("Server settings not found")
+
+            if settings.FEATURE_FLAGS["NEW_TRANSACTIONAL_EMAIL_TEMPLATES"]:
+                send_templated_email(
+                    "email/messages/account_registration.html",
+                    {
+                        "registration_url": user_stub.get_registration_url(),
+                        "expires_at": user_stub.expires_at.strftime("%m-%d-%Y %H:%M:%S"),
+                        "request_url": f"{settings.PUBLIC_URL}/accounts/register",
+                    },
+                    [user_stub.email_address()],
+                )
+                return
+
             send_mail(
                 f"Create your {server_settings.organization_name} account",
                 f"""
@@ -200,7 +218,7 @@ If this was not you, you can safely ignore this email.
 Thanks!
 """,
                 settings.EMAIL_FROM,
-                [f"{user_stub.net_id}@utdallas.edu"],
+                [user_stub.email_address()],
                 fail_silently=False,
                 html_message=f"""
 <h2>Hey there!</h2>
