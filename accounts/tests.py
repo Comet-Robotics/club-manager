@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, patch
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core import mail
 from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
@@ -14,7 +15,7 @@ from accounts.models import (
     UserStub,
     validate_after_registration_redirect_destination,
 )
-from core.models import UserProfile
+from core.models import ServerSettings, UserProfile
 from payments.models import Payment, Product, Term
 
 
@@ -241,3 +242,49 @@ class UserStubManagementCommandTests(RegistrationTestCase):
         call_command("purge_expired_user_stubs")
 
         self.assertFalse(UserStub.objects.exists())
+
+
+class UserStubNotifyTests(RegistrationTestCase):
+    """
+    Both sides of NEW_TRANSACTIONAL_EMAIL_TEMPLATES.
+
+    `accounts.models` reads the flag off the settings *module* rather than
+    `django.conf.settings`, so `override_settings` does not reach it - patch the dict.
+    """
+
+    def setUp(self):
+        super().setUp()
+        ServerSettings.objects.get_or_create(defaults={"organization_name": "Comet Robotics"})
+
+    def notify(self, *, templated):
+        user_stub = UserStub.create("abc123456", None)
+        with patch.dict("clubManager.settings.FEATURE_FLAGS", {"NEW_TRANSACTIONAL_EMAIL_TEMPLATES": templated}):
+            UserStub.notify(user_stub)
+        self.assertEqual(len(mail.outbox), 1)
+        return user_stub, mail.outbox[0]
+
+    def test_templated_path_renders_the_shared_layout(self):
+        user_stub, message = self.notify(templated=True)
+        html = message.alternatives[0][0] if message.alternatives else ""
+
+        self.assertEqual(message.subject, "Create your Comet Robotics account")
+        self.assertEqual(message.to, ["abc123456@utdallas.edu"])
+        self.assertIn(user_stub.get_registration_url(), html)
+        # The shared base.html footer, which the hand-rolled path has no equivalent of.
+        self.assertIn("You received this email because", html)
+        # Plain text is generated from the HTML rather than maintained by hand.
+        self.assertIn(user_stub.get_registration_url(), message.body)
+
+    def test_legacy_path_is_unchanged_while_the_flag_is_off(self):
+        user_stub, message = self.notify(templated=False)
+        html = message.alternatives[0][0] if message.alternatives else ""
+
+        self.assertEqual(message.subject, "Create your Comet Robotics account")
+        self.assertEqual(message.to, ["abc123456@utdallas.edu"])
+        self.assertIn(user_stub.get_registration_url(), html)
+        self.assertIn("Hey there!", html)
+
+    def test_email_address_derives_from_the_net_id(self):
+        user_stub = UserStub.create("abc123456", None)
+
+        self.assertEqual(user_stub.email_address(), "abc123456@utdallas.edu")
