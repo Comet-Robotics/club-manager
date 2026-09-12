@@ -55,7 +55,7 @@ class PaymentSuccessView(View):
         payment = get_object_or_404(Payment, id=payment_id)
 
         product: Product = payment.purchased_products.first().product
-        user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        user_profile, _ = UserProfile.objects.get_or_create(user=payment.user)
 
         is_user_missing_discord_account_link = user_profile.discord_id is None
         is_payment_is_for_member_dues = product.term is not None
