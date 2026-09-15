@@ -65,6 +65,16 @@
                         </div>
                     </div>
                 </div>
+                {% elif message == 'renewal' %}
+                <div class="result-card result-warning">
+                    <div class="result-icon">
+                        <i data-lucide="alert-triangle"></i>
+                    </div>
+                    <div class="result-content">
+                        <h3>Membership Renewal Needed</h3>
+                        <p>{{ user.first_name }} {{ user.last_name }} is a current member but needs to pay dues for {{ renewal_term.name }}.</p>
+                    </div>
+                </div>
                 {% else %}
                 <div class="result-card result-success">
                     <div class="result-icon">
