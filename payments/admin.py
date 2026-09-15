@@ -8,6 +8,10 @@ from more_admin_filters import MultiSelectDropdownFilter
 from .models import Product, Payment, Term, PurchasedProduct
 
 
+class PurchasedProductInline(admin.TabularInline):
+    model = PurchasedProduct
+    extra = 1
+    
 class PaymentAdmin(admin.ModelAdmin):
     exclude = ["completed_at", "metadata"]
     readonly_fields = ["created_at", "updated_at", "metadata", "completed_at"]
@@ -17,6 +21,8 @@ class PaymentAdmin(admin.ModelAdmin):
         ("user__userprofile__discord_id", admin.EmptyFieldListFilter),
         ("method", MultiSelectDropdownFilter),
     ]
+    inlines = [PurchasedProductInline]
+
 
 
 class PurchasedProductAdmin(admin.ModelAdmin):
