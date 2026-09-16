@@ -104,10 +104,7 @@ def email_org_context() -> dict:
     """Build the ``org`` context that the email header, footer, and stylesheet render from."""
     from core.models import ServerSettings
 
-    if settings.FEATURE_FLAGS["AUTO_SERVER_SETTINGS_INIT"]:
-        server_settings = ServerSettings.objects.get_or_create()[0]
-    else:
-        server_settings = ServerSettings.objects.get()
+    server_settings = ServerSettings.objects.get_or_create()[0]
 
     logo_url = None
     if server_settings.logo and settings.PUBLIC_URL:
