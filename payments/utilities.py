@@ -18,8 +18,6 @@ def can_purchase_product(product: Product, user: User) -> str | None:
     else:
         # Purchases allowed, but need to check if user has reached max purchases
 
-        # TODO: need to test this
-
         total_purchased = (
             PurchasedProduct.objects.filter(product=product, payment__user=user, payment__is_successful=True).aggregate(
                 total_quantity=Sum("quantity")
