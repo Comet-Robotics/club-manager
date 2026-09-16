@@ -244,7 +244,7 @@ DISCORD_TEAM_LEAD_ROLE_ID = int(os.getenv("DISCORD_TEAM_LEAD_ROLE_ID", 0))
 DISCORD_MEMBER_ROLE_ID = int(os.getenv("DISCORD_MEMBER_ROLE_ID", 0))
 
 ENABLE_SQUARE_PAYMENTS = bool(int(os.getenv("ENABLE_SQUARE_PAYMENTS", 0)))
-LOGOUT_REDIRECT_URL = 'login'
+LOGOUT_REDIRECT_URL = "login"
 
 
 def strtobool(val):
@@ -262,12 +262,19 @@ def strtobool(val):
         raise ValueError("invalid truth value %r" % (val,))
 
 
-def resolve_feature_flags(flags_with_defaults: dict[str, bool]) -> dict[str, bool]:
+def resolve_feature_flags(
+    *,
+    flags_with_defaults: dict[str, bool],
+    deprecated_flags: list[str],
+) -> dict[str, bool]:
     """
     returns a dictionary of feature flags with their resolved values - whether from environment variable or falling back to their default value.
 
     key: flag name. looks for an environment variable with the name 'FLAG_{flag_name}'
     value: default value for the flag. if not set, defaults to False.
+
+    deprecated_flags: flag names that are no longer used. if the corresponding
+    FLAG_{name} environment variable is still set, a warning is printed so it can be removed.
     """
     resolved_flags = {}
     flags_using_defaults: set[str] = set()
@@ -285,6 +292,16 @@ def resolve_feature_flags(flags_with_defaults: dict[str, bool]) -> dict[str, boo
         resolved_flags[flag] = value_as_bool
 
     print(f"Feature flags using default values: {flags_using_defaults}")
+
+    set_deprecated_env_vars = [
+        f"FLAG_{flag}" for flag in deprecated_flags if os.environ.get(f"FLAG_{flag}") is not None
+    ]
+    if set_deprecated_env_vars:
+        print(
+            "The following feature flag environment variables are deprecated and can be deleted: "
+            f"{set_deprecated_env_vars}"
+        )
+
     return resolved_flags
 
 
@@ -294,7 +311,7 @@ Club Manager uses a trunk-based development workflow, meaning that all new funct
 To configure feature flags at deploy time via environment variables, take the name of the flag and prepend "FLAG_" to it, and set it to a truthy or falsy string value. for example, the flag "AUTO_SERVER_SETTINGS_INIT" would be enabled with the environment variable "FLAG_AUTO_SERVER_SETTINGS_INIT" set to "true".
 """
 FEATURE_FLAGS = resolve_feature_flags(
-    {
+    flags_with_defaults={
         # enabled: ServerSettings are auto created when needed, displays configuration prompts to superusers on new instances
         # disabled: ServerSettings needs to be manually created in Django Admin, users will encounter Django errors if this is not done
         # - @jasonappah, 10/14/2025 - default off
@@ -304,5 +321,6 @@ FEATURE_FLAGS = resolve_feature_flags(
         # disabled: transactional emails use HTML strings that are inlined in sending code
         # - @jasonappah, 09/10/2026 - default off
         "NEW_TRANSACTIONAL_EMAIL_TEMPLATES": False,
-    }
+    },
+    deprecated_flags=[],
 )
