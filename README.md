@@ -119,6 +119,38 @@ These pages are deliberately standalone — they don't extend the portal base te
 which reads `ServerSettings` from the database. An error page has to render when the
 database is exactly what's broken.
 
+### releases and suspect commits
+
+Events are always tagged with a release: with `SENTRY_RELEASE` unset, the SDK auto-detects
+it as the current commit SHA of the checkout the services run from. That much needs no
+setup.
+
+Registering that release *with* Sentry is what buys the rest — suspect commits ("this was
+probably introduced by commit X"), working `resolvedInNextRelease`, deploy markers on
+charts, and release-over-release comparison.
+
+**Setting `SENTRY_AUTH_TOKEN` in `.env` is the only step.** It needs the
+`project:releases` scope; `SENTRY_ORG` and `SENTRY_PROJECT` default to
+`comet-robotics` / `club-manager`, matching the default DSN. Both `deploy/init.sh` and
+`deploy/run.sh` install `sentry-cli` themselves the first time they see a token and then
+verify it authenticates, so adding Sentry to an existing deployment doesn't mean
+re-running `init.sh` — the next `run.sh` picks it up.
+
+That the token *exists* is the signal, rather than a hostname check or a separate flag: an
+instance with a release token is an instance that wants releases. A club running its own
+copy sets no token, so nothing is installed and nothing is reported. To force the decision
+the other way, set `SENTRY_CLI_INSTALL` to a truthy or falsy value; to avoid tracking the
+latest CLI, pin `SENTRY_CLI_VERSION`.
+
+Nothing here can fail a deploy. A missing token, a failed install, a rejected token, or a
+Sentry outage each print a warning and continue. The release is registered before the
+services restart; the deploy marker is recorded after they come back up, so its timestamp
+reflects when the new code started serving.
+
+The release SHA comes from `git rev-parse HEAD` rather than
+`sentry-cli releases propose-version`, specifically so it cannot disagree with the SHA the
+SDK auto-detects.
+
 ### checking that a deployment reports
 
 Because Sentry is off under `DEBUG`, the wiring can only be exercised on a real
