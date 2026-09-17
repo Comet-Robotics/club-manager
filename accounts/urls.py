@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("register/done", views.RegistrationSubmittedView.as_view(), name="registration_submitted"),
     path(
         "register/continue/<uuid:user_registration_key>",
         views.RegistrationCompleteView.as_view(),

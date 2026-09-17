@@ -5,7 +5,9 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core import mail
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import (
+    TestCase,
+)
 from django.urls import reverse
 from django.utils import timezone
 
@@ -373,12 +375,7 @@ class UserStubNotifyTests(RegistrationTestCase):
 
 class RegistrationCompletionViewTests(RegistrationTestCase):
     def complete(self, user_stub, **overrides):
-        payload = {
-            "first_name": "Ada",
-            "last_name": "Lovelace",
-            "new_password1": "correct-horse-battery-staple",
-            "new_password2": "correct-horse-battery-staple",
-        }
+        payload = {"first_name": "Ada", "last_name": "Lovelace"}
         payload.update(overrides)
         return self.client.post(reverse("registration_complete", args=[user_stub.user_registration_key]), payload)
 
@@ -389,22 +386,27 @@ class RegistrationCompletionViewTests(RegistrationTestCase):
 
         self.assertRedirects(response, "/payments/", fetch_redirect_response=False)
         user = User.objects.get(username="registrationuser")
-        self.assertTrue(user.is_active)
-        self.assertTrue(user.check_password("correct-horse-battery-staple"))
         self.assertEqual(user.first_name, "Ada")
         self.assertEqual(user.last_name, "Lovelace")
         self.assertFalse(UserStub.objects.filter(pk=user_stub.pk).exists())
-        self.assertEqual(self.client.session["_auth_user_id"], str(user.pk))
 
-    def test_invalid_password_keeps_the_stub_and_creates_no_account(self):
-        user_stub = UserStub.create("invalidregistration", "")
+    def test_valid_registration_leaves_the_account_passwordless_and_signed_out(self):
+        user_stub = UserStub.create("registrationuser", "/payments/")
 
-        response = self.complete(user_stub, new_password2="not-the-same-password")
+        self.complete(user_stub)
 
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(User.objects.filter(username="invalidregistration").exists())
-        self.assertTrue(UserStub.objects.filter(pk=user_stub.pk).exists())
-        self.assertContains(response, "The two password fields didn\u2019t match.")
+        user = User.objects.get(username="registrationuser")
+        self.assertTrue(user.is_active)
+        self.assertFalse(user.has_usable_password())
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_registration_form_asks_for_no_password(self):
+        user_stub = UserStub.create("passwordless", "")
+
+        response = self.client.get(reverse("registration_complete", args=[user_stub.user_registration_key]))
+
+        self.assertContains(response, 'name="first_name"')
+        self.assertNotContains(response, 'type="password"')
 
     def test_missing_name_keeps_the_stub_and_creates_no_account(self):
         user_stub = UserStub.create("missingname", "")
@@ -427,12 +429,13 @@ class RegistrationCompletionViewTests(RegistrationTestCase):
         self.assertFalse(User.objects.filter(username="expiredregistration").exists())
         self.assertTrue(UserStub.objects.filter(pk=user_stub.pk).exists())
 
-    def test_valid_registration_without_destination_redirects_to_profile(self):
-        user_stub = UserStub.create("profiledestination", "")
+    def test_valid_registration_without_destination_redirects_to_the_done_page(self):
+        user_stub = UserStub.create("donedestination", "")
 
         response = self.complete(user_stub)
 
-        self.assertRedirects(response, reverse("profile"))
+        self.assertRedirects(response, reverse("registration_submitted"))
+        self.assertContains(self.client.get(reverse("registration_submitted")), "You're registered")
 
     def test_net_id_claimed_while_the_form_was_open_is_reported(self):
         """activate() raises AccountAlreadyExistsError here; the view must not 500."""
@@ -443,3 +446,76 @@ class RegistrationCompletionViewTests(RegistrationTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "already")
+
+
+class RegistrationCompletionDiscordConsentTests(RegistrationTestCase):
+    """
+    The registration page is the last place a hijacked `/link` can be refused.
+
+    `/link` takes any Net ID, so the Discord ID on a stub is a stranger's claim until the
+    person reading their own email agrees to it on this page.
+    """
+
+    def get_page(self, user_stub, discord_user=FAKE_DISCORD_USER):
+        with patch("accounts.views.describe_discord_user", return_value=discord_user):
+            return self.client.get(reverse("registration_complete", args=[user_stub.user_registration_key]))
+
+    def complete(self, user_stub, **overrides):
+        payload = {"first_name": "Ada", "last_name": "Lovelace"}
+        payload.update(overrides)
+        with patch("accounts.views.describe_discord_user", return_value=FAKE_DISCORD_USER):
+            return self.client.post(reverse("registration_complete", args=[user_stub.user_registration_key]), payload)
+
+    def test_page_names_the_net_id_being_registered(self):
+        user_stub = UserStub.create("abc123456", "")
+
+        response = self.get_page(user_stub)
+
+        self.assertContains(response, "Registering abc123456")
+
+    def test_page_shows_the_pending_discord_account_and_an_opt_out(self):
+        user_stub = UserStub.create("abc123456", "", discord_user_id="123456789012345678")
+
+        response = self.get_page(user_stub)
+
+        self.assertContains(response, 'name="link_discord"')
+        self.assertContains(response, "123456789012345678")
+        self.assertContains(response, "attacker")
+        self.assertContains(response, "Not you? Uncheck this and tell an officer.")
+
+    def test_page_still_names_the_account_when_the_discord_lookup_fails(self):
+        user_stub = UserStub.create("abc123456", "", discord_user_id="123456789012345678")
+
+        response = self.get_page(user_stub, discord_user=None)
+
+        self.assertContains(response, 'name="link_discord"')
+        self.assertContains(response, "123456789012345678")
+
+    def test_no_opt_out_without_a_pending_discord_account(self):
+        user_stub = UserStub.create("abc123456", "")
+
+        response = self.get_page(user_stub)
+
+        self.assertNotContains(response, 'name="link_discord"')
+
+    def test_checked_opt_in_links_the_discord_account(self):
+        user_stub = UserStub.create("abc123456", "", discord_user_id="123456789012345678")
+
+        self.complete(user_stub, link_discord="on")
+
+        user = User.objects.get(username="abc123456")
+        user.userprofile.refresh_from_db()
+        self.assertEqual(user.userprofile.discord_id, "123456789012345678")
+        self.assertFalse(UserStub.objects.filter(pk=user_stub.pk).exists())
+
+    def test_declining_creates_the_account_without_the_discord_link(self):
+        user_stub = UserStub.create("abc123456", "", discord_user_id="123456789012345678")
+
+        response = self.complete(user_stub)
+
+        self.assertRedirects(response, reverse("registration_submitted"))
+        user = User.objects.get(username="abc123456")
+        user.userprofile.refresh_from_db()
+        self.assertIsNone(user.userprofile.discord_id)
+        self.assertFalse(UserProfile.objects.filter(discord_id="123456789012345678").exists())
+        self.assertFalse(UserStub.objects.filter(pk=user_stub.pk).exists())

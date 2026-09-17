@@ -1,16 +1,19 @@
-from django.contrib.auth import login
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.views import View
-from .models import AccountAlreadyExistsError, AccountLink, DiscordAccountAlreadyLinkedError, UserStub
+from .models import (
+    AccountAlreadyExistsError,
+    AccountLink,
+    DiscordAccountAlreadyLinkedError,
+    UserStub,
+)
+from .discord import describe_discord_user, get_discord_user
 from .forms import RegistrationCompletionForm
 from core.models import ServerSettings, UserProfile
 from clubManager import settings
 from core.utilities import get_layout_data
-import requests
-from typing import TypedDict
 
 
 class LinkSocialView(View):
@@ -78,25 +81,49 @@ class RegistrationCompleteView(View):
             raise Http404("This registration link is invalid or has expired.")
         return user_stub
 
+    def build_form(self, user_stub, data=None):
+        # An unsaved User for the form to fill in. activate() is what actually creates the
+        # account, so a submission that fails leaves nothing behind.
+        arguments = () if data is None else (data,)
+        return RegistrationCompletionForm(
+            user_stub.build_user(), *arguments, has_pending_discord_id=bool(user_stub.pending_discord_id)
+        )
+
+    def page_context(self, user_stub, form):
+        """
+        Everything the page needs to be honest about what finishing it will do.
+
+        The Net ID is shown because the link arrives by email and the reader has to be
+        able to tell at a glance whose account this is. The Discord account is shown
+        because `/link` takes any Net ID: if someone else started this registration, the
+        page they land on is the last place they can refuse the link before it is made.
+        """
+        discord_user = describe_discord_user(user_stub.pending_discord_id) if user_stub.pending_discord_id else None
+        return {
+            "form": form,
+            "settings": ServerSettings.objects.first(),
+            "net_id": user_stub.net_id,
+            "pending_discord_id": user_stub.pending_discord_id,
+            # Named for _discord_card.html, which reads these straight off the context.
+            "username": discord_user["username"] if discord_user else None,
+            "profile_image": discord_user["profile_image"] if discord_user else None,
+        }
+
     def get(self, request, user_registration_key):
         user_stub = self.get_user_stub(user_registration_key)
-        return render(
-            request,
-            self.template_name,
-            {"form": RegistrationCompletionForm(user_stub.build_user()), "settings": ServerSettings.objects.first()},
-        )
+        return render(request, self.template_name, self.page_context(user_stub, self.build_form(user_stub)))
 
     def post(self, request, user_registration_key):
         activated = False
         with transaction.atomic():
             user_stub = self.get_user_stub(user_registration_key, lock=True)
-            # An unsaved User for the form to fill in. activate() is what actually creates
-            # the account, so a submission that fails here leaves nothing behind.
-            form = RegistrationCompletionForm(user_stub.build_user(), request.POST)
+            form = self.build_form(user_stub, request.POST)
             if form.is_valid():
                 user = form.save(commit=False)
                 try:
-                    redirect_destination = user_stub.activate(user)
+                    redirect_destination = user_stub.activate(
+                        user, link_discord=form.cleaned_data.get("link_discord", True)
+                    )
                     activated = True
                 except AccountAlreadyExistsError:
                     form.add_error(None, "An account for this Net ID already exists. Try signing in instead.")
@@ -106,39 +133,14 @@ class RegistrationCompleteView(View):
                     )
 
         if not activated:
-            return render(
-                request,
-                self.template_name,
-                {"form": form, "settings": ServerSettings.objects.first()},
-            )
-        login(request, user)
-        return redirect(redirect_destination or "profile")
+            return render(request, self.template_name, self.page_context(user_stub, form))
+        return redirect(redirect_destination or "registration_submitted")
 
 
-class DiscordUser(TypedDict):
-    username: str
-    discord_id: int
-    profile_image: str
+class RegistrationSubmittedView(View):
+    """Where a finished registration lands when it has nowhere else to go."""
 
+    template_name = "registration_submitted.html"
 
-def get_discord_user(user_id: int, bot_token: str) -> DiscordUser | None:
-    url = f"https://discord.com/api/v10/users/{user_id}"
-    headers = {"Authorization": f"Bot {bot_token}"}
-
-    response = requests.get(url, headers=headers)
-
-    if not response.status_code == 200:
-        return None
-
-    user_data = response.json()
-
-    discord_id = int(user_data["id"])
-    discriminator = int(user_data["discriminator"]) or 0
-
-    if "avatar" in user_data:
-        profile_image = f"https://cdn.discordapp.com/avatars/{discord_id}/{user_data['avatar']}.png"
-    else:
-        discord_profile_image_index = ((discord_id >> 22) % 6) if discriminator == 0 else discriminator % 5
-        profile_image = f"https://cdn.discordapp.com/embed/avatars/{discord_id}.png"
-
-    return {"username": user_data["username"], "discord_id": discord_id, "profile_image": profile_image}
+    def get(self, request):
+        return render(request, self.template_name, {"settings": ServerSettings.objects.first()})
