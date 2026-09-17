@@ -34,6 +34,7 @@ django-debug-toolbar = "*"
 django-naomi = "*"
 css-inline = "*"
 inscriptis = "*"
+django-ratelimit = "*"
 
 [dev-packages]
 types-beautifulsoup4 = "*"
