@@ -40,11 +40,39 @@
       {%endif%}
       <h1 class="font-mashine text-white text-lg">Payments</h1>
       <h2 class="font-unbounded text-white text-3xl">{{product_name}}</h2>
+      <!-- TODO: allow username to not be a net id -->
       <p>Enter your Net ID below to begin processing your payment!</p>
     </div>
     <div
       class="flex flex-col bg-textDark w-full p-12 gap-4 items-center justify-center"
     >
+      {% if confirm_net_id %}
+      <p>
+        We don't have an account for <strong>{{ confirm_net_id }}</strong>.
+        <br />
+        Is that your Net ID? We'll email {{ confirm_email }} a link to finish
+        registering, then bring you back here to pay.
+      </p>
+      <form
+        method="post"
+        class="flex flex-col gap-2 items-center justify-center"
+      >
+        {% csrf_token %}
+        <input type="hidden" name="username" value="{{ confirm_net_id }}" />
+        <input
+          type="hidden"
+          name="payment_method"
+          value="{{ confirm_payment_method }}"
+        />
+        <input type="hidden" name="confirm_registration" value="1" />
+        <button class="btn w-max btn-neutral" type="submit">
+          Yes, email me a registration link
+        </button>
+      </form>
+      <a class="btn w-max btn-ghost" href="{{ request.path }}">
+        No, let me fix it
+      </a>
+      {% else %}
       <form
         method="post"
         class="flex flex-col gap-2 items-center justify-center"
@@ -54,6 +82,7 @@
           Continue
         </button>
       </form>
+      {% endif %}
       {% if message %}
       <div role="alert" class="alert alert-info">
         <p>{{ message }}</p>
