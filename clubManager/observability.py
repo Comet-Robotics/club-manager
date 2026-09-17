@@ -64,6 +64,19 @@ def resolve_tenant(public_url: str | None) -> str:
     return hostname or "unknown"
 
 
+# Scope tags reach errors and logs, but not streamed spans -- those are their own
+# envelope items and never pass through the event scope. These are stamped onto each
+# span by `_before_send_span` instead. Mutable because set_service() corrects `service`
+# after settings.py has already initialized the SDK.
+_SPAN_ATTRIBUTES: dict[str, str] = {}
+
+
+def _before_send_span(span, _hint):
+    """Stamp the tenant and service onto every streamed span."""
+    span.setdefault("attributes", {}).update(_SPAN_ATTRIBUTES)
+    return span
+
+
 def init_sentry(*, debug: bool, public_url: str | None, service: str = "web") -> bool:
     """
     Initialize the Sentry SDK unless this instance has opted out.
@@ -102,6 +115,13 @@ def init_sentry(*, debug: bool, public_url: str | None, service: str = "web") ->
         # the debugging metadata that makes a production report actionable.
         send_default_pii=True,
         traces_sample_rate=_env_float("SENTRY_TRACES_SAMPLE_RATE", 1.0),
+        # Send spans in batches as they finish, instead of buffering a whole transaction
+        # in memory until its root span closes. Lifts the 1000-span-per-transaction cap
+        # and gets trace data visible sooner. The one behavioral change: breadcrumbs are
+        # no longer attached to spans -- they stay on errors, which is where we read them.
+        trace_lifecycle="stream",
+        # Only honoured in stream mode; it is how the tenant reaches span data at all.
+        before_send_span=_before_send_span,
         profile_session_sample_rate=_env_float("SENTRY_PROFILE_SESSION_SAMPLE_RATE", 1.0),
         profile_lifecycle="trace",
         enable_logs=True,
@@ -122,11 +142,14 @@ def init_sentry(*, debug: bool, public_url: str | None, service: str = "web") ->
         ],
     )
 
-    # Global scope, so these land on every event, log, and transaction the process sends
-    # rather than only on ones raised inside a request.
+    # Global scope, so these land on every event and log the process sends rather than
+    # only on ones raised inside a request. Spans are covered separately, via
+    # _before_send_span.
+    tenant = resolve_tenant(public_url)
     scope = sentry_sdk.get_global_scope()
-    scope.set_tag("tenant", resolve_tenant(public_url))
+    scope.set_tag("tenant", tenant)
     scope.set_tag("service", service)
+    _SPAN_ATTRIBUTES.update({"tenant": tenant, "service": service})
 
     return True
 
@@ -146,6 +169,7 @@ def set_service(service: str) -> None:
 
     if sentry_sdk.get_client().is_active():
         sentry_sdk.get_global_scope().set_tag("service", service)
+        _SPAN_ATTRIBUTES["service"] = service
 
 
 def trigger_error(request):

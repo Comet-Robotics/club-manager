@@ -90,6 +90,17 @@ them separable:
   override with `SENTRY_TENANT` for a friendlier name.
 - `service` — `web` or `discord-bot`.
 
+Tracing runs in Sentry's **stream mode** (`trace_lifecycle="stream"`): spans are sent in
+batches as they finish rather than buffered until the root span closes, which lifts the
+1000-span-per-transaction cap and surfaces trace data sooner. Two consequences worth
+knowing if you write custom instrumentation:
+
+- The legacy `sentry_sdk.start_span` / `start_transaction` API is a no-op in stream mode
+  and returns a `NoOpSpan`. Use the streamed Span API instead. We currently rely entirely
+  on auto-instrumentation, all of which is stream-aware.
+- Scope tags don't reach spans, because spans are their own envelope items. The tenant and
+  service are stamped on via `before_send_span` — which itself only works in stream mode.
+
 To point an instance at its own Sentry project, set `SENTRY_DSN`. To opt out of reporting
 altogether, set `SENTRY_ENABLED=0` (or blank out `SENTRY_DSN`). The rest of the knobs are
 listed in `.env.example`.
