@@ -2,6 +2,7 @@ from unittest import mock
 
 from django.test import TestCase
 
+from clubManager import observability
 from clubManager.observability import init_sentry, resolve_tenant
 
 
@@ -52,3 +53,44 @@ class ResolveTenantTests(TestCase):
     def test_falls_back_when_public_url_is_missing(self):
         with mock.patch.dict("os.environ", {"SENTRY_TENANT": ""}):
             self.assertEqual(resolve_tenant(None), "unknown")
+
+
+class SpanAttributeTests(TestCase):
+    """
+    Spans need the tenant stamped on separately.
+
+    In stream mode spans are their own envelope items and never pass through the event
+    scope, so the global scope tags that cover errors and logs do not reach them. Without
+    `before_send_span` the trace data arrives unattributable -- which is the whole point
+    of the tenant.
+    """
+
+    def setUp(self):
+        self._saved = dict(observability._SPAN_ATTRIBUTES)
+        observability._SPAN_ATTRIBUTES.clear()
+        observability._SPAN_ATTRIBUTES.update({"tenant": "some-club", "service": "web"})
+        self.addCleanup(self._restore)
+
+    def _restore(self):
+        observability._SPAN_ATTRIBUTES.clear()
+        observability._SPAN_ATTRIBUTES.update(self._saved)
+
+    def test_attributes_are_added_to_a_span(self):
+        span = observability._before_send_span({"name": "GET /"}, None)
+        self.assertEqual(span["attributes"]["tenant"], "some-club")
+        self.assertEqual(span["attributes"]["service"], "web")
+
+    def test_existing_attributes_are_preserved(self):
+        span = observability._before_send_span({"attributes": {"http.method": "GET"}}, None)
+        self.assertEqual(span["attributes"]["http.method"], "GET")
+        self.assertEqual(span["attributes"]["tenant"], "some-club")
+
+    def test_set_service_retags_spans_not_just_events(self):
+        # The bot corrects its service tag after settings.py initialized the SDK; spans
+        # emitted afterwards have to pick that up too.
+        with mock.patch("sentry_sdk.get_client") as get_client:
+            get_client.return_value.is_active.return_value = True
+            observability.set_service("discord-bot")
+
+        span = observability._before_send_span({}, None)
+        self.assertEqual(span["attributes"]["service"], "discord-bot")
