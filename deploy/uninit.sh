@@ -1,1 +1,1 @@
-rm /etc/systemd/system/gunicorn.service /etc/systemd/system/gunicorn.socket /etc/systemd/system/discord_bot.service /etc/nginx/sites-available/clubManager /etc/nginx/sites-enabled/clubManager
+rm /etc/systemd/system/gunicorn.service /etc/systemd/system/gunicorn.socket /etc/systemd/system/discord_bot.service /etc/systemd/system/post_office_queue.service /etc/systemd/system/post_office_queue.timer /etc/systemd/system/post_office_cleanup.service /etc/systemd/system/post_office_cleanup.timer /etc/nginx/sites-available/clubManager /etc/nginx/sites-enabled/clubManager

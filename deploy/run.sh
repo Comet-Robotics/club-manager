@@ -23,3 +23,17 @@ pipenv run python manage.py generate_nginx_configuration
 sudo systemctl reload nginx
 sudo systemctl restart gunicorn
 sudo systemctl restart discord_bot
+
+# The mail timers were added after the existing deployments were set up by init.sh, so link and
+# enable them here rather than requiring a re-run of init.sh. All three steps are no-ops once
+# done, so this is safe to run on every deploy.
+DEPLOY_PATH="$(cd "$(dirname "${BASH_SOURCE:-$0}")" && pwd)"
+for unit in post_office_queue.service post_office_queue.timer \
+            post_office_cleanup.service post_office_cleanup.timer; do
+  sudo ln -sfn "$DEPLOY_PATH/$unit" "/etc/systemd/system/$unit"
+done
+sudo systemctl daemon-reload
+sudo systemctl enable post_office_queue.timer post_office_cleanup.timer
+# Restart rather than start, so a changed timer definition is picked up.
+sudo systemctl restart post_office_queue.timer
+sudo systemctl restart post_office_cleanup.timer

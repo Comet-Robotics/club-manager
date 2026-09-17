@@ -1,0 +1,12 @@
+[Unit]
+Description=Prune old Club Manager email records
+# Every message we send is kept in the database along with a log row per delivery attempt, so
+# without this the post_office tables grow forever. 90 days is long enough to answer "did we ever
+# email this member, and what did it say" for the current semester.
+After=network.target postgresql.service
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/root/clubManager
+ExecStart=pipenv --python /root/.pyenv/shims/python run python manage.py cleanup_mail --days 90 --delete-attachments

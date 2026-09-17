@@ -30,6 +30,8 @@ once pipenv is installed, run `./deploy/init.sh` (sets up systemd services, does
 - create the shared cache table as an UNLOGGED table (run after migrating a fresh database): `pipenv run python manage.py setup_cache_table`
 - run static: `pipenv run python manage.py collectstatic`
 - create superuser: `pipenv run python manage.py createsuperuser`
+- send any queued email right now instead of waiting for the timer: `pipenv run python manage.py send_queued_mail`
+- delete stored email older than 90 days: `pipenv run python manage.py cleanup_mail --days 90 --delete-attachments`
 
 to \[re-\]deploy: `./deploy/run.sh` (does not include pulling from git)
 
@@ -37,4 +39,26 @@ to \[re-\]deploy: `./deploy/run.sh` (does not include pulling from git)
 - `journalctl -e -u gunicorn.service`
 - `journalctl -e -u gunicorn.socket`
 - `journalctl -e -u discord_bot.service`
+- `journalctl -e -u post_office_queue.service`
+- `journalctl -e -u post_office_cleanup.service`
+
+## email
+
+Outgoing email goes through [django-post_office](https://github.com/ui/django-post_office), which
+stores every message in the database before handing it to the real backend (SMTP in production,
+[naomi](https://github.com/AndrewIngram/django-naomi) locally when the `SMTP_*` environment
+variables aren't all set). That means the admin has a **Post Office** section where you can read
+any message we have ever sent, see the delivery attempts for it, and resend one - useful when a
+member says they never got their account link email.
+
+- messages are sent inline, during the request or bot command that created them, so nothing waits
+  on a timer. The queue is only used for scheduled mail, retries, and the admin's "requeue"
+  action, and the `post_office_queue` systemd timer drains it every 5 minutes.
+- every message gets a `Message-ID` generated from `PUBLIC_URL`'s hostname and stored alongside
+  it, so the ID in the admin is the one to search for in the SMTP provider's logs.
+- the `post_office_cleanup` timer drops stored messages older than 90 days, so the tables don't
+  grow forever.
+- message bodies are rendered from the Django templates in `core/templates/email/` by
+  `core.emails`, not from post_office's database-stored templates - that admin page is hidden
+  because nothing reads it.
 

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import datetime
 import os
 import tempfile
 from dotenv import load_dotenv
@@ -63,7 +64,8 @@ INSTALLED_APPS = [
     "payments.apps.PaymentsConfig",
     "accounts.apps.AccountsConfig",
     "projects.apps.ProjectsConfig",
-    "django.contrib.admin",
+    # Subclasses django.contrib.admin so it can adjust third-party admin registrations.
+    "clubManager.admin.ClubManagerAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -79,6 +81,7 @@ INSTALLED_APPS = [
     "multiselectfield",
     "colorfield",
     "naomi",
+    "post_office",
 ]
 
 if DEBUG:
@@ -251,11 +254,53 @@ unset_email_config = [
 if len(unset_email_config) > 0:
     print("Defaulting to local only email backend because not all required environment variables are set correctly.")
     print(f"These email environment variables are not currently set correctly: {unset_email_config}")
-    EMAIL_BACKEND = "naomi.mail.backends.naomi.NaomiBackend"
+    _email_delivery_backend = "naomi.mail.backends.naomi.NaomiBackend"
     EMAIL_FILE_PATH = Path(tempfile.mkdtemp(prefix="comet-robotics-club-manager-dev-emails"))
 else:
     print("Using SMTP email sending backend - config looks correct.")
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    _email_delivery_backend = "django.core.mail.backends.smtp.EmailBackend"
+
+# Every outgoing message goes through django-post_office rather than straight to the delivery
+# backend. `post_office.EmailBackend` writes the message to the database first, then hands it to
+# the backend chosen above, which is what gives us a copy of everything we have ever sent, a log
+# row per delivery attempt, and a "Post Office" section in the admin where an officer can read a
+# message a member says they never received and resend it.
+#
+# Anything that calls `django.core.mail` - `send_mail`, `EmailMultiAlternatives.send()`,
+# `core.emails.send_templated_email` - is covered by this, so no call site has to know about it.
+EMAIL_BACKEND = "post_office.EmailBackend"
+
+POST_OFFICE = {
+    # The backend post_office actually delivers through, once the message is persisted.
+    "BACKENDS": {"default": _email_delivery_backend},
+    # Deliver in the same request or command that created the message, the way a bare
+    # `send_mail()` does, instead of leaving it in the queue for `send_queued_mail` to pick up.
+    # Queued delivery would mean a member waits on the mail timer for their account link email,
+    # and it would silently drop mail on any host where the timer is not installed. The queue is
+    # still there for scheduled mail, retries, and the admin's "requeue" action - the
+    # post_office_queue systemd timer (see deploy/) drains it.
+    "DEFAULT_PRIORITY": "now",
+    # 2 = write a Log row for every delivery attempt, successful or failed. The whole point of
+    # routing through post_office here is having that history, so never drop the successes.
+    "LOG_LEVEL": 2,
+    # Generate and store a Message-ID for every message, so the ID we keep in the database is the
+    # same one the recipient's mail server and our SMTP provider's logs report. Without this,
+    # post_office stores nothing and each message gets whatever Message-ID the SMTP library
+    # invents at send time, which we would have no record of.
+    "MESSAGE_ID_ENABLED": True,
+    # A retry budget for queued mail. Mail sent with priority "now" is not retried - the
+    # exception surfaces to the caller instead - but anything requeued from the admin gets a few
+    # spaced-out attempts before it is left as failed.
+    "MAX_RETRIES": 3,
+    "RETRY_INTERVAL": datetime.timedelta(minutes=15),
+}
+
+# post_office defaults the Message-ID domain to socket.getfqdn(), which on a container or VPS is
+# usually "localhost" or some internal hostname. A Message-ID that does not match the sending
+# domain is a well-known spam signal, so derive it from PUBLIC_URL when we have one.
+_message_id_domain = urlparse(PUBLIC_URL).hostname if PUBLIC_URL else None
+if _message_id_domain:
+    POST_OFFICE["MESSAGE_ID_FQDN"] = _message_id_domain
 
 API_SECRET = str(os.getenv("API_SECRET"))
 DISCORD_API_PORT = int(os.getenv("DISCORD_API_PORT", 2468))
