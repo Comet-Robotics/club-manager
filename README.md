@@ -127,18 +127,25 @@ setup.
 
 Registering that release *with* Sentry is what buys the rest — suspect commits ("this was
 probably introduced by commit X"), working `resolvedInNextRelease`, deploy markers on
-charts, and release-over-release comparison. `deploy/run.sh` does that when two things are
-present:
+charts, and release-over-release comparison.
 
-1. `SENTRY_AUTH_TOKEN` in `.env`, with the `project:releases` scope. `SENTRY_ORG` and
-   `SENTRY_PROJECT` default to `comet-robotics` / `club-manager`, matching the default DSN.
-2. `sentry-cli` on the host — `curl -sL https://sentry.io/get-cli/ | bash`, or
-   `npm install -g @sentry/cli` since nodejs is already a deployment prerequisite.
+**Setting `SENTRY_AUTH_TOKEN` in `.env` is the only step.** It needs the
+`project:releases` scope; `SENTRY_ORG` and `SENTRY_PROJECT` default to
+`comet-robotics` / `club-manager`, matching the default DSN. Both `deploy/init.sh` and
+`deploy/run.sh` install `sentry-cli` themselves the first time they see a token and then
+verify it authenticates, so adding Sentry to an existing deployment doesn't mean
+re-running `init.sh` — the next `run.sh` picks it up.
 
-Without either one the deploy prints why it skipped and carries on. A Sentry outage can't
-fail a deploy either: registration failures warn and continue. The release is registered
-before the services restart; the deploy marker is recorded after they come back up, so its
-timestamp reflects when the new code started serving.
+That the token *exists* is the signal, rather than a hostname check or a separate flag: an
+instance with a release token is an instance that wants releases. A club running its own
+copy sets no token, so nothing is installed and nothing is reported. To force the decision
+the other way, set `SENTRY_CLI_INSTALL` to a truthy or falsy value; to avoid tracking the
+latest CLI, pin `SENTRY_CLI_VERSION`.
+
+Nothing here can fail a deploy. A missing token, a failed install, a rejected token, or a
+Sentry outage each print a warning and continue. The release is registered before the
+services restart; the deploy marker is recorded after they come back up, so its timestamp
+reflects when the new code started serving.
 
 The release SHA comes from `git rev-parse HEAD` rather than
 `sentry-cli releases propose-version`, specifically so it cannot disagree with the SHA the

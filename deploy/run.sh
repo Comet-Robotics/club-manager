@@ -4,18 +4,22 @@ set -e
 
 deploy_started_at=$SECONDS
 
-# Reads a single value out of .env. The file uses `KEY = 'value'` spacing, which bash
-# cannot source, so it goes through python-dotenv the same way MEDIA_ROOT does below.
-read_env_var() {
-  pipenv run python -c \
-    'import os, sys; from dotenv import load_dotenv; load_dotenv(); print(os.getenv(sys.argv[1], ""))' \
-    "$1" 2>/dev/null | tail -n 1
-}
+# shellcheck source=deploy/lib.sh
+source "$(cd "$(dirname "${BASH_SOURCE:-$0}")" && pwd)/lib.sh"
 
 # Telling Sentry about a release is what turns a stack trace into "this broke in the
 # commit that shipped 20 minutes ago". Entirely optional: an instance without a Sentry
-# auth token, or without sentry-cli installed, deploys exactly as it did before, and a
-# Sentry outage is never allowed to fail a deploy.
+# auth token deploys exactly as it did before, and a Sentry outage is never allowed to
+# fail a deploy.
+#
+# ensure_sentry_cli installs the CLI the first time an instance has a token, so adding
+# Sentry to an existing deployment doesn't mean re-running init.sh -- the same approach
+# the mail timers below take.
+sentry_releases_enabled=0
+if ensure_sentry_cli; then
+  sentry_releases_enabled=1
+fi
+
 SENTRY_AUTH_TOKEN="$(read_env_var SENTRY_AUTH_TOKEN)"
 SENTRY_ORG="$(read_env_var SENTRY_ORG)"
 SENTRY_PROJECT="$(read_env_var SENTRY_PROJECT)"
@@ -29,15 +33,6 @@ SENTRY_ENVIRONMENT="${SENTRY_ENVIRONMENT:-production}"
 # disagree with what the SDK reports: with no SENTRY_RELEASE set, the SDK auto-detects
 # the release as this same full commit SHA, read from the repo the services run out of.
 SENTRY_RELEASE="$(git rev-parse HEAD)"
-
-sentry_releases_enabled=1
-if [[ -z "$SENTRY_AUTH_TOKEN" ]]; then
-  echo "Skipping Sentry release registration: SENTRY_AUTH_TOKEN is not set in .env."
-  sentry_releases_enabled=0
-elif ! command -v sentry-cli >/dev/null 2>&1; then
-  echo "Skipping Sentry release registration: sentry-cli is not installed (see README)."
-  sentry_releases_enabled=0
-fi
 
 if [[ "$sentry_releases_enabled" == 1 ]]; then
   export SENTRY_AUTH_TOKEN SENTRY_ORG SENTRY_PROJECT
