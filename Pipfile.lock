@@ -1874,6 +1874,17 @@
             "markers": "python_version >= '3.10'",
             "version": "==0.19.2"
         },
+        "sentry-sdk": {
+            "extras": [
+                "django"
+            ],
+            "hashes": [
+                "sha256:0ef0ed7168657ceb5a0be081f4102d92042a125462d1d1a29277992e344e749e",
+                "sha256:873437a989ee1b8b25579847bae8384515bf18cfed231b06c591b735c1781fe3"
+            ],
+            "markers": "python_version >= '3.6'",
+            "version": "==2.50.0"
+        },
         "setuptools": {
             "hashes": [
                 "sha256:51a52592b3b99e102b609654876bd65f19f999935166d1352678931132b0c670",

@@ -18,6 +18,8 @@ from dotenv import load_dotenv
 from platformdirs import PlatformDirs
 from urllib.parse import urlparse
 
+from clubManager.observability import init_sentry
+
 
 dirs = PlatformDirs(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True)
 
@@ -37,6 +39,10 @@ SECRET_KEY = str(os.getenv("SECRET_KEY"))
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(int(os.getenv("DEBUG", "0")))
+
+# Has to happen before Django loads any application code so the SDK can patch framework
+# internals. No-ops in local development and on instances that have opted out.
+SENTRY_INITIALIZED = init_sentry(debug=DEBUG, public_url=PUBLIC_URL)
 
 CSRF_COOKIE_SAMESITE = "Strict"
 SESSION_COOKIE_SAMESITE = "Strict"
