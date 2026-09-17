@@ -114,7 +114,10 @@ def init_sentry(*, debug: bool, public_url: str | None, service: str = "web") ->
         # Attaches request headers, client IP, and the signed-in user to events. This is
         # the debugging metadata that makes a production report actionable.
         send_default_pii=True,
-        traces_sample_rate=_env_float("SENTRY_TRACES_SAMPLE_RATE", 1.0),
+        # Both rates are metered, so these are deliberately not the 1.0 the Sentry
+        # onboarding wizard suggests -- that value is meant to show data immediately in a
+        # demo, not to run in production. Tune per instance via the env vars.
+        traces_sample_rate=_env_float("SENTRY_TRACES_SAMPLE_RATE", 0.2),
         # Send spans in batches as they finish, instead of buffering a whole transaction
         # in memory until its root span closes. Lifts the 1000-span-per-transaction cap
         # and gets trace data visible sooner. The one behavioral change: breadcrumbs are
@@ -122,7 +125,7 @@ def init_sentry(*, debug: bool, public_url: str | None, service: str = "web") ->
         trace_lifecycle="stream",
         # Only honoured in stream mode; it is how the tenant reaches span data at all.
         before_send_span=_before_send_span,
-        profile_session_sample_rate=_env_float("SENTRY_PROFILE_SESSION_SAMPLE_RATE", 1.0),
+        profile_session_sample_rate=_env_float("SENTRY_PROFILE_SESSION_SAMPLE_RATE", 0.5),
         profile_lifecycle="trace",
         enable_logs=True,
         integrations=[
