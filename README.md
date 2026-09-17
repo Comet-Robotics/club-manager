@@ -62,3 +62,56 @@ member says they never got their account link email.
   `core.emails`, not from post_office's database-stored templates - that admin page is hidden
   because nothing reads it.
 
+## error reporting
+
+Unhandled errors, `logging` calls at `ERROR` or above, traces, and profiles are reported
+to Sentry. Both processes are covered: the Django site, and the Discord bot along with
+the FastAPI server it runs alongside the bot client.
+
+**Sentry never runs in local development.** It is skipped entirely whenever `DEBUG` is
+on, so there is nothing to configure — or to accidentally pollute the issue feed with —
+while working locally.
+
+Every instance reports to Comet Robotics' shared Sentry project by default, so a
+deployment is debuggable without any per-instance setup. Events carry two tags that keep
+them separable:
+
+- `tenant` — which deployment the event came from. Defaults to the `PUBLIC_URL` hostname;
+  override with `SENTRY_TENANT` for a friendlier name.
+- `service` — `web` or `discord-bot`.
+
+Tracing runs in Sentry's **stream mode** (`trace_lifecycle="stream"`): spans are sent in
+batches as they finish rather than buffered until the root span closes, which lifts the
+1000-span-per-transaction cap and surfaces trace data sooner. Two consequences worth
+knowing if you write custom instrumentation:
+
+- The legacy `sentry_sdk.start_span` / `start_transaction` API is a no-op in stream mode
+  and returns a `NoOpSpan`. Use the streamed Span API instead. We currently rely entirely
+  on auto-instrumentation, all of which is stream-aware.
+- Scope tags don't reach spans, because spans are their own envelope items. The tenant and
+  service are stamped on via `before_send_span` — which itself only works in stream mode.
+
+To point an instance at its own Sentry project, set `SENTRY_DSN`. To opt out of reporting
+altogether, set `SENTRY_ENABLED=0` (or blank out `SENTRY_DSN`). The rest of the knobs are
+listed in `.env.example`.
+
+### sampling and quota
+
+Traces and profiles are both metered by Sentry, so they sample below 1.0 by default:
+`SENTRY_TRACES_SAMPLE_RATE` at 0.2 and `SENTRY_PROFILE_SESSION_SAMPLE_RATE` at 0.5. Note
+that the Sentry onboarding wizard suggests 1.0 for both — that is a demo value chosen to
+surface data immediately, not a production setting.
+
+Errors and logs are **not** sampled; every one is reported.
+
+Continuous profiling is the expensive one: Sentry's free Developer plan includes **zero**
+continuous profile hours, so any profiling at all trips the billing quota until the org is
+on a plan that covers it. Set `SENTRY_PROFILE_SESSION_SAMPLE_RATE=0` to switch profiling
+off without touching anything else.
+
+### checking that a deployment reports
+
+Because Sentry is off under `DEBUG`, the wiring can only be exercised on a real
+deployment. Set `SENTRY_DEBUG_ENDPOINT=1`, restart, and visit `/sentry-debug/` — it
+raises on purpose. Unset it afterwards.
+
