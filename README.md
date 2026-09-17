@@ -95,6 +95,20 @@ To point an instance at its own Sentry project, set `SENTRY_DSN`. To opt out of 
 altogether, set `SENTRY_ENABLED=0` (or blank out `SENTRY_DSN`). The rest of the knobs are
 listed in `.env.example`.
 
+### sampling and quota
+
+Traces and profiles are both metered by Sentry, so they sample below 1.0 by default:
+`SENTRY_TRACES_SAMPLE_RATE` at 0.2 and `SENTRY_PROFILE_SESSION_SAMPLE_RATE` at 0.5. Note
+that the Sentry onboarding wizard suggests 1.0 for both — that is a demo value chosen to
+surface data immediately, not a production setting.
+
+Errors and logs are **not** sampled; every one is reported.
+
+Continuous profiling is the expensive one: Sentry's free Developer plan includes **zero**
+continuous profile hours, so any profiling at all trips the billing quota until the org is
+on a plan that covers it. Set `SENTRY_PROFILE_SESSION_SAMPLE_RATE=0` to switch profiling
+off without touching anything else.
+
 ### checking that a deployment reports
 
 Because Sentry is off under `DEBUG`, the wiring can only be exercised on a real
