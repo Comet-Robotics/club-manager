@@ -1,8 +1,11 @@
-from operator import ne
-
 from django.shortcuts import render, get_object_or_404, redirect
 
-from accounts.models import UserStub
+from accounts.models import (
+    AccountAlreadyExistsError,
+    RegistrationAlreadySentError,
+    RegistrationEmailError,
+    UserStub,
+)
 from core.models import UserProfile
 from .forms import PaymentSignInForm
 import configparser
@@ -77,6 +80,39 @@ class PaymentSuccessView(View):
 
 class ChooseUserView(View):
     template_name = "choose_user.html"
+    registration_sent_message = "Check your UT Dallas email for a link to finish registering — it will bring you back here to finish this payment."
+    registration_email_failed_message = (
+        "We couldn't send the registration email. Please try again in a few minutes or ask an officer."
+    )
+
+    def start_registration(self, request, net_id):
+        """
+        Email a registration link for a Net ID with no account, and say how it went.
+
+        Only ever called once the visitor has confirmed the Net ID is theirs: the address
+        is derived from what they typed, so a typo mails a stranger. Returns the message
+        to show, or None if an account turned up in the meantime and the payment can just
+        carry on.
+        """
+        try:
+            user_stub = UserStub.create(net_id=net_id, after_registration_redirect_destination=request.get_full_path())
+        except RegistrationAlreadySentError:
+            return (
+                f"We already emailed {net_id}@utdallas.edu a registration link recently — check your inbox (and spam)."
+            )
+        except AccountAlreadyExistsError:
+            # The account appeared between typing the Net ID and confirming it. Nothing
+            # to register - fall through to the normal payment path.
+            return None
+
+        try:
+            UserStub.notify(user_stub)
+        except RegistrationEmailError:
+            # Nothing was delivered, so leave no stub behind to block a retry.
+            user_stub.delete()
+            return self.registration_email_failed_message
+
+        return self.registration_sent_message
 
     def get(self, request, product_id):
         layout_data = get_layout_data(request)
@@ -94,21 +130,35 @@ class ChooseUserView(View):
             try:
                 user = User.objects.get(username=username)
             except User.DoesNotExist:
-                try:
-                    UserStub.create(net_id=username, after_registration_redirect_destination=request.get_full_path())
-                    message = "Check your UT Dallas email address for an email from us with a link to get registered and finish this payment!"
-                except:
-                    message = "We couldn't find your user in our system. Please ask an officer for further assistance!"
-                return render(
-                    request,
-                    self.template_name,
-                    {
-                        **layout_data,
-                        "form": form,
-                        "message": message,
-                        "product_name": product.name,
-                    },
-                )
+                # Registering mails whatever Net ID was typed, so confirm it first
+                # instead of sending a stranger a link on the strength of a typo.
+                if request.POST.get("confirm_registration") != "1":
+                    return render(
+                        request,
+                        self.template_name,
+                        {
+                            **layout_data,
+                            "form": form,
+                            "product_name": product.name,
+                            "confirm_net_id": username,
+                            "confirm_email": f"{username}@utdallas.edu",
+                            "confirm_payment_method": payment_choice,
+                        },
+                    )
+
+                message = self.start_registration(request, username)
+                if message is not None:
+                    return render(
+                        request,
+                        self.template_name,
+                        {
+                            **layout_data,
+                            "form": form,
+                            "message": message,
+                            "product_name": product.name,
+                        },
+                    )
+                user = User.objects.get(username=username)
 
             message = can_purchase_product(product, user)
             if message:

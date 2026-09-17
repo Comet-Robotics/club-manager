@@ -10,18 +10,37 @@
                 <div class="rsvp-icon"><i data-lucide="user-round-plus"></i></div>
                 <h1 class="rsvp-title">Create your account</h1>
                 <p class="rsvp-description">
-                    Choose your name and password to finish creating your{% if settings %} {{ settings.organization_name }}{% endif %} account.
+                    Registering {{ net_id }}
+                </p>
+                <p class="rsvp-description">
+                    Tell us your name to finish your{% if settings %} {{ settings.organization_name }}{% endif %} registration.
                 </p>
             </div>
 
             <div class="rsvp-form-container">
+                {% comment %}
+                Anyone can start a registration for someone else's Net ID from Discord, so the
+                account that would be linked is named here and can be refused before it is.
+                {% endcomment %}
+                {% if pending_discord_id %}
+                <div class="discord-notice">
+                    <p class="discord-notice-title">This registration was started from Discord.</p>
+                    {% if username %}
+                    <div class="discord-card-wrapper">{% include "_discord_card.html" %}</div>
+                    {% endif %}
+                    <p class="help-text">
+                        Discord ID {{ pending_discord_id }}{% if username %} &middot; @{{ username }}{% endif %}
+                    </p>
+                </div>
+                {% endif %}
+
                 <form method="post" class="rsvp-form">
                     {% csrf_token %}
                     {{ form.non_field_errors }}
                     <div class="form-fields">
                         <div class="form-row">
                             {% for field in form %}
-                            {% if field.name == "first_name" or field.name == "last_name" %}
+                            {% if field.name != "link_discord" %}
                             <div class="form-field">
                                 {{ field.label_tag }}
                                 {{ field }}
@@ -30,19 +49,15 @@
                             {% endif %}
                             {% endfor %}
                         </div>
-
-                        {% for field in form %}
-                        {% if field.name == "new_password1" or field.name == "new_password2" %}
-                        <div class="form-field">
-                            {{ field.label_tag }}
-                            {{ field }}
-                            {% if field.errors %}<div class="error-message">{{ field.errors.0 }}</div>{% endif %}
-                            {% if field.help_text %}<div class="help-text">{{ field.help_text }}</div>{% endif %}
+                        {% if pending_discord_id %}
+                        <div class="form-field consent-field">
+                            <label class="consent-label">{{ form.link_discord }} {{ form.link_discord.label }}</label>
+                            <p class="help-text">Not you? Uncheck this and tell an officer.</p>
+                            {% if form.link_discord.errors %}<div class="error-message">{{ form.link_discord.errors.0 }}</div>{% endif %}
                         </div>
                         {% endif %}
-                        {% endfor %}
                     </div>
-                    <button class="submit-button" type="submit"><i data-lucide="check"></i>Create account</button>
+                    <button class="submit-button" type="submit"><i data-lucide="check"></i>Finish registration</button>
                 </form>
             </div>
         </div>
@@ -67,6 +82,13 @@
     .form-field input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(191, 30, 46, 0.1); outline: none; transform: translateY(-1px); }
     .form-field input:hover { border-color: #d1d5db; }
     .help-text { color: #6b7280; font-size: 0.75rem; }
+    .discord-notice { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0.75rem; margin-bottom: 1.5rem; padding: 1.25rem; text-align: center; }
+    .discord-notice-title { color: #374151; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.75rem; }
+    .discord-card-wrapper { display: flex; justify-content: center; margin-bottom: 0.75rem; }
+    .discord-card-wrapper > div { max-width: 100%; }
+    .consent-field { gap: 0.25rem; }
+    .consent-label { align-items: center; color: #374151; display: flex; font-size: 0.875rem; font-weight: 500; gap: 0.5rem; }
+    .consent-label input { accent-color: var(--primary); height: 1rem; width: 1rem; }
     .error-message { color: var(--primary); font-size: 0.75rem; font-weight: 500; }
     .submit-button { align-items: center; background: var(--primary); border: none; border-radius: 0.5rem; color: #fff; cursor: pointer; display: flex; font-size: 1rem; font-weight: 600; gap: 0.5rem; justify-content: center; padding: 1rem 2rem; transition: all 0.2s ease; }
     .submit-button:hover { background: color-mix(in hsl, var(--primary) 90%, black); box-shadow: 0 4px 12px rgba(191, 30, 46, 0.3); transform: translateY(-2px); }
