@@ -119,6 +119,31 @@ These pages are deliberately standalone — they don't extend the portal base te
 which reads `ServerSettings` from the database. An error page has to render when the
 database is exactly what's broken.
 
+### releases and suspect commits
+
+Events are always tagged with a release: with `SENTRY_RELEASE` unset, the SDK auto-detects
+it as the current commit SHA of the checkout the services run from. That much needs no
+setup.
+
+Registering that release *with* Sentry is what buys the rest — suspect commits ("this was
+probably introduced by commit X"), working `resolvedInNextRelease`, deploy markers on
+charts, and release-over-release comparison. `deploy/run.sh` does that when two things are
+present:
+
+1. `SENTRY_AUTH_TOKEN` in `.env`, with the `project:releases` scope. `SENTRY_ORG` and
+   `SENTRY_PROJECT` default to `comet-robotics` / `club-manager`, matching the default DSN.
+2. `sentry-cli` on the host — `curl -sL https://sentry.io/get-cli/ | bash`, or
+   `npm install -g @sentry/cli` since nodejs is already a deployment prerequisite.
+
+Without either one the deploy prints why it skipped and carries on. A Sentry outage can't
+fail a deploy either: registration failures warn and continue. The release is registered
+before the services restart; the deploy marker is recorded after they come back up, so its
+timestamp reflects when the new code started serving.
+
+The release SHA comes from `git rev-parse HEAD` rather than
+`sentry-cli releases propose-version`, specifically so it cannot disagree with the SHA the
+SDK auto-detects.
+
 ### checking that a deployment reports
 
 Because Sentry is off under `DEBUG`, the wiring can only be exercised on a real
