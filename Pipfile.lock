@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "4df7b8f08b964f5ede6087eae363eef1167cec55cb5c61e759f72f096a1f2209"
+            "sha256": "9a98a712844a758772dd275b129fd8fca04dcc36cec0a6bcbda7ce8230e288b4"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -2586,6 +2586,9 @@
             "version": "==0.16.0"
         },
         "sentry-sdk": {
+            "extras": [
+                "django"
+            ],
             "hashes": [
                 "sha256:0ef0ed7168657ceb5a0be081f4102d92042a125462d1d1a29277992e344e749e",
                 "sha256:873437a989ee1b8b25579847bae8384515bf18cfed231b06c591b735c1781fe3"

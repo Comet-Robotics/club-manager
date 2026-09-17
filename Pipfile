@@ -35,6 +35,9 @@ django-naomi = "*"
 css-inline = "*"
 inscriptis = "*"
 django-post-office = "*"
+# 2.35+ required for `enable_logs` (structured Sentry Logs). The django extra pulls in
+# the complementary packages; the FastAPI and asyncio integrations need no extra.
+sentry-sdk = {extras = ["django"], version = "~=2.35"}
 
 [dev-packages]
 types-beautifulsoup4 = "*"

@@ -62,3 +62,31 @@ member says they never got their account link email.
   `core.emails`, not from post_office's database-stored templates - that admin page is hidden
   because nothing reads it.
 
+## error reporting
+
+Unhandled errors, `logging` calls at `ERROR` or above, traces, and profiles are reported
+to Sentry. Both processes are covered: the Django site, and the Discord bot along with
+the FastAPI server it runs alongside the bot client.
+
+**Sentry never runs in local development.** It is skipped entirely whenever `DEBUG` is
+on, so there is nothing to configure — or to accidentally pollute the issue feed with —
+while working locally.
+
+Every instance reports to Comet Robotics' shared Sentry project by default, so a
+deployment is debuggable without any per-instance setup. Events carry two tags that keep
+them separable:
+
+- `tenant` — which deployment the event came from. Defaults to the `PUBLIC_URL` hostname;
+  override with `SENTRY_TENANT` for a friendlier name.
+- `service` — `web` or `discord-bot`.
+
+To point an instance at its own Sentry project, set `SENTRY_DSN`. To opt out of reporting
+altogether, set `SENTRY_ENABLED=0` (or blank out `SENTRY_DSN`). The rest of the knobs are
+listed in `.env.example`.
+
+### checking that a deployment reports
+
+Because Sentry is off under `DEBUG`, the wiring can only be exercised on a real
+deployment. Set `SENTRY_DEBUG_ENDPOINT=1`, restart, and visit `/sentry-debug/` — it
+raises on purpose. Unset it afterwards.
+
