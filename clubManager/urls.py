@@ -15,6 +15,8 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+import os
+
 from django.contrib import admin
 from django.urls import include, path
 from django.conf import settings
@@ -38,3 +40,10 @@ if settings.DEBUG:
     from debug_toolbar.toolbar import debug_toolbar_urls
 
     urlpatterns += debug_toolbar_urls()
+
+# Sentry is off under DEBUG, so confirming the wiring means exercising it on a real
+# deployment. Opt in there with SENTRY_DEBUG_ENDPOINT, hit the route, then unset it.
+if os.getenv("SENTRY_DEBUG_ENDPOINT"):
+    from clubManager.observability import trigger_error
+
+    urlpatterns.append(path("sentry-debug/", trigger_error))

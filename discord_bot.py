@@ -7,6 +7,14 @@ import time
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "clubManager.settings")
 from clubManager import settings
 
+# Importing settings above already initialized Sentry, so this process is covered; it
+# just needs re-tagging, since settings.py assumes it is being loaded by the web app.
+# Sentry's FastAPI integration picks up the API below automatically -- it was enabled
+# during that init, which runs before this module creates the app.
+from clubManager.observability import instrument_discord_bot, set_service
+
+set_service("discord-bot")
+
 import django
 import discord
 from discord.ext import pages
@@ -81,6 +89,7 @@ intents.presences = True
 intents.message_content = True
 
 bot = discord.Bot(intents=intents)
+instrument_discord_bot(bot)
 
 app = FastAPI()
 
