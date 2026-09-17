@@ -1,0 +1,12 @@
+{% extends "errors/base.html" %}
+
+{% block title %}Page not found{% endblock %}
+{% block status_code %}404{% endblock %}
+{% block heading %}We couldn't find that page{% endblock %}
+
+{% block body %}
+    <p>
+        The page you asked for doesn't exist, or it may have moved. Double-check the
+        address, or head back to the <a href="/">portal home page</a>.
+    </p>
+{% endblock %}
