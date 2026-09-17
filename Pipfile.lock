@@ -1879,7 +1879,7 @@
                 "django"
             ],
             "hashes": [
-                "sha256:0d2ffbc28ee2e63cbaf3d015e93b448cffcc3ef3be03a44704ad36ade72faa95",
+"sha256:0d2ffbc28ee2e63cbaf3d015e93b448cffcc3ef3be03a44704ad36ade72faa95",
                 "sha256:3e13ace4ffd0b3cc78288236edfc4e4bd90eb12a396cc5845fa10a58ff289f50"
             ],
             "markers": "python_version >= '3.6'",
