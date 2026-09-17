@@ -1,4 +1,3 @@
-from django.contrib.auth import login
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
@@ -14,6 +13,7 @@ from .models import (
 )
 from .discord import describe_discord_user, get_discord_user
 from .forms import RegistrationCompletionForm, RegistrationRequestForm
+from common.throttle import registration_throttled
 from core.models import ServerSettings, UserProfile
 from clubManager import settings
 from core.utilities import get_layout_data
@@ -142,10 +142,21 @@ class RegistrationCompleteView(View):
 
 class RegistrationSubmittedView(View):
     """Where a finished registration lands when it has nowhere else to go."""
+
+    template_name = "registration_submitted.html"
+
+    def get(self, request):
+        return render(request, self.template_name, {"settings": ServerSettings.objects.first()})
+
+
 class RegistrationRequestView(View):
     template_name = "registration_request.html"
     confirmation_message = (
         "If you are eligible to register, check your UTD email for a link to finish creating your account."
+    )
+    throttled_message = (
+        "We've had a lot of registration requests recently. Please try again later, or ask an officer "
+        "to set up your account."
     )
 
     def render_form(self, request, form, **context):
@@ -161,6 +172,11 @@ class RegistrationRequestView(View):
         if not form.is_valid():
             return self.render_form(request, form)
         net_id = form.cleaned_data["net_id"]
+        # Metered here rather than over the whole view: a GET, or a post that failed
+        # validation above, sends no mail and so should not spend anyone's allowance.
+        # Being over the limit has to leave no stub behind either, so this comes first.
+        if registration_throttled(request):
+            return self.render_form(request, form, error=self.throttled_message)
         try:
             user_stub = UserStub.create(net_id, None)
             UserStub.notify(user_stub)
@@ -173,9 +189,3 @@ class RegistrationRequestView(View):
                 request, form, error="We could not send your registration email. Please try again later."
             )
         return self.render_form(request, RegistrationRequestForm(), success=self.confirmation_message)
-
-
-    template_name = "registration_submitted.html"
-
-    def get(self, request):
-        return render(request, self.template_name, {"settings": ServerSettings.objects.first()})

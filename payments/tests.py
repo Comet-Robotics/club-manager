@@ -13,7 +13,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from django.contrib.auth.models import User
 from django.core import mail
-from django.test import TestCase
+from django.core.cache import cache
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import escape
@@ -57,11 +58,14 @@ class PaymentRegistrationTestCase(TestCase):
         self.product = Product.objects.create(name="Dues", amount_cents=2000, max_purchases_per_user=-1)
         self.pay_url = reverse("choose_user", args=[self.product.id])
 
-    def pay_as(self, net_id, **extra):
-        return self.client.post(self.pay_url, {"username": net_id, "payment_method": "cash", **extra})
+    def pay_as(self, net_id, *, ip=None, **extra):
+        # `ip` becomes the X-Real-IP nginx sets in production, which is what the
+        # registration throttle buckets on. Left off, the request looks like local dev.
+        headers = {"HTTP_X_REAL_IP": ip} if ip else {}
+        return self.client.post(self.pay_url, {"username": net_id, "payment_method": "cash", **extra}, **headers)
 
-    def confirm_registration_for(self, net_id):
-        return self.pay_as(net_id, confirm_registration="1")
+    def confirm_registration_for(self, net_id, *, ip=None):
+        return self.pay_as(net_id, ip=ip, confirm_registration="1")
 
 
 class PaymentAfterRegistrationTests(PaymentRegistrationTestCase):
@@ -180,3 +184,98 @@ class UnknownNetIDConfirmationTests(PaymentRegistrationTestCase):
         self.assertRedirects(response, reverse("payment_success", args=[payment.id]), fetch_redirect_response=False)
         self.assertFalse(UserStub.objects.exists())
         self.assertEqual(mail.outbox, [])
+
+
+@override_settings(
+    CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}},
+    REGISTRATION_EMAIL_RATE_PER_IP="2/h",
+    REGISTRATION_EMAIL_RATE_GLOBAL="150/d",
+)
+class PaymentRegistrationThrottleTests(PaymentRegistrationTestCase):
+    """
+    Confirming an unknown Net ID here mails it, so that one branch is metered.
+
+    The rest of the page must stay untouched: it is what officers use to take cash from
+    a queue of members at a recruiting table, all from the same laptop and therefore the
+    same address as far as the throttle can tell.
+    """
+
+    ip = "198.51.100.1"
+    over_limit_message = "We've had a lot of registration requests recently."
+
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+
+    def exhaust_per_ip_allowance(self):
+        for index in (1, 2):
+            self.confirm_registration_for(f"abc00000{index}", ip=self.ip)
+
+    def test_confirmations_up_to_the_per_ip_limit_all_send(self):
+        self.exhaust_per_ip_allowance()
+
+        self.assertEqual(UserStub.objects.count(), 2)
+        self.assertEqual(len(mail.outbox), 2)
+
+    def test_the_confirmation_over_the_per_ip_limit_registers_nobody(self):
+        self.exhaust_per_ip_allowance()
+        mail.outbox.clear()
+
+        response = self.confirm_registration_for("abc000003", ip=self.ip)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, escape(self.over_limit_message))
+        self.assertFalse(UserStub.objects.filter(net_id="abc000003").exists())
+        self.assertEqual(mail.outbox, [])
+
+    @override_settings(REGISTRATION_EMAIL_RATE_GLOBAL="2/d")
+    def test_the_global_cap_trips_across_different_client_ips(self):
+        self.confirm_registration_for("abc000001", ip="198.51.100.1")
+        self.confirm_registration_for("abc000002", ip="198.51.100.2")
+        mail.outbox.clear()
+
+        response = self.confirm_registration_for("abc000003", ip="198.51.100.3")
+
+        self.assertContains(response, escape(self.over_limit_message))
+        self.assertEqual(UserStub.objects.count(), 2)
+        self.assertEqual(mail.outbox, [])
+
+    def test_cash_payments_for_known_members_are_never_throttled(self):
+        """
+        An officer at the check-in table takes payment after payment from one device.
+
+        The throttle lives on the registration branch alone, so the limit being spent -
+        by this device or by everyone sharing its NATed address - must not stop a member
+        who already has an account from paying.
+        """
+        self.exhaust_per_ip_allowance()
+        self.confirm_registration_for("abc000003", ip=self.ip)
+
+        for net_id in ("xyz000001", "xyz000002", "xyz000003"):
+            with self.subTest(net_id=net_id):
+                user = User.objects.create(username=net_id)
+
+                response = self.pay_as(net_id, ip=self.ip)
+
+                payment = Payment.objects.get(user=user)
+                self.assertRedirects(
+                    response, reverse("payment_success", args=[payment.id]), fetch_redirect_response=False
+                )
+
+    def test_the_confirmation_prompt_itself_is_not_metered(self):
+        """Asking "is that your Net ID?" sends nothing, so it should cost nothing."""
+        for index in (1, 2, 3, 4):
+            response = self.pay_as(f"abc00000{index}", ip=self.ip)
+            self.assertContains(response, "Is that your Net ID?")
+
+        self.assertEqual(mail.outbox, [])
+        self.assertContains(self.confirm_registration_for("abc000001", ip=self.ip), "Check your UT Dallas email")
+
+    def test_the_allowance_is_shared_with_the_accounts_registration_page(self):
+        """Both pages send the same email, so they draw on one bucket."""
+        self.exhaust_per_ip_allowance()
+
+        response = self.client.post(reverse("registration_request"), {"net_id": "abc000003"}, HTTP_X_REAL_IP=self.ip)
+
+        self.assertContains(response, "a lot of registration requests")
+        self.assertFalse(UserStub.objects.filter(net_id="abc000003").exists())

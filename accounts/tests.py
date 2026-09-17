@@ -2,15 +2,20 @@ from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core import mail
 from django.core.management import call_command
 from django.test import (
+    RequestFactory,
+    SimpleTestCase,
     TestCase,
+    override_settings,
 )
 from django.urls import reverse
 from django.utils import timezone
 
+from common.throttle import get_client_ip
 from accounts.models import (
     AccountAlreadyExistsError,
     RegistrationEmailError,
@@ -520,6 +525,8 @@ class RegistrationCompletionDiscordConsentTests(RegistrationTestCase):
         self.assertIsNone(user.userprofile.discord_id)
         self.assertFalse(UserProfile.objects.filter(discord_id="123456789012345678").exists())
         self.assertFalse(UserStub.objects.filter(pk=user_stub.pk).exists())
+
+
 class RegistrationRequestViewTests(RegistrationTestCase):
     def test_get_renders_registration_request_form(self):
         response = self.client.get(reverse("registration_request"))
@@ -546,3 +553,118 @@ class RegistrationRequestViewTests(RegistrationTestCase):
 
         self.assertContains(response, "could not send")
         self.assertFalse(UserStub.objects.exists())
+
+
+class ClientIPTests(SimpleTestCase):
+    """
+    nginx is the only ingress in production and rewrites X-Real-IP on every request, so
+    the header is the client address there. `runserver` has no proxy in front of it.
+    """
+
+    def test_prefers_the_header_nginx_sets(self):
+        request = RequestFactory().post("/accounts/register", HTTP_X_REAL_IP="198.51.100.4", REMOTE_ADDR="192.0.2.1")
+
+        self.assertEqual(get_client_ip(request), "198.51.100.4")
+
+    def test_falls_back_to_remote_addr_when_there_is_no_proxy(self):
+        request = RequestFactory().post("/accounts/register", REMOTE_ADDR="127.0.0.1")
+
+        self.assertEqual(get_client_ip(request), "127.0.0.1")
+
+    def test_falls_back_to_remote_addr_when_the_header_is_empty(self):
+        """gunicorn behind a unix socket reports an empty REMOTE_ADDR - never crash on it."""
+        request = RequestFactory().post("/accounts/register", HTTP_X_REAL_IP="", REMOTE_ADDR="")
+
+        self.assertEqual(get_client_ip(request), "unknown")
+
+
+@override_settings(
+    CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}},
+    REGISTRATION_EMAIL_RATE_PER_IP="2/h",
+    REGISTRATION_EMAIL_RATE_GLOBAL="150/d",
+)
+class RegistrationRequestThrottleTests(RegistrationTestCase):
+    """
+    `/accounts/register` mails an address built from whatever Net ID was typed in, with
+    no authentication in front of it. The per-Net-ID rule on `UserStub` stops the same
+    student being mailed twice, but a walk through plausible Net IDs sends one message
+    per Net ID, so sending volume is capped separately.
+
+    Limits are lowered through settings rather than by posting twenty times; locmem
+    keeps each test's counters to itself.
+    """
+
+    over_limit_message = "a lot of registration requests"
+
+    def setUp(self):
+        super().setUp()
+        # Real mail (to the test outbox) rather than a patched notify, so "nothing was
+        # sent" is checked at the outbox instead of at a mock.
+        ServerSettings.objects.get_or_create(defaults={"organization_name": "Comet Robotics"})
+        cache.clear()
+
+    def request_registration(self, net_id, ip="198.51.100.1"):
+        return self.client.post(reverse("registration_request"), {"net_id": net_id}, HTTP_X_REAL_IP=ip)
+
+    def exhaust_per_ip_allowance(self, ip="198.51.100.1"):
+        for index in (1, 2):
+            self.request_registration(f"abc00000{index}", ip=ip)
+
+    def test_requests_up_to_the_per_ip_limit_all_go_through(self):
+        self.exhaust_per_ip_allowance()
+
+        self.assertEqual(UserStub.objects.count(), 2)
+        self.assertEqual(len(mail.outbox), 2)
+
+    def test_the_request_over_the_per_ip_limit_creates_nothing_and_sends_nothing(self):
+        self.exhaust_per_ip_allowance()
+        mail.outbox.clear()
+
+        response = self.request_registration("abc000003")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.over_limit_message)
+        self.assertFalse(UserStub.objects.filter(net_id="abc000003").exists())
+        self.assertEqual(mail.outbox, [])
+
+    def test_a_different_client_ip_has_its_own_allowance(self):
+        """Campus wifi NATs students together; one exhausted address must not lock out the rest."""
+        self.exhaust_per_ip_allowance()
+        self.request_registration("abc000003")
+
+        response = self.request_registration("def000001", ip="203.0.113.7")
+
+        self.assertContains(response, "check your UTD email")
+        self.assertTrue(UserStub.objects.filter(net_id="def000001").exists())
+
+    @override_settings(REGISTRATION_EMAIL_RATE_GLOBAL="2/d")
+    def test_the_global_cap_trips_across_different_client_ips(self):
+        """The per-IP limit is generous, so the global cap is what bounds a botnet."""
+        for index, ip in ((1, "198.51.100.1"), (2, "198.51.100.2")):
+            self.assertContains(self.request_registration(f"abc00000{index}", ip=ip), "check your UTD email")
+        mail.outbox.clear()
+
+        response = self.request_registration("abc000003", ip="198.51.100.3")
+
+        self.assertContains(response, self.over_limit_message)
+        self.assertEqual(UserStub.objects.count(), 2)
+        self.assertEqual(mail.outbox, [])
+
+    def test_being_throttled_does_not_consume_the_net_id(self):
+        """Nothing is written, so the Net ID is still registrable once the window rolls over."""
+        self.exhaust_per_ip_allowance()
+        self.request_registration("abc000003")
+
+        response = self.request_registration("abc000003", ip="203.0.113.7")
+
+        self.assertContains(response, "check your UTD email")
+        self.assertTrue(UserStub.objects.filter(net_id="abc000003").exists())
+
+    def test_an_invalid_net_id_does_not_spend_the_allowance(self):
+        """The form never gets as far as sending, so it should not count against anyone."""
+        for _ in range(3):
+            self.client.post(reverse("registration_request"), {"net_id": "invalid"}, HTTP_X_REAL_IP="198.51.100.1")
+
+        response = self.request_registration("abc000001")
+
+        self.assertContains(response, "check your UTD email")
