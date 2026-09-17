@@ -1,7 +1,8 @@
 {% extends "email/base.html" %}
 {% comment %}
 Sent when someone starts a self-service registration, from the web form or the Discord bot.
-Context: registration_url, expires_at, request_url.
+Context: net_id, registration_url, expires_at, request_url, discord_disclosure (optional - set
+when the registration was started from Discord and names the account that would be linked).
 {% endcomment %}
 
 {% block subject %}Create your {{ org.name }} account{% endblock %}
@@ -13,9 +14,18 @@ Context: registration_url, expires_at, request_url.
 {% block content %}
   <h1>Create your account</h1>
 
-  <p>Hey there! You're one step away from a {{ org.name }} account. Use the button below to choose a password and finish setting it up.</p>
+  <p>Hey there! You're one step away from a {{ org.name }} account for the Net ID <strong>{{ net_id }}</strong>. Use the button below to tell us your name and finish registering.</p>
 
-  {% include "email/_button.html" with href=registration_url label="Create account" %}
+  {% comment %}
+  The Discord bot's /link command accepts any Net ID, so the person reading this may not be the
+  one who started the registration. Naming the account that would be attached is what lets them
+  notice - it is the only warning they get before the link is made.
+  {% endcomment %}
+  {% if discord_disclosure %}
+    <p><strong>{{ discord_disclosure }}</strong></p>
+  {% endif %}
+
+  {% include "email/_button.html" with href=registration_url label="Finish registering" %}
 
   <p>This link expires on {{ expires_at }}. If it has already run out, <a href="{{ request_url }}">request a new one</a>.</p>
 

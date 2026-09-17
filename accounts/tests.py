@@ -1,11 +1,13 @@
 from datetime import timedelta
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core import mail
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import (
+    TestCase,
+)
 from django.utils import timezone
 
 from accounts.models import (
@@ -18,6 +20,12 @@ from accounts.models import (
 from core.models import ServerSettings, UserProfile
 from payments.models import Payment, Product, Term
 
+FAKE_DISCORD_USER = {
+    "username": "attacker",
+    "discord_id": 123456789012345678,
+    "profile_image": "https://cdn.discordapp.com/avatars/123456789012345678/abc.png",
+}
+
 
 class RegistrationTestCase(TestCase):
     """
@@ -26,7 +34,8 @@ class RegistrationTestCase(TestCase):
     Saving a `UserProfile` that has a `discord_id` fires the member-role signal, which
     needs a current `Term` to resolve membership and would otherwise call out to the bot
     API. Give it a real Term and stub the outbound call so these tests exercise the
-    actual signal path.
+    actual signal path. Creating a `User` also kicks off a NetID -> major directory
+    lookup, which has no business making a real request here.
     """
 
     def setUp(self):
@@ -39,13 +48,16 @@ class RegistrationTestCase(TestCase):
             end_date=today + timedelta(days=30),
             product=product,
         )
-        add_member_role = patch("core.signals.handlers.add_member_role", new=AsyncMock(return_value=True))
-        add_member_role.start()
-        self.addCleanup(add_member_role.stop)
+        for target, replacement in (
+            ("core.signals.handlers.add_member_role", AsyncMock(return_value=True)),
+            ("core.signals.handlers.get_major_from_netid", MagicMock(return_value=None)),
+        ):
+            patcher = patch(target, new=replacement)
+            patcher.start()
+            self.addCleanup(patcher.stop)
 
     def create_user(self, username):
-        with patch("core.signals.handlers.get_major_from_netid", return_value=None):
-            return User.objects.create(username=username)
+        return User.objects.create(username=username)
 
 
 class UserStubRedirectDestinationTests(RegistrationTestCase):
@@ -127,13 +139,11 @@ class UserStubCreateTests(RegistrationTestCase):
 
 
 class UserStubActivateTests(RegistrationTestCase):
-    def activate(self, user_stub, *, password="a-very-good-password"):
+    def activate(self, user_stub):
         user = user_stub.build_user()
         user.first_name = "Comet"
         user.last_name = "Robotics"
-        user.set_password(password)
-        with patch("core.signals.handlers.get_major_from_netid", return_value=None):
-            return user_stub.activate(user)
+        return user_stub.activate(user)
 
     def test_build_user_writes_nothing(self):
         user_stub = UserStub.create("abc123456", None)
@@ -142,15 +152,16 @@ class UserStubActivateTests(RegistrationTestCase):
 
         self.assertFalse(User.objects.filter(username="abc123456").exists())
 
-    def test_activate_creates_an_active_account_and_drops_the_stub(self):
+    def test_activate_creates_an_active_passwordless_account_and_drops_the_stub(self):
         user_stub = UserStub.create("abc123456", "/payments/")
 
         redirect_destination = self.activate(user_stub)
 
         self.assertEqual(redirect_destination, "/payments/")
         user = User.objects.get(username="abc123456")
+        # Active with no usable password: a member who cannot sign in, not a banned one.
         self.assertTrue(user.is_active)
-        self.assertTrue(user.check_password("a-very-good-password"))
+        self.assertFalse(user.has_usable_password())
         self.assertFalse(UserStub.objects.filter(pk=user_stub.pk).exists())
 
     def test_activate_moves_a_pending_discord_id_onto_the_profile(self):
@@ -161,6 +172,21 @@ class UserStubActivateTests(RegistrationTestCase):
         user = User.objects.get(username="abc123456")
         user.userprofile.refresh_from_db()
         self.assertEqual(user.userprofile.discord_id, "123456789012345678")
+
+    def test_activate_can_decline_the_pending_discord_id(self):
+        """Declining still finishes the registration - the link is what was refused."""
+        user_stub = UserStub.create("abc123456", None, discord_user_id="123456789012345678")
+        user = user_stub.build_user()
+        user.first_name = "Comet"
+        user.last_name = "Robotics"
+
+        user_stub.activate(user, link_discord=False)
+
+        created = User.objects.get(username="abc123456")
+        created.userprofile.refresh_from_db()
+        self.assertIsNone(created.userprofile.discord_id)
+        self.assertFalse(UserProfile.objects.filter(discord_id="123456789012345678").exists())
+        self.assertFalse(UserStub.objects.filter(pk=user_stub.pk).exists())
 
     def test_activate_rejects_a_user_for_a_different_net_id(self):
         user_stub = UserStub.create("abc123456", None)
@@ -256,12 +282,20 @@ class UserStubNotifyTests(RegistrationTestCase):
         super().setUp()
         ServerSettings.objects.get_or_create(defaults={"organization_name": "Comet Robotics"})
 
-    def notify(self, *, templated):
-        user_stub = UserStub.create("abc123456", None)
+    def notify(self, *, templated, discord_user_id=None):
+        # Callers compare the two flag paths in one test, so start from a clean outbox and
+        # no stub holding the Net ID (or the Discord ID) from the previous pass.
+        mail.outbox.clear()
+        UserStub.objects.all().delete()
+        user_stub = UserStub.create("abc123456", None, discord_user_id=discord_user_id)
         with patch.dict("clubManager.settings.FEATURE_FLAGS", {"NEW_TRANSACTIONAL_EMAIL_TEMPLATES": templated}):
             UserStub.notify(user_stub)
         self.assertEqual(len(mail.outbox), 1)
         return user_stub, mail.outbox[0]
+
+    @staticmethod
+    def html_of(message):
+        return message.alternatives[0][0] if message.alternatives else ""
 
     def test_templated_path_renders_the_shared_layout(self):
         user_stub, message = self.notify(templated=True)
@@ -283,6 +317,54 @@ class UserStubNotifyTests(RegistrationTestCase):
         self.assertEqual(message.to, ["abc123456@utdallas.edu"])
         self.assertIn(user_stub.get_registration_url(), html)
         self.assertIn("Hey there!", html)
+
+    def test_both_paths_name_the_net_id_being_registered(self):
+        for templated in (True, False):
+            with self.subTest(templated=templated):
+                _, message = self.notify(templated=templated)
+
+                self.assertIn("abc123456", self.html_of(message))
+                self.assertIn("abc123456", message.body)
+
+    def test_no_discord_line_when_the_registration_did_not_come_from_discord(self):
+        for templated in (True, False):
+            with self.subTest(templated=templated):
+                _, message = self.notify(templated=templated)
+
+                self.assertNotIn("started from Discord", self.html_of(message))
+                self.assertNotIn("started from Discord", message.body)
+
+    @patch("accounts.models.describe_discord_user", return_value=FAKE_DISCORD_USER)
+    def test_both_paths_disclose_the_pending_discord_account(self, describe):
+        """
+        The Discord bot links any Net ID, so this line is the victim's only warning.
+
+        Without it the email is a plain "create your account" and finishing the form
+        silently hands the stranger who ran /link the member role on this account.
+        """
+        for templated in (True, False):
+            with self.subTest(templated=templated):
+                _, message = self.notify(templated=templated, discord_user_id="123456789012345678")
+
+                for body in (self.html_of(message), message.body):
+                    self.assertIn("started from Discord", body)
+                    self.assertIn("@attacker", body)
+                    self.assertIn("123456789012345678", body)
+                    self.assertIn("tell an officer", body)
+
+        describe.assert_called_with("123456789012345678")
+
+    @patch("accounts.models.describe_discord_user", return_value=None)
+    def test_discord_line_falls_back_to_the_raw_id_when_the_lookup_fails(self, _describe):
+        for templated in (True, False):
+            with self.subTest(templated=templated):
+                _, message = self.notify(templated=templated, discord_user_id="123456789012345678")
+
+                for body in (self.html_of(message), message.body):
+                    self.assertIn("started from Discord", body)
+                    self.assertIn("123456789012345678", body)
+                    self.assertIn("tell an officer", body)
+                    self.assertNotIn("@attacker", body)
 
     def test_email_address_derives_from_the_net_id(self):
         user_stub = UserStub.create("abc123456", None)
