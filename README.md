@@ -27,6 +27,7 @@ once pipenv is installed, run `./deploy/init.sh` (sets up systemd services, does
 - run server: `pipenv run python manage.py runserver`
 - run migrations: `pipenv run python manage.py migrate`
 - create migrations: `pipenv run python manage.py makemigrations`
+- create the shared cache table as an UNLOGGED table (run after migrating a fresh database): `pipenv run python manage.py setup_cache_table`
 - run static: `pipenv run python manage.py collectstatic`
 - create superuser: `pipenv run python manage.py createsuperuser`
 

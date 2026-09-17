@@ -4,6 +4,9 @@ set -e
 
 pipenv install --deploy
 pipenv run python manage.py migrate
+# Creates the database cache table and marks it UNLOGGED. Both steps are no-ops once
+# done, so this is safe to run on every deploy.
+pipenv run python manage.py setup_cache_table
 pipenv run python manage.py collectstatic --noinput --clear
 find /var/www/static -type f -exec chmod 644 {} +
 

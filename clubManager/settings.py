@@ -151,6 +151,33 @@ DATABASES = {
 }
 
 
+# Cache
+# https://docs.djangoproject.com/en/5.0/topics/cache/
+
+# The cache has to be *shared*, not just present: gunicorn runs several worker processes,
+# and anything counted or memoized in the cache is only correct if every worker sees the
+# same entries. The database backend gets that from the Postgres instance we already run,
+# so a deploy does not grow a Redis or memcached alongside it. The table is created by
+# `manage.py setup_cache_table` (Django's `createcachetable` plus
+# `ALTER TABLE ... SET UNLOGGED`, so cache writes skip the WAL), which deploy/run.sh runs
+# right after `migrate`.
+#
+# This is the general-purpose cache for the whole instance - rate limits, page fragments,
+# a `cache_page` on an expensive report, anything else that wants a shared cache should
+# use it rather than stand up a second one.
+#
+# The backend is our own subclass only because Django's `DatabaseCache` inherits a
+# non-atomic `incr` (get, add, set in Python), which loses increments when two workers
+# race on the same key. `common.cache.AtomicDatabaseCache` takes a row lock first; it is
+# otherwise the stock database backend.
+CACHES = {
+    "default": {
+        "BACKEND": "common.cache.AtomicDatabaseCache",
+        "LOCATION": "django_cache",
+    }
+}
+
+
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
