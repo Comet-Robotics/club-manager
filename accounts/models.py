@@ -6,7 +6,9 @@ from datetime import datetime, timedelta
 
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.utils.html import escape
 
+from accounts.discord import DiscordUser, describe_discord_user
 from core.emails import send_templated_email
 from django.utils.http import url_has_allowed_host_and_scheme
 
@@ -34,6 +36,27 @@ class DiscordAccountAlreadyLinkedError(RegistrationError):
 
 class RegistrationEmailError(RegistrationError):
     """The registration email could not be delivered."""
+
+
+def describe_pending_discord_link(discord_id: str) -> str:
+    """
+    The line a registration email has to carry when the registration came from Discord.
+
+    `/link` accepts any Net ID, so the person opening this email may never have touched
+    Discord: without this line they get a plain "create your account" mail, finish the
+    form, and silently hand the stranger who typed their Net ID a Discord account on
+    theirs - and with it the member role. Naming the account and saying it can be refused
+    is what makes that visible to the one person able to stop it.
+
+    The Discord lookup is decoration. When it fails the ID alone still identifies the
+    account well enough for an officer to act on.
+    """
+    discord_user: DiscordUser | None = describe_discord_user(discord_id)
+    who = f"@{discord_user['username']} (ID {discord_id})" if discord_user else f"the account with ID {discord_id}"
+    return (
+        f"This registration was started from Discord by {who}. Finishing it will link that Discord "
+        "account to your new account. If that isn't you, don't use this link and tell an officer."
+    )
 
 
 def get_registration_expiration() -> datetime:
@@ -139,23 +162,37 @@ class UserStub(models.Model):
         """
         An unsaved `User` for this registration, for a form to fill in before `activate`.
 
+        The account is active with no usable password, which is Django's idiom for "this
+        account is fine, it just has no way to sign in with a password". Members do not log
+        in to the web portal today: the account exists so the member can pay dues, link
+        their Discord, and be checked in at events. `is_active=False` means *banned* by
+        convention, and everything that grows to read the flag - a magic-link login most of
+        all - would read every ordinary member as suspended.
+
         Nothing is written to the database until `activate` is called, so abandoning the
         form here leaves no trace.
         """
-        return User(username=self.net_id, is_active=True)
+        user = User(username=self.net_id, is_active=True)
+        user.set_unusable_password()
+        return user
 
-    def activate(self, user: User) -> str | None:
+    def activate(self, user: User, *, link_discord: bool = True) -> str | None:
         """
         Turn this registration into a real account and return where to send the user next.
 
-        `user` is the instance from `build_user` with names and password already set.
-        Creating the `User` and dropping this stub happen in one transaction, so a Net ID
-        is never held by both a stub and an account.
+        `user` is the instance from `build_user` with names already set. Creating the
+        `User` and dropping this stub happen in one transaction, so a Net ID is never held
+        by both a stub and an account.
+
+        `link_discord=False` is how the member declines the Discord account this
+        registration was started from. Anyone can run `/link` against someone else's Net
+        ID, so the Discord ID riding along on the stub is a claim by a stranger until the
+        person reading their own email agrees to it. Declining still finishes the
+        registration - the account is wanted, the link is not - so the stub goes either
+        way and the rejected ID disappears with it.
         """
         if user.username != self.net_id:
             raise ValueError(f"Cannot activate the registration for {self.net_id} with a User for {user.username}.")
-
-        user.is_active = True
 
         with transaction.atomic():
             try:
@@ -166,7 +203,7 @@ class UserStub(models.Model):
                 # account wins, and this registration is now moot.
                 raise AccountAlreadyExistsError from error
 
-            if self.pending_discord_id is not None:
+            if link_discord and self.pending_discord_id is not None:
                 profile, _ = UserProfile.objects.get_or_create(user=user)
                 profile.discord_id = self.pending_discord_id
                 try:
@@ -192,25 +229,40 @@ class UserStub(models.Model):
             if server_settings is None:
                 raise Exception("Server settings not found")
 
+            # Both paths below have to say which Net ID is being registered and, when the
+            # registration came from Discord, whose Discord account is riding along on it.
+            discord_disclosure = (
+                describe_pending_discord_link(user_stub.pending_discord_id) if user_stub.pending_discord_id else None
+            )
+
             if settings.FEATURE_FLAGS["NEW_TRANSACTIONAL_EMAIL_TEMPLATES"]:
                 send_templated_email(
                     "email/messages/account_registration.html",
                     {
+                        "net_id": user_stub.net_id,
                         "registration_url": user_stub.get_registration_url(),
                         "expires_at": user_stub.expires_at.strftime("%m-%d-%Y %H:%M:%S"),
                         "request_url": f"{settings.PUBLIC_URL}/accounts/register",
+                        "discord_disclosure": discord_disclosure,
                     },
                     [user_stub.email_address()],
                 )
                 return
+
+            discord_disclosure_text = f"\n{discord_disclosure}\n" if discord_disclosure else ""
+            discord_disclosure_html = (
+                f"<p><strong>{escape(discord_disclosure)}</strong></p>" if discord_disclosure else ""
+            )
 
             send_mail(
                 f"Create your {server_settings.organization_name} account",
                 f"""
 Hey there!
 
-Let's finish creating your {server_settings.organization_name} account! Just click this link to finish up: {user_stub.get_registration_url()}
+Let's finish your {server_settings.organization_name} registration! Just click this link to finish up: {user_stub.get_registration_url()}
 
+This creates an account for the Net ID {user_stub.net_id}.
+{discord_disclosure_text}
 This link expires at {user_stub.expires_at.strftime("%m-%d-%Y %H:%M:%S")}. To request a new one, click this link: {f"{settings.PUBLIC_URL}/accounts/register"}
 
 If this was not you, you can safely ignore this email.
@@ -223,9 +275,13 @@ Thanks!
                 html_message=f"""
 <h2>Hey there!</h2>
 
-<p>Let's finish creating your {server_settings.organization_name} account! Click the button below or use the link to finish up.</p>
+<p>Let's finish your {server_settings.organization_name} registration! Click the button below or use the link to finish up.</p>
 
-<a href="{user_stub.get_registration_url()}"><button style="border: solid #950000 3px;padding: 1em; border-radius: 10px; background-color:#bf1e2e; color: white;"><strong>Create Account</strong></button></a>
+<p>This creates an account for the Net ID <strong>{user_stub.net_id}</strong>.</p>
+
+{discord_disclosure_html}
+
+<a href="{user_stub.get_registration_url()}"><button style="border: solid #950000 3px;padding: 1em; border-radius: 10px; background-color:#bf1e2e; color: white;"><strong>Finish Registering</strong></button></a>
 
 <br><br><a href="{user_stub.get_registration_url()}">{user_stub.get_registration_url()}</a>
 
