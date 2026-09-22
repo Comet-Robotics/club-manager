@@ -41,6 +41,7 @@ from accounts.models import (
     AccountAlreadyExistsError,
     AccountLink,
     DiscordAccountAlreadyLinkedError,
+    DiscordRegistrationPendingError,
     RegistrationAlreadySentError,
     RegistrationEmailError,
     UserStub,
@@ -209,10 +210,21 @@ async def get_active_member_discord_ids():
 
 
 class AccountCreationView(discord.ui.View):
-    def __init__(self, net_id: str, discord_user_id: int) -> None:
+    """
+    Confirms a Net ID before `/link` emails it a registration link.
+
+    With `replace_pending` set, confirming also drops the registration this Discord account
+    already has pending for another Net ID. That is the way out of a `/link` typo, so it is
+    only ever offered after naming the Net ID whose link will stop working.
+    """
+
+    def __init__(self, net_id: str, discord_user_id: int | str, *, replace_pending: bool = False) -> None:
         super().__init__(timeout=300)
         self.net_id = net_id
         self.discord_user_id = str(discord_user_id)
+        self.replace_pending = replace_pending
+        if replace_pending:
+            self.confirm_account_creation.label = f"Yes, use {net_id} instead"
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user is not None and str(interaction.user.id) == self.discord_user_id:
@@ -234,6 +246,7 @@ class AccountCreationView(discord.ui.View):
                 net_id=self.net_id,
                 after_registration_redirect_destination="",
                 discord_user_id=self.discord_user_id,
+                replace_pending_discord_registration=self.replace_pending,
             )
         except RegistrationAlreadySentError:
             await interaction.edit_original_response(
@@ -246,6 +259,16 @@ class AccountCreationView(discord.ui.View):
         except AccountAlreadyExistsError:
             await interaction.edit_original_response(
                 content="There's already an account with this Net ID in the system.", view=None
+            )
+            return
+        except DiscordRegistrationPendingError as pending:
+            await interaction.edit_original_response(
+                content=(
+                    f"You already have a registration pending for `{pending.pending_net_id}`. If that was a typo, "
+                    f"we can start over with `{self.net_id}` - the link we emailed to "
+                    f"`{pending.pending_net_id}@utdallas.edu` will stop working."
+                ),
+                view=AccountCreationView(self.net_id, self.discord_user_id, replace_pending=True),
             )
             return
         except DiscordAccountAlreadyLinkedError:
