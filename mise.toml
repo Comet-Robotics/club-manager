@@ -2,4 +2,6 @@
 idiomatic_version_file_enable_tools = ["python"]
 
 [tools]
-"pypi:pipenv" = "2026.8.0"
+# pypi: installs need uv or pipx present; a bare server has neither.
+uv = "0.12.17"
+"pypi:pipenv" = { version = "2026.8.0", depends = ["uv"] }
