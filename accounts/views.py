@@ -3,6 +3,8 @@ from django.views import View
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.forms import AuthenticationForm
 from django.urls import reverse
+
+from accounts.discord import get_discord_user
 from .models import AccountLink
 from core.models import UserProfile
 from clubManager import settings
@@ -88,30 +90,3 @@ class LinkSuccessView(View):
         return render(request, self.template_name, {**layout_data})
 
 
-class DiscordUser(TypedDict):
-    username: str
-    discord_id: int
-    profile_image: str
-
-
-def get_discord_user(user_id: int, bot_token: str) -> DiscordUser | None:
-    url = f"https://discord.com/api/v10/users/{user_id}"
-    headers = {"Authorization": f"Bot {bot_token}"}
-
-    response = requests.get(url, headers=headers)
-
-    if not response.status_code == 200:
-        return None
-
-    user_data = response.json()
-
-    discord_id = int(user_data["id"])
-    discriminator = int(user_data["discriminator"]) or 0
-
-    if "avatar" in user_data:
-        profile_image = f"https://cdn.discordapp.com/avatars/{discord_id}/{user_data['avatar']}.png"
-    else:
-        discord_profile_image_index = ((discord_id >> 22) % 6) if discriminator == 0 else discriminator % 5
-        profile_image = f"https://cdn.discordapp.com/embed/avatars/{discord_id}.png"
-
-    return {"username": user_data["username"], "discord_id": discord_id, "profile_image": profile_image}
