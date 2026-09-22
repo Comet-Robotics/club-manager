@@ -13,6 +13,7 @@ from core.emails import send_templated_email
 from django.utils.http import url_has_allowed_host_and_scheme
 
 from clubManager import settings
+from common.utils import is_valid_net_id
 from core.models import ServerSettings, UserProfile
 from django.db.models.query import QuerySet
 from django.utils import timezone
@@ -30,8 +31,20 @@ class AccountAlreadyExistsError(RegistrationError):
     """The Net ID already belongs to a completed account."""
 
 
+class InvalidNetIDError(RegistrationError):
+    """The Net ID is not in the `abc123456` format, so there is nowhere to send the email."""
+
+
 class DiscordAccountAlreadyLinkedError(RegistrationError):
     """The Discord account is already associated with another user."""
+
+
+class DiscordRegistrationPendingError(RegistrationError):
+    """The Discord account already has a registration pending for a different Net ID."""
+
+    def __init__(self, pending_net_id: str):
+        super().__init__(pending_net_id)
+        self.pending_net_id = pending_net_id
 
 
 class RegistrationEmailError(RegistrationError):
@@ -120,9 +133,25 @@ class UserStub(models.Model):
         net_id: str,
         after_registration_redirect_destination: str | None,
         discord_user_id: str | None = None,
+        *,
+        replace_pending_discord_registration: bool = False,
     ):
+        """
+        Reserve `net_id` and return the stub that holds it.
+
+        A Discord account can only have one registration pending at a time. Asking for a
+        second one raises `DiscordRegistrationPendingError` naming the first, unless
+        `replace_pending_discord_registration` is set - which is how someone who typo'd
+        their Net ID in `/link` starts over without waiting out the 24 hours. The stub being
+        replaced was created by this same Discord account, so dropping it (and the link in
+        the email that went to the wrong Net ID) takes nothing from anyone else.
+        """
         validate_after_registration_redirect_destination(after_registration_redirect_destination)
         net_id = net_id.lower()
+        # Checked here rather than trusted from each caller: the address this mails is
+        # built from the Net ID, and the email templates interpolate it.
+        if not is_valid_net_id(net_id):
+            raise InvalidNetIDError
         _ = UserStub.purge_deletion_candidates()
 
         with transaction.atomic():
@@ -132,8 +161,15 @@ class UserStub(models.Model):
             if UserStub.objects.filter(net_id=net_id).exists():
                 raise RegistrationAlreadySentError
 
-            if discord_user_id is not None and UserProfile.objects.filter(discord_id=discord_user_id).exists():
-                raise DiscordAccountAlreadyLinkedError
+            if discord_user_id is not None:
+                if UserProfile.objects.filter(discord_id=discord_user_id).exists():
+                    raise DiscordAccountAlreadyLinkedError
+
+                pending = UserStub.objects.select_for_update().filter(pending_discord_id=discord_user_id).first()
+                if pending is not None:
+                    if not replace_pending_discord_registration:
+                        raise DiscordRegistrationPendingError(pending.net_id)
+                    pending.delete()
 
             try:
                 with transaction.atomic():
@@ -147,6 +183,9 @@ class UserStub(models.Model):
                 # Discord account. Work out which unique constraint gave way.
                 if UserStub.objects.filter(net_id=net_id).exists():
                     raise RegistrationAlreadySentError from error
+                pending = UserStub.objects.filter(pending_discord_id=discord_user_id).first()
+                if pending is not None:
+                    raise DiscordRegistrationPendingError(pending.net_id) from error
                 raise DiscordAccountAlreadyLinkedError from error
 
     def build_user(self) -> User:
