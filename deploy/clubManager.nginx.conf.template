@@ -2,6 +2,17 @@ server {
     listen 80;
     server_name portal.cometrobotics.org;
 
+    # Public traffic arrives through Cloudflare Tunnel, so every connection nginx sees
+    # comes from cloudflared rather than from the client. For connections from cloudflared
+    # only, take the client address from the header Cloudflare sets; `proxy_params` then
+    # forwards it to Django as X-Real-IP, which the registration rate limits key on
+    # (common/throttle.py). Anything connecting from elsewhere keeps its own address, so
+    # the header cannot be spoofed around the tunnel. If cloudflared runs on another host,
+    # list that host's address here instead.
+    set_real_ip_from 127.0.0.1;
+    set_real_ip_from ::1;
+    real_ip_header CF-Connecting-IP;
+
     #location = /favicon.ico { access_log off; log_not_found off; }
 
     location / {

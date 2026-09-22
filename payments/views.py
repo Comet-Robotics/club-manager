@@ -112,13 +112,6 @@ class ChooseUserView(View):
         """
         Email a registration link for a Net ID with no account, and say how it went.
         """
-        # The registration branch is the only part of this page that sends mail, and the
-        # only part that is metered. Everything below it is how officers take cash at a
-        # recruiting table - many payments for known members from one laptop - and
-        # throttling the view as a whole would stop that dead.
-        if registration_throttled(request):
-            return self.registration_throttled_message
-
         try:
             user_stub = UserStub.create(net_id=net_id, after_registration_redirect_destination=request.get_full_path())
         except RegistrationAlreadySentError:
@@ -129,6 +122,15 @@ class ChooseUserView(View):
             # The account appeared between typing the Net ID and confirming it. Nothing
             # to register - fall through to the normal payment path.
             return None
+
+        # The registration branch is the only part of this page that sends mail, and the
+        # only part that is metered - and only once an email is actually about to go out.
+        # Everything else here is how officers take cash at a recruiting table (many
+        # payments for known members from one laptop), and throttling the whole view would
+        # stop that dead.
+        if registration_throttled(request):
+            user_stub.delete()
+            return self.registration_throttled_message
 
         try:
             UserStub.notify(user_stub)

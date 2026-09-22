@@ -835,3 +835,87 @@ class RegistrationRequestThrottleTests(RegistrationTestCase):
         response = self.request_registration("abc000001")
 
         self.assertContains(response, "check your UTD email")
+
+
+@override_settings(
+    CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}},
+    REGISTRATION_EMAIL_RATE_PER_IP="2/h",
+    REGISTRATION_EMAIL_RATE_GLOBAL="3/d",
+)
+class RegistrationThrottleAccountingTests(RegistrationTestCase):
+    """What does and does not spend the allowances, independent of which page sent it."""
+
+    def setUp(self):
+        super().setUp()
+        ServerSettings.objects.get_or_create(defaults={"organization_name": "Comet Robotics"})
+        cache.clear()
+
+    def request_registration(self, net_id, ip="198.51.100.1"):
+        return self.client.post(reverse("registration_request"), {"net_id": net_id}, HTTP_X_REAL_IP=ip)
+
+    def test_a_client_over_its_own_limit_does_not_spend_the_global_one(self):
+        """Otherwise one machine could close registration for the whole instance."""
+        self.request_registration("abc000001")
+        self.request_registration("abc000002")
+        for index in range(3, 10):
+            self.request_registration(f"abc00000{index}")
+
+        response = self.request_registration("def000001", ip="203.0.113.7")
+
+        self.assertContains(response, "check your UTD email")
+        self.assertTrue(UserStub.objects.filter(net_id="def000001").exists())
+
+    def test_net_ids_that_would_not_be_emailed_cost_nothing(self):
+        User.objects.create(username="abc000001")
+        UserStub.create("abc000002", None)
+        for _ in range(3):
+            self.request_registration("abc000001")
+            self.request_registration("abc000002")
+        mail.outbox.clear()
+
+        self.request_registration("abc000003")
+        self.request_registration("abc000004")
+
+        self.assertEqual(
+            sorted(message.to[0] for message in mail.outbox),
+            [
+                "abc000003@utdallas.edu",
+                "abc000004@utdallas.edu",
+            ],
+        )
+
+
+@override_settings(
+    CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}},
+    REGISTRATION_EMAIL_RATE_PER_DISCORD_USER="2/d",
+    REGISTRATION_EMAIL_RATE_GLOBAL="150/d",
+)
+class DiscordRegistrationThrottleTests(DiscordPendingRegistrationTests):
+    """Replacing a pending registration sends another email, so `/link` is metered per Discord account."""
+
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+
+    async def test_replacements_count_against_the_discord_accounts_allowance(self):
+        discord_id = 123456789012345678
+        await self.press_confirm(self.bot.AccountCreationView("abc000001", discord_id))
+        await self.press_confirm(self.bot.AccountCreationView("abc000002", discord_id, replace_pending=True))
+        self.assertEqual(len(mail.outbox), 2)
+
+        reply = await self.press_confirm(self.bot.AccountCreationView("abc000003", discord_id, replace_pending=True))
+
+        self.assertIn("a lot of registration emails", reply["content"])
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertFalse(await sync_to_async(UserStub.objects.filter(net_id="abc000003").exists)())
+
+    @override_settings(REGISTRATION_EMAIL_RATE_GLOBAL="1/d")
+    async def test_discord_shares_the_global_cap_with_the_web(self):
+        await sync_to_async(self.client.post)(
+            reverse("registration_request"), {"net_id": "web000001"}, HTTP_X_REAL_IP="198.51.100.1"
+        )
+
+        reply = await self.press_confirm(self.bot.AccountCreationView("abc000001", 123456789012345678))
+
+        self.assertIn("a lot of registration emails", reply["content"])
+        self.assertEqual([message.to for message in mail.outbox], [["web000001@utdallas.edu"]])
