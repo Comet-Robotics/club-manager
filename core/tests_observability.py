@@ -4,6 +4,22 @@ from django.test import TestCase
 
 from clubManager import observability
 from clubManager.observability import init_sentry, resolve_tenant
+from clubManager.utils import strtobool
+
+
+class StrtoboolTests(TestCase):
+    def test_accepts_truthy_and_falsy_values_with_surrounding_whitespace(self):
+        for value in ("y", "yes", "t", "true", "on", "1"):
+            with self.subTest(value=value):
+                self.assertTrue(strtobool(f"  {value.upper()}  "))
+
+        for value in ("n", "no", "f", "false", "off", "0"):
+            with self.subTest(value=value):
+                self.assertFalse(strtobool(f"  {value.upper()}  "))
+
+    def test_rejects_unknown_values(self):
+        with self.assertRaises(ValueError):
+            strtobool("sometimes")
 
 
 class InitSentryTests(TestCase):
@@ -37,6 +53,10 @@ class InitSentryTests(TestCase):
         with mock.patch.dict("os.environ", {"SENTRY_ENABLED": "maybe", "SENTRY_DSN": ""}):
             # Still disabled here, but by the blank DSN rather than the bad flag.
             self.assertFalse(init_sentry(debug=False, public_url="https://example.org"))
+
+    def test_enabled_flag_uses_shared_truth_parser(self):
+        with mock.patch.dict("os.environ", {"SENTRY_ENABLED": "  off  "}):
+            self.assertFalse(observability._env_flag("SENTRY_ENABLED", True))
 
 
 class ResolveTenantTests(TestCase):
