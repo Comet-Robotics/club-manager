@@ -5,10 +5,11 @@ from csv import DictWriter
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import Http404, HttpResponse
 from django.db.models import Q
+from platformdirs import user_runtime_dir
 
 from core.utilities import get_layout_data
 from .forms import EventForm, SignInForm, UserSearchForm, RSVPForm
-from .models import Attendance, Event, Reservation
+from .models import Attendance, CheckinMethod, Event, Reservation
 from core.models import UserProfile
 from django.contrib.auth.models import User
 from django.contrib.admin.views.decorators import staff_member_required
@@ -28,21 +29,19 @@ def sign_in(request, event_id):
             student_id = form.cleaned_data["card_data"]
             try:
                 user_profile = UserProfile.objects.get(comet_card_serial_number=student_id)
-                if user_profile:
-                    user = user_profile.user
-                    valid_payment = user_profile.is_member()[1]
-                    form = SignInForm()
-                    status, created = Attendance.objects.get_or_create(event=current_event, user=user)
-                    if created:
-                        message = "success"
-                        if not valid_payment:
-                            message = "nomember"
-                    else:
-                        message = "repeat"
-                        if not valid_payment:
-                            message = "nomember"
             except UserProfile.DoesNotExist:
                 return redirect("lookup-user", event_id=event_id, student_id=student_id)
+            user = user_profile.user
+            form = SignInForm()
+            # TODO: switch all checkin verbage to "sign in" verbage for consistency 
+            success, meta = user_profile.check_in_to_event(current_event, CheckinMethod.STAFF_INITIATED)
+
+            if meta.already_checked_in:
+                message = "repeat"
+            elif meta.is_not_member:
+                message = "nomember"
+            else:
+                message = "success"
 
             return render(
                 request,
@@ -51,7 +50,7 @@ def sign_in(request, event_id):
                     **layout_data,
                     "form": form,
                     "message": message,
-                    "status": status,
+                    "status": meta.attendance,
                     "user": user,
                     "event_id": event_id,
                     "event_name": event_name,

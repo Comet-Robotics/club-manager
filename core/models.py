@@ -1,8 +1,10 @@
+from dataclasses import dataclass
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 
 from common.major import get_majors
+from events.models import Attendance, Event
 from payments.models import PurchasedProduct, Term
 from django.utils import timezone
 from datetime import timedelta
@@ -50,6 +52,12 @@ class Diet(models.Model):
     def __str__(self):
         return self.name
 
+@dataclass
+class CheckInMetadata:
+  is_not_member: bool
+  already_checked_in: bool | None
+  attendance: Attendance
+
 
 class UserProfile(models.Model):
     class GenderChoice(models.TextChoices):
@@ -82,6 +90,27 @@ class UserProfile(models.Model):
     )  # TODO: get rid of default=True and fix UserProfile creation with null field
     date_of_birth = models.DateField(null=True, blank=True)
     comet_card_serial_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
+
+    def check_in_to_event(self, event: Event, check_in_method: str) -> tuple[bool, CheckInMetadata]:
+      """
+      Checks a user into a given event. 
+
+      Returns a tuple:
+        bool: true if the check-in was successful, false otherwise. for all current use-cases, this bool will always be true, but eventually we should stop people from checking in to an event if they haven't paid member dues past a certain point (which should also be configurable)
+        CheckInMetadata: messages which explain the decision / can optionally be surfaced as warnings to the user
+        
+      """
+      _, purchased_product = self.is_member()
+      is_member = bool(purchased_product)
+      
+      attendance, is_first_check_in = Attendance.objects.get_or_create(event=event, user=self.user, checkin_method=check_in_method)
+      
+      return True, CheckInMetadata(
+        already_checked_in=not is_first_check_in,
+        is_not_member=not is_member,
+        attendance=attendance
+      )
+
 
     def is_minor(self):
         assert self.date_of_birth is not None
