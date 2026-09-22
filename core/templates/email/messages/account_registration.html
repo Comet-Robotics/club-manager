@@ -1,0 +1,28 @@
+{% extends "email/base.html" %}
+{% comment %}
+Sent when someone starts a self-service registration, from the web form or the Discord bot.
+Context: net_id, registration_url, expires_at, request_url, discord_disclosure (optional:  set
+when the registration was started from Discord and names the account that would be linked).
+{% endcomment %}
+
+{% block subject %}Create your {{ org.name }} account{% endblock %}
+
+{% block preheader %}Finish setting up your {{ org.name }} account.{% endblock %}
+
+{% block footer_reason %}You received this email because someone used your Net ID to start creating an account on {{ org.name }}'s Club Manager.{% endblock %}
+
+{% block content %}
+  <h1>Create your account</h1>
+
+  <p>Hey there! You're one step away from a {{ org.name }} account for the Net ID <strong>{{ net_id }}</strong>. Use the button below to tell us your name and finish registering.</p>
+
+  {% if discord_disclosure %}
+    <p><strong>{{ discord_disclosure }}</strong></p>
+  {% endif %}
+
+  {% include "email/_button.html" with href=registration_url label="Finish registering" %}
+
+  <p>This link expires on {{ expires_at }}. If it has already run out, <a href="{{ request_url }}">request a new one</a>.</p>
+
+  <p class="fine">If this was not you, you can ignore this message. No account is created until the link above is used.</p>
+{% endblock %}
