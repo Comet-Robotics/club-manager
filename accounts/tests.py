@@ -13,6 +13,8 @@ from django.utils import timezone
 from accounts.models import (
     AccountAlreadyExistsError,
     DiscordAccountAlreadyLinkedError,
+    DiscordRegistrationPendingError,
+    InvalidNetIDError,
     RegistrationAlreadySentError,
     UserStub,
     validate_after_registration_redirect_destination,
@@ -62,7 +64,7 @@ class RegistrationTestCase(TestCase):
 
 class UserStubRedirectDestinationTests(RegistrationTestCase):
     def test_user_stub_allows_no_redirect_destination(self):
-        user_stub = UserStub.create("noredirect", None)
+        user_stub = UserStub.create("nor123456", None)
 
         self.assertIsNone(user_stub.after_registration_redirect_destination)
 
@@ -119,11 +121,56 @@ class UserStubCreateTests(RegistrationTestCase):
         with self.assertRaises(DiscordAccountAlreadyLinkedError):
             UserStub.create("abc123456", None, discord_user_id="123456789012345678")
 
-    def test_create_rejects_a_discord_account_with_a_pending_registration(self):
+    def test_create_rejects_a_net_id_in_the_wrong_format(self):
+        """The email address is built from the Net ID, so a malformed one never gets a stub."""
+        for net_id in ("abc12345", "abc1234567", "123abcdef", "abc123456@evil.example", ""):
+            with self.subTest(net_id=net_id):
+                with self.assertRaises(InvalidNetIDError):
+                    UserStub.create(net_id, None)
+
+        self.assertFalse(UserStub.objects.exists())
+
+    def test_create_names_the_net_id_a_discord_account_already_has_pending(self):
         UserStub.create("abc123456", None, discord_user_id="123456789012345678")
 
-        with self.assertRaises(DiscordAccountAlreadyLinkedError):
+        with self.assertRaises(DiscordRegistrationPendingError) as raised:
             UserStub.create("def123456", None, discord_user_id="123456789012345678")
+
+        self.assertEqual(raised.exception.pending_net_id, "abc123456")
+        self.assertFalse(UserStub.objects.filter(net_id="def123456").exists())
+
+    def test_create_can_replace_the_discord_accounts_own_pending_registration(self):
+        """A /link typo: start over on the right Net ID instead of waiting out the 24 hours."""
+        typo = UserStub.create("abc123457", None, discord_user_id="123456789012345678")
+
+        corrected = UserStub.create(
+            "abc123456", None, discord_user_id="123456789012345678", replace_pending_discord_registration=True
+        )
+
+        self.assertFalse(UserStub.objects.filter(pk=typo.pk).exists())
+        self.assertEqual(corrected.net_id, "abc123456")
+        self.assertEqual(corrected.pending_discord_id, "123456789012345678")
+
+    def test_replacing_leaves_other_registrations_alone(self):
+        someone_else = UserStub.create("xyz123456", None, discord_user_id="999999999999999999")
+        web_only = UserStub.create("web123456", None)
+        UserStub.create("abc123457", None, discord_user_id="123456789012345678")
+
+        UserStub.create(
+            "abc123456", None, discord_user_id="123456789012345678", replace_pending_discord_registration=True
+        )
+
+        self.assertTrue(UserStub.objects.filter(pk=someone_else.pk).exists())
+        self.assertTrue(UserStub.objects.filter(pk=web_only.pk).exists())
+
+    def test_replacing_does_not_get_around_the_per_net_id_lockout(self):
+        """Replacement is for a different Net ID; asking again for the same one is still 'already sent'."""
+        UserStub.create("abc123456", None, discord_user_id="123456789012345678")
+
+        with self.assertRaises(RegistrationAlreadySentError):
+            UserStub.create(
+                "abc123456", None, discord_user_id="123456789012345678", replace_pending_discord_registration=True
+            )
 
     def test_create_holds_the_discord_id_without_touching_any_profile(self):
         user_stub = UserStub.create("abc123456", None, discord_user_id="123456789012345678")
@@ -132,9 +179,9 @@ class UserStubCreateTests(RegistrationTestCase):
         self.assertFalse(UserProfile.objects.filter(discord_id="123456789012345678").exists())
 
     def test_management_command_accepts_discord_user_id(self):
-        call_command("create_user_stub", "commandstub", "--discord-user-id", "987654321098765432")
+        call_command("create_user_stub", "cmd123456", "--discord-user-id", "987654321098765432")
 
-        user_stub = UserStub.objects.get(net_id="commandstub")
+        user_stub = UserStub.objects.get(net_id="cmd123456")
         self.assertEqual(user_stub.pending_discord_id, "987654321098765432")
 
 
