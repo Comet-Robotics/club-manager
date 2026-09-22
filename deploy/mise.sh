@@ -38,3 +38,16 @@ install_toolchain() {
 mise_exec() {
   "$MISE" exec -- "$@"
 }
+
+# Absolute path to the interpreter mise resolved for this project.
+#
+# Always hand this to pipenv with --python. pipenv does NOT honour PATH when it builds a
+# virtualenv: with no [requires] python_version in the Pipfile it uses the interpreter pipenv
+# itself is running under, and mise installs pipenv into its own virtualenv on an unrelated
+# Python. Left alone, that silently builds the project virtualenv on the wrong version.
+#
+# `mise where` is the tool's install directory, which - unlike `mise which` or a PATH lookup -
+# cannot be shadowed by an activated virtualenv.
+python_bin() {
+  echo "$("$MISE" where python)/bin/python"
+}

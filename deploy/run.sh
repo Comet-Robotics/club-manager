@@ -17,7 +17,8 @@ install_toolchain
 # rebuilding it when the Python version changes, and then fails with a stack trace ending in
 # "ERROR:: Aborting deploy", which never mentions Python. Recreate it ourselves instead - the
 # virtualenv is disposable, `pipenv install --deploy` rebuilds it from the lockfile right after.
-REQUIRED_PYTHON="$(tr -d '[:space:]' < .python-version | cut -d. -f1,2)"
+PYTHON_BIN="$(python_bin)"
+REQUIRED_PYTHON="$("$PYTHON_BIN" -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
 VENV_PATH="$(mise_exec pipenv --venv 2>/dev/null || true)"
 if [[ -n "$VENV_PATH" && -x "$VENV_PATH/bin/python" ]]; then
   VENV_PYTHON="$("$VENV_PATH/bin/python" -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
@@ -28,7 +29,7 @@ if [[ -n "$VENV_PATH" && -x "$VENV_PATH/bin/python" ]]; then
   fi
 fi
 
-mise_exec pipenv install --deploy
+mise_exec pipenv install --deploy --python "$PYTHON_BIN"
 mise_exec pipenv run python manage.py migrate
 # Creates the database cache table and marks it UNLOGGED. Both steps are no-ops once
 # done, so this is safe to run on every deploy.
