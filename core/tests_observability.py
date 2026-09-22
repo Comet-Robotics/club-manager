@@ -4,22 +4,22 @@ from django.test import TestCase
 
 from clubManager import observability
 from clubManager.observability import init_sentry, resolve_tenant
-from clubManager.utils import strtobool
+from clubManager.utils import parse_bool
 
 
-class StrtoboolTests(TestCase):
+class ParseBoolTests(TestCase):
     def test_accepts_truthy_and_falsy_values_with_surrounding_whitespace(self):
         for value in ("y", "yes", "t", "true", "on", "1"):
             with self.subTest(value=value):
-                self.assertTrue(strtobool(f"  {value.upper()}  "))
+                self.assertTrue(parse_bool(f"  {value.upper()}  "))
 
         for value in ("n", "no", "f", "false", "off", "0"):
             with self.subTest(value=value):
-                self.assertFalse(strtobool(f"  {value.upper()}  "))
+                self.assertFalse(parse_bool(f"  {value.upper()}  "))
 
     def test_rejects_unknown_values(self):
         with self.assertRaises(ValueError):
-            strtobool("sometimes")
+            parse_bool("sometimes")
 
 
 class InitSentryTests(TestCase):
@@ -56,7 +56,15 @@ class InitSentryTests(TestCase):
 
     def test_enabled_flag_uses_shared_truth_parser(self):
         with mock.patch.dict("os.environ", {"SENTRY_ENABLED": "  off  "}):
-            self.assertFalse(observability._env_flag("SENTRY_ENABLED", True))
+            self.assertFalse(observability._env_value("SENTRY_ENABLED", True, parse_bool, "truth value"))
+
+    def test_sample_rate_uses_shared_env_parser(self):
+        with mock.patch.dict("os.environ", {"SENTRY_TRACES_SAMPLE_RATE": " 0.35 "}):
+            self.assertEqual(observability._env_value("SENTRY_TRACES_SAMPLE_RATE", 0.2, float, "number"), 0.35)
+
+    def test_invalid_sample_rate_uses_default(self):
+        with mock.patch.dict("os.environ", {"SENTRY_TRACES_SAMPLE_RATE": "not-a-number"}):
+            self.assertEqual(observability._env_value("SENTRY_TRACES_SAMPLE_RATE", 0.2, float, "number"), 0.2)
 
 
 class ResolveTenantTests(TestCase):

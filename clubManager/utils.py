@@ -1,7 +1,7 @@
 """Small utilities that can be imported before Django initializes."""
 
 
-def strtobool(val: str) -> bool:
+def parse_bool(val: str) -> bool:
     """Convert a string representation of truth to a boolean.
 
     True values are ``y``, ``yes``, ``t``, ``true``, ``on``, and ``1``; false

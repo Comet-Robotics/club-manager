@@ -9,9 +9,11 @@ patch framework internals.
 
 import logging
 import os
+from collections.abc import Callable
+from typing import TypeVar
 from urllib.parse import urlparse
 
-from clubManager.utils import strtobool
+from clubManager.utils import parse_bool
 
 # Comet Robotics' hosted Sentry project. Every instance reports here by default so that
 # a breakage on any deployment is debuggable from one place; events are tagged with a
@@ -19,28 +21,18 @@ from clubManager.utils import strtobool
 # its own project can set SENTRY_DSN, or opt out entirely with SENTRY_ENABLED=0.
 DEFAULT_SENTRY_DSN = "https://474f3f624969b1b7f16b6243ed154185@o4512098201698304.ingest.us.sentry.io/4512098322743296"
 
+T = TypeVar("T")
 
-def _env_flag(name: str, default: bool) -> bool:
-    """Read a boolean env var, falling back to `default` when unset or unparseable."""
+
+def _env_value(name: str, default: T, converter: Callable[[str], T], value_type: str) -> T:
+    """Read and convert an environment variable, falling back to ``default`` on errors."""
     raw = os.getenv(name)
     if raw is None:
         return default
     try:
-        return strtobool(raw)
+        return converter(raw)
     except ValueError:
-        print(f"Warning: {name} is set to {raw!r}, which isn't a truth value. Using default {default}.")
-        return default
-
-
-def _env_float(name: str, default: float) -> float:
-    """Read a float env var, falling back to `default` when unset or unparseable."""
-    raw = os.getenv(name)
-    if raw is None:
-        return default
-    try:
-        return float(raw)
-    except ValueError:
-        print(f"Warning: {name} is set to {raw!r}, which isn't a number. Using default {default}.")
+        print(f"Warning: {name} is set to {raw!r}, which isn't a {value_type}. Using default {default}.")
         return default
 
 
@@ -89,7 +81,7 @@ def init_sentry(*, debug: bool, public_url: str | None, service: str = "web") ->
         print("Sentry is disabled because DEBUG is on.")
         return False
 
-    if not _env_flag("SENTRY_ENABLED", True):
+    if not _env_value("SENTRY_ENABLED", True, parse_bool, "truth value"):
         print("Sentry is disabled because SENTRY_ENABLED is set to a falsy value.")
         return False
 
@@ -114,7 +106,7 @@ def init_sentry(*, debug: bool, public_url: str | None, service: str = "web") ->
         # Both rates are metered, so these are deliberately not the 1.0 the Sentry
         # onboarding wizard suggests -- that value is meant to show data immediately in a
         # demo, not to run in production. Tune per instance via the env vars.
-        traces_sample_rate=_env_float("SENTRY_TRACES_SAMPLE_RATE", 0.2),
+        traces_sample_rate=_env_value("SENTRY_TRACES_SAMPLE_RATE", 0.2, float, "number"),
         # Send spans in batches as they finish, instead of buffering a whole transaction
         # in memory until its root span closes. Lifts the 1000-span-per-transaction cap
         # and gets trace data visible sooner. The one behavioral change: breadcrumbs are
@@ -122,7 +114,7 @@ def init_sentry(*, debug: bool, public_url: str | None, service: str = "web") ->
         trace_lifecycle="stream",
         # Only honoured in stream mode; it is how the tenant reaches span data at all.
         before_send_span=_before_send_span,
-        profile_session_sample_rate=_env_float("SENTRY_PROFILE_SESSION_SAMPLE_RATE", 0.5),
+        profile_session_sample_rate=_env_value("SENTRY_PROFILE_SESSION_SAMPLE_RATE", 0.5, float, "number"),
         profile_lifecycle="trace",
         enable_logs=True,
         integrations=[
