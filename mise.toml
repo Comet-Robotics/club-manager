@@ -15,4 +15,9 @@ idiomatic_version_file_enable_tools = ["python"]
 [tools]
 # Pinned rather than "latest" so a deploy can never pick up a new pipenv on its own - this is
 # the tool that builds the production virtualenv. Bump it deliberately.
-pipenv = "2026.8.0"
+#
+# The pypi: backend is named explicitly. Plain `pipenv` resolves to mise's vfox plugin first,
+# which builds its own virtualenv in a postinstall hook and dies on ubuntu-latest with
+# "ensurepip ... exit status 127". pypi: installs the executables directly and works on both
+# Linux and macOS.
+"pypi:pipenv" = "2026.8.0"
