@@ -114,7 +114,7 @@ def _git_helper_has_github_creds() -> bool:
 # installed. pgserver discovers binaries by scanning site-packages for
 # `pgserver_binaries/pg*/bin`, so a symlink (junction on Windows) into mise's
 # install directory is all it takes - no patching, no vendoring.
-POSTGRES_VERSION = "14"  # match production; see README
+POSTGRES_VERSION = "15"  # Django 6.1's floor; match production, see README
 FORK_PGSERVER_WHEEL = (
     "https://github.com/alexandre-fundcraft/pgserver/releases/download/latest/pgserver-0.3.0-py3-none-any.whl"
 )
@@ -260,6 +260,29 @@ def _link_postgres_binaries(pg_dir: Path) -> None:
         link.symlink_to(pg_dir, target_is_directory=True)
 
 
+def _check_pgdata_version(dev_pgdata: str) -> None:
+    """Fail early when the embedded cluster isn't the PostgreSQL we now install.
+
+    PostgreSQL won't start on a data directory from another major version, and
+    the error it prints for that ("database files are incompatible with
+    server") doesn't say what to do about it.
+    """
+    version_file = Path(dev_pgdata) / "PG_VERSION"
+    if not version_file.exists():
+        return
+
+    found = version_file.read_text().strip()
+    if found == POSTGRES_VERSION:
+        return
+
+    raise SystemExit(
+        f"dev_setup: the dev database in {dev_pgdata} is PostgreSQL {found}, but this "
+        f"project needs PostgreSQL {POSTGRES_VERSION} (Django 6.1's floor). Stop any "
+        "running dev server, dump anything you want to keep with `pg_dump`, then delete "
+        "that directory and re-run this script to build a fresh cluster."
+    )
+
+
 def ensure_pgserver() -> None:
     """Install pgserver on demand if the dev flow needs it and it's missing.
 
@@ -268,8 +291,11 @@ def ensure_pgserver() -> None:
     instead, and only when DEV_PGDATA asks for it. If that fails, say so
     plainly and point at system Postgres.
     """
-    if not _effective_dev_pgdata():
+    dev_pgdata = _effective_dev_pgdata()
+    if not dev_pgdata:
         return
+
+    _check_pgdata_version(dev_pgdata)
 
     using_override = bool(_env("DEV_PG_BIN_DIR"))
 
@@ -292,7 +318,7 @@ def ensure_pgserver() -> None:
                 f"dev_setup: `mise install postgres@{POSTGRES_VERSION}` failed. No "
                 "PostgreSQL build exists for this platform via mise (e.g. Windows on "
                 "ARM). Install PostgreSQL yourself - on Windows: "
-                "`winget install PostgreSQL.PostgreSQL.14` - then set DEV_PG_BIN_DIR "
+                "`winget install PostgreSQL.PostgreSQL.15` - then set DEV_PG_BIN_DIR "
                 "in .env to its bin directory, or comment out DEV_PGDATA and set DB_*."
             )
 
