@@ -16,6 +16,28 @@ from core.models import ServerSettings
 from payments.models import Payment, Product, PurchasedProduct, Term
 
 
+def make_term(name, start_date, end_date):
+    product = Product.objects.create(
+        name=f"{name} dues",
+        amount_cents=1000,
+        max_purchases_per_user=1,
+    )
+    return Term.objects.create(name=name, start_date=start_date, end_date=end_date, product=product)
+
+
+def make_member(username, term, *, successful=True):
+    """Creates a user with a paid membership in `term`."""
+    user = User.objects.create_user(username=username, password="pass")
+    payment = Payment.objects.create(
+        user=user,
+        amount_cents=1000,
+        is_successful=successful,
+        completed_at=timezone.now() if successful else None,
+    )
+    PurchasedProduct.objects.create(product=term.product, payment=payment, quantity=1)
+    return user
+
+
 class TermOverlapTestCase(TestCase):
     """Terms can overlap, so more than one term may be active on a given day."""
 
