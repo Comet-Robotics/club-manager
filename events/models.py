@@ -7,7 +7,6 @@ from projects.models import Project, Team
 from django.db.models import F
 
 
-# Create your models here.
 class Event(models.Model):
     event_name = models.CharField(max_length=200)
     event_date = models.DateTimeField("event date")
@@ -60,10 +59,20 @@ class Event(models.Model):
         )
 
 
+class CheckinMethod(models.TextChoices):
+    SELF_QR = "self_qr", _("Self Check-in via QR Code")
+    STAFF_INITIATED = "staff_initiated", _("Staff Initiated Check-in")
+
+
 class Attendance(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="attendances")
     timestamp = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
+    checkin_method = models.CharField(
+        max_length=20,
+        choices=CheckinMethod.choices,
+        default=CheckinMethod.STAFF_INITIATED,
+    )
 
     def __str__(self):
         return str(self.user) + " - " + str(self.event) + " - " + str(self.timestamp)
