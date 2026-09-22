@@ -32,8 +32,10 @@ jobs:
         with:
           path: ~/.local/share/virtualenvs
           key: pipenv-${{ runner.os }}-${{ hashFiles('.python-version', 'Pipfile.lock') }}
+      # --python for the same reason deploy/run.sh passes it: pipenv ignores PATH and falls back to
+      # the interpreter it is itself running under, which is the one mise installed pipenv with.
       - name: Install dependencies
-        run: pipenv install --dev
+        run: pipenv install --dev --python "$(mise where python)/bin/python"
       - name: Create .env file
         run: cp .env.example .env
       - name: Run lint
