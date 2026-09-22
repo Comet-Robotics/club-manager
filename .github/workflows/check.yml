@@ -23,17 +23,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      # Installs the Python named by .python-version and the pipenv pinned in mise.toml, so CI
-      # and the deploy hosts can't drift apart. Caches the tools it installs by default.
       - uses: jdx/mise-action@v4
-      # Keyed on the lockfile: a dependency change rebuilds, anything else reuses the virtualenv.
       - name: Cache virtualenv
         uses: actions/cache@v4
         with:
           path: ~/.local/share/virtualenvs
           key: pipenv-${{ runner.os }}-${{ hashFiles('.python-version', 'Pipfile.lock') }}
-      # --python for the same reason deploy/run.sh passes it: pipenv ignores PATH and falls back to
-      # the interpreter it is itself running under, which is the one mise installed pipenv with.
       - name: Install dependencies
         run: pipenv install --dev --python "$(mise where python)/bin/python"
       - name: Create .env file

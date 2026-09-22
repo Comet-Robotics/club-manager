@@ -5,7 +5,6 @@ Wants=gunicorn.service
 [Service]
 User=root
 WorkingDirectory=/root/clubManager
-# See the note in gunicorn.service about why this goes through mise.
 ExecStart=/usr/local/bin/mise exec -- pipenv run python discord_bot.py
 
 [Install]

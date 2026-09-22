@@ -7,16 +7,9 @@ DEPLOY_PATH="$(cd "$(dirname "${BASH_SOURCE:-$0}")" && pwd)"
 source "$DEPLOY_PATH/mise.sh"
 cd "$DEPLOY_PATH/.."
 
-# Install mise if this host doesn't have it, then bring the toolchain up to date. This is what
-# guarantees the interpreter is the one .python-version names, so nothing below has to check and
-# a version bump needs no action on the host.
 ensure_mise
 install_toolchain
 
-# The one thing mise can't fix for us: pipenv reuses an existing virtualenv rather than
-# rebuilding it when the Python version changes, and then fails with a stack trace ending in
-# "ERROR:: Aborting deploy", which never mentions Python. Recreate it ourselves instead - the
-# virtualenv is disposable, `pipenv install --deploy` rebuilds it from the lockfile right after.
 PYTHON_BIN="$(python_bin)"
 REQUIRED_PYTHON="$("$PYTHON_BIN" -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
 VENV_PATH="$(mise_exec pipenv --venv 2>/dev/null || true)"
@@ -24,7 +17,6 @@ if [[ -n "$VENV_PATH" && -x "$VENV_PATH/bin/python" ]]; then
   VENV_PYTHON="$("$VENV_PATH/bin/python" -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
   if [[ "$VENV_PYTHON" != "$REQUIRED_PYTHON" ]]; then
     echo "Virtualenv is on Python $VENV_PYTHON but $REQUIRED_PYTHON is required; recreating it."
-    # `pipenv remove`, not the `pipenv --rm` spelling - that one is deprecated as of pipenv 2026.8.
     mise_exec pipenv remove
   fi
 fi
@@ -56,9 +48,6 @@ for unit in post_office_queue.service post_office_queue.timer \
   sudo ln -sfn "$DEPLOY_PATH/$unit" "/etc/systemd/system/$unit"
 done
 
-# Reload before restarting anything. The unit files are symlinks into this repo, so a pull can
-# change what a unit does; reloading afterwards meant a unit change only took effect on the
-# deploy after this one.
 sudo systemctl daemon-reload
 sudo systemctl enable post_office_queue.timer post_office_cleanup.timer
 

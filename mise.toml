@@ -1,23 +1,5 @@
-# Toolchain for Club Manager. `mise install` makes a machine match this file; the deploy
-# scripts in deploy/ call it for you, so a host only ever needs mise itself.
-#
-# The Python version deliberately does NOT live here - it stays in .python-version, so that
-# pyenv, asdf, actions/setup-python and anyone not using mise keep reading the same number.
-# The setting below is what makes mise honour that file (mise ignores idiomatic version files
-# unless asked). It is set here rather than globally so no one has to configure their machine.
-#
-# Careful: a `python` entry under [tools] would silently take precedence over .python-version
-# and give us two sources of truth. That is why there isn't one. Bump .python-version instead,
-# and do not run `mise use python@...`, which writes such an entry.
 [settings]
 idiomatic_version_file_enable_tools = ["python"]
 
 [tools]
-# Pinned rather than "latest" so a deploy can never pick up a new pipenv on its own - this is
-# the tool that builds the production virtualenv. Bump it deliberately.
-#
-# The pypi: backend is named explicitly. Plain `pipenv` resolves to mise's vfox plugin first,
-# which builds its own virtualenv in a postinstall hook and dies on ubuntu-latest with
-# "ensurepip ... exit status 127". pypi: installs the executables directly and works on both
-# Linux and macOS.
 "pypi:pipenv" = "2026.8.0"
