@@ -14,8 +14,10 @@ from pathlib import Path
 import datetime
 import os
 import tempfile
+from collections.abc import Callable
 from dotenv import load_dotenv
 from platformdirs import PlatformDirs
+from typing import TypeVar
 from urllib.parse import urlparse
 
 from clubManager.observability import init_sentry
@@ -41,9 +43,48 @@ SECRET_KEY = str(os.getenv("SECRET_KEY"))
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(int(os.getenv("DEBUG", "0")))
 
+T = TypeVar("T")
+
+
+def _env_value(name: str, default: T, converter: Callable[[str], T], value_type: str) -> T:
+    """Read and convert an environment variable, falling back to ``default`` on errors."""
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        return converter(raw)
+    except ValueError:
+        print(f"Warning: {name} is set to {raw!r}, which isn't a {value_type}. Using default {default}.")
+        return default
+
+
+# Comet Robotics' hosted Sentry project. Every instance reports here by default so that a
+# breakage on any deployment is debuggable from one place; events are tagged with a tenant
+# to tell those deployments apart. An instance that wants its own project can set SENTRY_DSN,
+# or opt out entirely with SENTRY_ENABLED=0.
+DEFAULT_SENTRY_DSN = "https://474f3f624969b1b7f16b6243ed154185@o4512098201698304.ingest.us.sentry.io/4512098322743296"
+SENTRY_ENABLED = _env_value("SENTRY_ENABLED", True, parse_bool, "truth value")
+SENTRY_DSN = os.getenv("SENTRY_DSN", DEFAULT_SENTRY_DSN).strip()
+SENTRY_TENANT = os.getenv("SENTRY_TENANT", "").strip()
+SENTRY_ENVIRONMENT = os.getenv("SENTRY_ENVIRONMENT", "production")
+SENTRY_RELEASE = os.getenv("SENTRY_RELEASE") or None
+SENTRY_TRACES_SAMPLE_RATE = _env_value("SENTRY_TRACES_SAMPLE_RATE", 0.2, float, "number")
+SENTRY_PROFILE_SESSION_SAMPLE_RATE = _env_value("SENTRY_PROFILE_SESSION_SAMPLE_RATE", 0.5, float, "number")
+SENTRY_DEBUG_ENDPOINT = os.getenv("SENTRY_DEBUG_ENDPOINT")
+
 # Has to happen before Django loads any application code so the SDK can patch framework
 # internals. No-ops in local development and on instances that have opted out.
-SENTRY_INITIALIZED = init_sentry(debug=DEBUG, public_url=PUBLIC_URL)
+SENTRY_INITIALIZED = init_sentry(
+    debug=DEBUG,
+    public_url=PUBLIC_URL,
+    sentry_enabled=SENTRY_ENABLED,
+    dsn=SENTRY_DSN,
+    environment=SENTRY_ENVIRONMENT,
+    release=SENTRY_RELEASE,
+    traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
+    profile_session_sample_rate=SENTRY_PROFILE_SESSION_SAMPLE_RATE,
+    configured_tenant=SENTRY_TENANT,
+)
 
 CSRF_COOKIE_SAMESITE = "Strict"
 SESSION_COOKIE_SAMESITE = "Strict"

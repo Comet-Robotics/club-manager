@@ -1,51 +1,26 @@
 """
 Sentry setup for Club Manager.
 
-Lives outside settings.py so the enable/disable rules are readable and testable on
-their own. `init_sentry()` is called near the top of settings.py, before Django loads
-any application code -- the Django integration needs to be initialized that early to
-patch framework internals.
+Lives outside settings.py so SDK setup remains readable and testable on its own.
+`settings.py` resolves the environment configuration and calls `init_sentry()` near
+the top of startup, before Django loads any application code -- the Django integration
+needs to be initialized that early to patch framework internals.
 """
 
 import logging
-import os
-from collections.abc import Callable
-from typing import TypeVar
 from urllib.parse import urlparse
 
-from clubManager.utils import parse_bool
 
-# Comet Robotics' hosted Sentry project. Every instance reports here by default so that
-# a breakage on any deployment is debuggable from one place; events are tagged with a
-# tenant (see `resolve_tenant`) to tell those deployments apart. An instance that wants
-# its own project can set SENTRY_DSN, or opt out entirely with SENTRY_ENABLED=0.
-DEFAULT_SENTRY_DSN = "https://474f3f624969b1b7f16b6243ed154185@o4512098201698304.ingest.us.sentry.io/4512098322743296"
-
-T = TypeVar("T")
-
-
-def _env_value(name: str, default: T, converter: Callable[[str], T], value_type: str) -> T:
-    """Read and convert an environment variable, falling back to ``default`` on errors."""
-    raw = os.getenv(name)
-    if raw is None:
-        return default
-    try:
-        return converter(raw)
-    except ValueError:
-        print(f"Warning: {name} is set to {raw!r}, which isn't a {value_type}. Using default {default}.")
-        return default
-
-
-def resolve_tenant(public_url: str | None) -> str:
+def resolve_tenant(public_url: str | None, *, configured_tenant: str | None = None) -> str:
     """
     Identify which Club Manager deployment an event came from.
 
     Instances share one Sentry project, so every event needs a tenant tag to be
     attributable. The host an instance is served from is already unique per deployment
-    and is configured everywhere, so it makes a good default; SENTRY_TENANT overrides it
-    when a friendlier name is wanted.
+    and is configured everywhere, so it makes a good default; the configured tenant
+    overrides it when a friendlier name is wanted.
     """
-    configured = os.getenv("SENTRY_TENANT", "").strip()
+    configured = configured_tenant.strip() if configured_tenant else ""
     if configured:
         return configured
 
@@ -66,7 +41,19 @@ def _before_send_span(span, _hint):
     return span
 
 
-def init_sentry(*, debug: bool, public_url: str | None, service: str = "web") -> bool:
+def init_sentry(
+    *,
+    debug: bool,
+    public_url: str | None,
+    sentry_enabled: bool,
+    dsn: str,
+    environment: str,
+    release: str | None,
+    traces_sample_rate: float,
+    profile_session_sample_rate: float,
+    configured_tenant: str | None = None,
+    service: str = "web",
+) -> bool:
     """
     Initialize the Sentry SDK unless this instance has opted out.
 
@@ -81,11 +68,10 @@ def init_sentry(*, debug: bool, public_url: str | None, service: str = "web") ->
         print("Sentry is disabled because DEBUG is on.")
         return False
 
-    if not _env_value("SENTRY_ENABLED", True, parse_bool, "truth value"):
+    if not sentry_enabled:
         print("Sentry is disabled because SENTRY_ENABLED is set to a falsy value.")
         return False
 
-    dsn = os.getenv("SENTRY_DSN", DEFAULT_SENTRY_DSN).strip()
     if not dsn:
         print("Sentry is disabled because SENTRY_DSN is set to an empty value.")
         return False
@@ -98,15 +84,15 @@ def init_sentry(*, debug: bool, public_url: str | None, service: str = "web") ->
 
     sentry_sdk.init(
         dsn=dsn,
-        environment=os.getenv("SENTRY_ENVIRONMENT", "production"),
-        release=os.getenv("SENTRY_RELEASE") or None,
+        environment=environment,
+        release=release,
         # Attaches request headers, client IP, and the signed-in user to events. This is
         # the debugging metadata that makes a production report actionable.
         send_default_pii=True,
         # Both rates are metered, so these are deliberately not the 1.0 the Sentry
         # onboarding wizard suggests -- that value is meant to show data immediately in a
         # demo, not to run in production. Tune per instance via the env vars.
-        traces_sample_rate=_env_value("SENTRY_TRACES_SAMPLE_RATE", 0.2, float, "number"),
+        traces_sample_rate=traces_sample_rate,
         # Send spans in batches as they finish, instead of buffering a whole transaction
         # in memory until its root span closes. Lifts the 1000-span-per-transaction cap
         # and gets trace data visible sooner. The one behavioral change: breadcrumbs are
@@ -114,7 +100,7 @@ def init_sentry(*, debug: bool, public_url: str | None, service: str = "web") ->
         trace_lifecycle="stream",
         # Only honoured in stream mode; it is how the tenant reaches span data at all.
         before_send_span=_before_send_span,
-        profile_session_sample_rate=_env_value("SENTRY_PROFILE_SESSION_SAMPLE_RATE", 0.5, float, "number"),
+        profile_session_sample_rate=profile_session_sample_rate,
         profile_lifecycle="trace",
         enable_logs=True,
         integrations=[
@@ -137,7 +123,7 @@ def init_sentry(*, debug: bool, public_url: str | None, service: str = "web") ->
     # Global scope, so these land on every event and log the process sends rather than
     # only on ones raised inside a request. Spans are covered separately, via
     # _before_send_span.
-    tenant = resolve_tenant(public_url)
+    tenant = resolve_tenant(public_url, configured_tenant=configured_tenant)
     scope = sentry_sdk.get_global_scope()
     scope.set_tag("tenant", tenant)
     scope.set_tag("service", service)
