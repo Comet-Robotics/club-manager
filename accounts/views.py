@@ -155,7 +155,9 @@ class RegistrationCompleteView(View):
                     )
                     activated = True
                 except AccountAlreadyExistsError:
-                    form.add_error(None, "An account for this Net ID already exists. Try signing in instead.")
+                    form.add_error(
+                        None, "An account for this Net ID already exists, so there is nothing left to register."
+                    )
                 except DiscordAccountAlreadyLinkedError:
                     form.add_error(
                         None, "That Discord account is already linked to another account. Contact an officer."

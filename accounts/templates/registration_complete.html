@@ -51,13 +51,23 @@
                         </div>
                         {% if pending_discord_id %}
                         <div class="form-field consent-field">
-                            <label class="consent-label">{{ form.link_discord }} {{ form.link_discord.label }}</label>
-                            <p class="help-text">Not you? Uncheck this and tell an officer.</p>
+                            <p class="help-text">Not you? Choose "Finish without Discord" and tell an officer.</p>
                             {% if form.link_discord.errors %}<div class="error-message">{{ form.link_discord.errors.0 }}</div>{% endif %}
                         </div>
                         {% endif %}
                     </div>
+                    {% if pending_discord_id %}
+                    {% comment %}
+                    Declining comes first in the DOM on purpose: pressing Enter in a name field
+                    submits with the first button, and that should never be the one that links.
+                    {% endcomment %}
+                    <div class="button-row">
+                        <button class="submit-button secondary" type="submit" name="link_discord" value="no">Finish without Discord</button>
+                        <button class="submit-button" type="submit" name="link_discord" value="yes"><i data-lucide="link"></i>Finish and link {% if username %}@{{ username }}{% else %}this Discord{% endif %}</button>
+                    </div>
+                    {% else %}
                     <button class="submit-button" type="submit"><i data-lucide="check"></i>Finish registration</button>
+                    {% endif %}
                 </form>
             </div>
         </div>
@@ -87,13 +97,14 @@
     .discord-card-wrapper { display: flex; justify-content: center; margin-bottom: 0.75rem; }
     .discord-card-wrapper > div { max-width: 100%; }
     .consent-field { gap: 0.25rem; }
-    .consent-label { align-items: center; color: #374151; display: flex; font-size: 0.875rem; font-weight: 500; gap: 0.5rem; }
-    .consent-label input { accent-color: var(--primary); height: 1rem; width: 1rem; }
+    .button-row { display: grid; gap: 0.75rem; grid-template-columns: 1fr 1fr; }
     .error-message { color: var(--primary); font-size: 0.75rem; font-weight: 500; }
     .submit-button { align-items: center; background: var(--primary); border: none; border-radius: 0.5rem; color: #fff; cursor: pointer; display: flex; font-size: 1rem; font-weight: 600; gap: 0.5rem; justify-content: center; padding: 1rem 2rem; transition: all 0.2s ease; }
     .submit-button:hover { background: color-mix(in hsl, var(--primary) 90%, black); box-shadow: 0 4px 12px rgba(191, 30, 46, 0.3); transform: translateY(-2px); }
     .submit-button:active { transform: translateY(0); }
     .submit-button svg { height: 1.25rem; width: 1.25rem; }
-    @media (max-width: 640px) { .rsvp-container { padding: 1rem; } .rsvp-header, .rsvp-form-container { padding: 1.5rem; } .form-row { grid-template-columns: 1fr; } }
+    .submit-button.secondary { background: #fff; border: 2px solid #e5e7eb; color: #374151; }
+    .submit-button.secondary:hover { background: #f9fafb; border-color: #d1d5db; box-shadow: none; }
+    @media (max-width: 640px) { .rsvp-container { padding: 1rem; } .rsvp-header, .rsvp-form-container { padding: 1.5rem; } .form-row, .button-row { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}

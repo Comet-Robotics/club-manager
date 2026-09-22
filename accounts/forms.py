@@ -9,12 +9,15 @@ class RegistrationCompletionForm(forms.ModelForm):
 
     `link_discord` only exists when the registration was started from Discord, because it
     asks about a specific account the person can see on the page. Offering it otherwise
-    would be asking about nothing.
+    would be asking about nothing. It is answered by which button submits the form rather
+    than by a checkbox, so there is no pre-filled answer to skim past: someone who never
+    started this from Discord has to actively choose to hand that account the link.
     """
 
-    link_discord = forms.BooleanField(
-        initial=True,
-        label="Link this Discord account to my new account",
+    link_discord = forms.TypedChoiceField(
+        choices=[("yes", "Link this Discord account"), ("no", "Don't link it")],
+        coerce=lambda value: value == "yes",
+        error_messages={"required": "Choose whether to link this Discord account."},
     )
 
     class Meta:
@@ -29,7 +32,3 @@ class RegistrationCompletionForm(forms.ModelForm):
 
         if not has_pending_discord_id:
             del self.fields["link_discord"]
-        else:
-            # A checkbox that has to be ticked to submit is not a choice. Unchecked is a
-            # valid answer here - it is the whole point of showing the box.
-            self.fields["link_discord"].required = False
