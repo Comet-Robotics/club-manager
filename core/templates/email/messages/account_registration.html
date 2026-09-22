@@ -1,13 +1,13 @@
 {% extends "email/base.html" %}
 {% comment %}
 Sent when someone starts a self-service registration, from the web form or the Discord bot.
-Context: net_id, registration_url, expires_at, request_url, discord_disclosure (optional - set
+Context: net_id, registration_url, expires_at, request_url, discord_disclosure (optional:  set
 when the registration was started from Discord and names the account that would be linked).
 {% endcomment %}
 
 {% block subject %}Create your {{ org.name }} account{% endblock %}
 
-{% block preheader %}Finish setting up your {{ org.name }} account - this link expires in a day.{% endblock %}
+{% block preheader %}Finish setting up your {{ org.name }} account.{% endblock %}
 
 {% block footer_reason %}You received this email because someone used your Net ID to start creating an account on {{ org.name }}'s Club Manager.{% endblock %}
 
@@ -16,11 +16,6 @@ when the registration was started from Discord and names the account that would 
 
   <p>Hey there! You're one step away from a {{ org.name }} account for the Net ID <strong>{{ net_id }}</strong>. Use the button below to tell us your name and finish registering.</p>
 
-  {% comment %}
-  The Discord bot's /link command accepts any Net ID, so the person reading this may not be the
-  one who started the registration. Naming the account that would be attached is what lets them
-  notice - it is the only warning they get before the link is made.
-  {% endcomment %}
   {% if discord_disclosure %}
     <p><strong>{{ discord_disclosure }}</strong></p>
   {% endif %}
@@ -29,5 +24,5 @@ when the registration was started from Discord and names the account that would 
 
   <p>This link expires on {{ expires_at }}. If it has already run out, <a href="{{ request_url }}">request a new one</a>.</p>
 
-  <p class="fine">If this was not you, you can ignore this message - no account is created until the link above is used.</p>
+  <p class="fine">If this was not you, you can ignore this message. No account is created until the link above is used.</p>
 {% endblock %}
