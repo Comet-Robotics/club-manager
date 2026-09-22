@@ -393,8 +393,13 @@ if _message_id_domain:
 # members from one laptop, so a tight per-IP number locks out exactly the people this
 # flow exists for. Sending volume is held down by the global cap and by the existing
 # one-pending-registration-per-Net-ID rule instead.
+#
+# The global cap is set just above a busy recruiting day (150-200 registrations) so real
+# members never hit it. The per-Discord-account rate leaves room for a first attempt plus a
+# couple of typo corrections through `/link`.
 REGISTRATION_EMAIL_RATE_PER_IP = os.getenv("REGISTRATION_EMAIL_RATE_PER_IP", "20/h")
-REGISTRATION_EMAIL_RATE_GLOBAL = os.getenv("REGISTRATION_EMAIL_RATE_GLOBAL", "150/d")
+REGISTRATION_EMAIL_RATE_PER_DISCORD_USER = os.getenv("REGISTRATION_EMAIL_RATE_PER_DISCORD_USER", "3/d")
+REGISTRATION_EMAIL_RATE_GLOBAL = os.getenv("REGISTRATION_EMAIL_RATE_GLOBAL", "250/d")
 
 API_SECRET = str(os.getenv("API_SECRET"))
 DISCORD_API_PORT = int(os.getenv("DISCORD_API_PORT", 2468))

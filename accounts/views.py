@@ -205,19 +205,20 @@ class RegistrationRequestView(View):
         if not form.is_valid():
             return self.render_form(request, form)
         net_id = form.cleaned_data["net_id"]
-        # Metered here rather than over the whole view: a GET, or a post that failed
-        # validation above, sends no mail and so should not spend anyone's allowance.
-        # Being over the limit has to leave no stub behind either, so this comes first.
-        if registration_throttled(request):
-            return self.render_form(request, form, error=self.throttled_message)
         try:
             user_stub = UserStub.create(net_id, None)
-            UserStub.notify(user_stub)
         except (RegistrationAlreadySentError, AccountAlreadyExistsError):
-            pass
+            # Nothing to send, so nothing to meter.
+            return self.render_form(request, RegistrationRequestForm(), success=self.confirmation_message)
+        # Metered only now that an email is about to go out. Being over the limit has to
+        # leave no stub behind, or the Net ID would stay reserved with no email to show for it.
+        if registration_throttled(request):
+            user_stub.delete()
+            return self.render_form(request, form, error=self.throttled_message)
+        try:
+            UserStub.notify(user_stub)
         except RegistrationEmailError:
-            if "user_stub" in locals():
-                user_stub.delete()
+            user_stub.delete()
             return self.render_form(
                 request, form, error="We could not send your registration email. Please try again later."
             )
