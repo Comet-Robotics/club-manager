@@ -31,7 +31,7 @@ class InitSentryTests(TestCase):
     pinning down.
     """
 
-    def _init_sentry(
+def _init_sentry(
         self,
         *,
         debug: bool = False,
