@@ -25,6 +25,13 @@ mise_exec() {
   "$MISE" exec -- "$@"
 }
 
+# The systemd units hardcode $MISE_SYSTEM_PATH, so make sure it resolves.
+link_system_mise() {
+  if [[ "$MISE" != "$MISE_SYSTEM_PATH" ]]; then
+    sudo ln -sfn "$MISE" "$MISE_SYSTEM_PATH"
+  fi
+}
+
 python_bin() {
   echo "$("$MISE" where python)/bin/python"
 }

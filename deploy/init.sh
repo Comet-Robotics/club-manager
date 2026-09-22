@@ -21,10 +21,7 @@ fi
 ensure_mise
 install_toolchain
 
-if [[ "$MISE" != "$MISE_SYSTEM_PATH" ]]; then
-  echo "Linking $MISE_SYSTEM_PATH -> $MISE so the systemd units can find mise."
-  sudo ln -sfn "$MISE" "$MISE_SYSTEM_PATH"
-fi
+link_system_mise
 
 for unit in gunicorn.service gunicorn.socket discord_bot.service \
             post_office_queue.service post_office_queue.timer \

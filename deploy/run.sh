@@ -9,6 +9,7 @@ cd "$DEPLOY_PATH/.."
 
 ensure_mise
 install_toolchain
+link_system_mise
 
 PYTHON_BIN="$(python_bin)"
 REQUIRED_PYTHON="$("$PYTHON_BIN" -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
@@ -40,16 +41,17 @@ find "$MEDIA_ROOT" -type f -exec chmod 644 {} +
 
 mise_exec pipenv run python manage.py generate_nginx_configuration
 
-# The mail timers were added after the existing deployments were set up by init.sh, so link and
-# enable them here rather than requiring a re-run of init.sh. All three steps are no-ops once
-# done, so this is safe to run on every deploy.
-for unit in post_office_queue.service post_office_queue.timer \
+# Relink every unit so a unit added or renamed since the host was set up lands without a
+# re-run of init.sh. All no-ops once done, so this is safe on every deploy.
+for unit in gunicorn.service gunicorn.socket discord_bot.service \
+            post_office_queue.service post_office_queue.timer \
             post_office_cleanup.service post_office_cleanup.timer; do
   sudo ln -sfn "$DEPLOY_PATH/$unit" "/etc/systemd/system/$unit"
 done
 
 sudo systemctl daemon-reload
-sudo systemctl enable post_office_queue.timer post_office_cleanup.timer
+sudo systemctl enable gunicorn.socket gunicorn.service discord_bot.service \
+  post_office_queue.timer post_office_cleanup.timer
 
 sudo systemctl reload nginx
 sudo systemctl restart gunicorn
