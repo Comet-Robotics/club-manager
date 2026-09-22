@@ -1,6 +1,8 @@
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from asgiref.sync import sync_to_async
+
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core import mail
@@ -417,3 +419,54 @@ class UserStubNotifyTests(RegistrationTestCase):
         user_stub = UserStub.create("abc123456", None)
 
         self.assertEqual(user_stub.email_address(), "abc123456@utdallas.edu")
+
+
+class DiscordPendingRegistrationTests(RegistrationTestCase):
+    """
+    `/link` confirmations for a Discord account that already has a registration pending.
+
+    Drives the button callbacks directly with a stand-in interaction; `discord_bot` reads
+    `ServerSettings` when it is imported, so the import waits until there is a row.
+    """
+
+    def setUp(self):
+        super().setUp()
+        ServerSettings.objects.get_or_create(defaults={"organization_name": "Comet Robotics"})
+        import discord_bot
+
+        self.bot = discord_bot
+        patcher = patch("accounts.models.describe_discord_user", return_value=None)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    @staticmethod
+    def interaction():
+        interaction = MagicMock()
+        interaction.response.edit_message = AsyncMock()
+        interaction.edit_original_response = AsyncMock()
+        return interaction
+
+    async def press_confirm(self, view):
+        interaction = self.interaction()
+        await view.confirm_account_creation.callback(interaction)
+        return interaction.edit_original_response.await_args.kwargs
+
+    async def test_a_typo_is_named_and_can_be_replaced(self):
+        await sync_to_async(UserStub.create)("abc123457", None, discord_user_id="123456789012345678")
+
+        reply = await self.press_confirm(self.bot.AccountCreationView("abc123456", 123456789012345678))
+
+        self.assertIn("pending for `abc123457`", reply["content"])
+        self.assertNotIn("already linked", reply["content"])
+        replace_view = reply["view"]
+        self.assertTrue(replace_view.replace_pending)
+        self.assertEqual(replace_view.confirm_account_creation.label, "Yes, use abc123456 instead")
+        self.assertFalse(await sync_to_async(UserStub.objects.filter(net_id="abc123456").exists)())
+
+        reply = await self.press_confirm(replace_view)
+
+        self.assertIn("Registration email sent", reply["content"])
+        self.assertFalse(await sync_to_async(UserStub.objects.filter(net_id="abc123457").exists)())
+        stub = await sync_to_async(UserStub.objects.get)(net_id="abc123456")
+        self.assertEqual(stub.pending_discord_id, "123456789012345678")
+        self.assertEqual([message.to for message in mail.outbox], [["abc123456@utdallas.edu"]])
