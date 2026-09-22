@@ -5,10 +5,11 @@ from csv import DictWriter
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import Http404, HttpResponse
 from django.db.models import Q
+from platformdirs import user_runtime_dir
 
 from core.utilities import get_layout_data
 from .forms import EventForm, SignInForm, UserSearchForm, RSVPForm
-from .models import Attendance, Event, Reservation
+from .models import Attendance, CheckinMethod, Event, Reservation
 from core.models import UserProfile
 from django.contrib.auth.models import User
 from django.contrib.admin.views.decorators import staff_member_required
@@ -29,25 +30,24 @@ def sign_in(request, event_id):
             student_id = form.cleaned_data["card_data"]
             try:
                 user_profile = UserProfile.objects.get(comet_card_serial_number=student_id)
-                if user_profile:
-                    user = user_profile.user
-                    # Fetch the active memberships once and derive both the membership check and the
-                    # renewal check from it, rather than querying for each separately.
-                    active_membership_terms = [term for term, _ in user_profile.get_active_membership_terms()]
-                    valid_payment = len(active_membership_terms) > 0
-                    renewal_term = Term.get_active_term_with_latest_end_date()
-                    needs_renewal = (
-                        valid_payment and renewal_term is not None and renewal_term not in active_membership_terms
-                    )
-                    form = SignInForm()
-                    status, created = Attendance.objects.get_or_create(event=current_event, user=user)
-                    message = "success" if created else "repeat"
-                    if not valid_payment:
-                        message = "nomember"
-                    elif needs_renewal:
-                        message = "renewal"
             except UserProfile.DoesNotExist:
                 return redirect("lookup-user", event_id=event_id, student_id=student_id)
+            user = user_profile.user
+            form = SignInForm()
+            # TODO: switch all checkin verbage to "sign in" verbage for consistency 
+            success, meta = user_profile.check_in_to_event(current_event, CheckinMethod.STAFF_INITIATED)
+
+            active_membership_terms = [term for term, _ in user_profile.get_active_membership_terms()]
+            renewal_term = Term.get_active_term_with_latest_end_date()
+            needs_renewal = bool(active_membership_terms) and renewal_term is not None and renewal_term not in active_membership_terms
+            if meta.is_not_member:
+                message = "nomember"
+            elif needs_renewal:
+                message = "renewal"
+            elif meta.already_checked_in:
+                message = "repeat"
+            else:
+                message = "success"
 
             return render(
                 request,
@@ -56,7 +56,7 @@ def sign_in(request, event_id):
                     **layout_data,
                     "form": form,
                     "message": message,
-                    "status": status,
+                    "status": meta.attendance,
                     "user": user,
                     "event_id": event_id,
                     "event_name": event_name,
