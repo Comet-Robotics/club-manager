@@ -21,6 +21,13 @@ from django.conf import settings
 from django.conf.urls.static import static
 from events.views import club_events_view
 
+# Error pages that surface the Sentry event ID, so a user can quote a reference code
+# that maps straight to the captured issue. See common/errors.py.
+handler400 = "common.errors.bad_request"
+handler403 = "common.errors.permission_denied"
+handler404 = "common.errors.page_not_found"
+handler500 = "common.errors.server_error"
+
 urlpatterns = [
     path("posters/", include("posters.urls")),
     path("events/", include("events.urls")),

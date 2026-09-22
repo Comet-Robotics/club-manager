@@ -109,6 +109,16 @@ continuous profile hours, so any profiling at all trips the billing quota until 
 on a plan that covers it. Set `SENTRY_PROFILE_SESSION_SAMPLE_RATE=0` to switch profiling
 off without touching anything else.
 
+### error pages and reference codes
+
+The 400/403/404/500 pages show the Sentry event ID of whatever was just captured. When a
+user reports a problem and quotes that code, searching for it in Sentry goes straight to
+the event, with the request, the signed-in user, and the preceding log lines attached.
+
+These pages are deliberately standalone — they don't extend the portal base template,
+which reads `ServerSettings` from the database. An error page has to render when the
+database is exactly what's broken.
+
 ### checking that a deployment reports
 
 Because Sentry is off under `DEBUG`, the wiring can only be exercised on a real

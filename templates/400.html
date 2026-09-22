@@ -1,0 +1,13 @@
+{% extends "errors/base.html" %}
+
+{% block title %}Bad request{% endblock %}
+{% block status_code %}400{% endblock %}
+{% block heading %}We couldn't process that request{% endblock %}
+
+{% block body %}
+    <p>
+        Something about the request didn't look right, so it was rejected before anything
+        happened. If you got here from a link or a form, try starting again from the
+        <a href="/">portal home page</a>.
+    </p>
+{% endblock %}
