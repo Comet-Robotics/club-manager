@@ -1,6 +1,6 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
-from accounts.models import UserStub
+from accounts.models import RegistrationError, UserStub
 
 
 class Command(BaseCommand):
@@ -24,11 +24,14 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        user_stub = UserStub.create(
-            net_id=options["net_id"],
-            after_registration_redirect_destination=options["after_registration_redirect_destination"],
-            discord_user_id=options["discord_user_id"],
-        )
+        try:
+            user_stub = UserStub.create(
+                net_id=options["net_id"],
+                after_registration_redirect_destination=options["after_registration_redirect_destination"],
+                discord_user_id=options["discord_user_id"],
+            )
+        except RegistrationError as error:
+            raise CommandError(f"Could not create a user stub: {type(error).__name__}") from error
 
         self.stdout.write(
             self.style.SUCCESS(
