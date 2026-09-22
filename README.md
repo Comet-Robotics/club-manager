@@ -11,17 +11,41 @@ clubManager is a web app for managing all things related to club operations. Som
 ## dev setup 
 needs to be fleshed out, the deployment section will probably be helpful
 
-first, install deps and create virtualenv: `pipenv install`
+install [mise](https://mise.jdx.dev/getting-started.html), then let it set up the toolchain:
+
+```sh
+mise trust     # one-time, per clone
+mise install   # installs the Python in .python-version and the pipenv pinned in mise.toml
+```
+
+you don't need pyenv, and you don't need to install pipenv yourself - mise provides both, at the
+versions this repo declares. activate mise in your shell (`mise activate`, see its docs) so
+`python` and `pipenv` resolve to this project's versions; if you'd rather not, prefix the commands
+below with `mise exec --`.
+
+then install deps and create the virtualenv: `pipenv install --dev`
 obtain the config.ini from Jason or Mason for Square, place at root of project
 
 ## deployment
 
 ### first time setup
-you'll need to install python 3.11 (preferably via [pyenv](http://github.com/pyenv/pyenv?tab=readme-ov-file)), [pipenv](https://pipenv.pypa.io/en/latest/#install-pipenv-today), [nodejs](https://nodejs.org/en) (preferably via [nvm](http://github.com/nvm-sh/nvm?tab=readme-ov-file)), nginx, and postgresql before continuing. this assumes you are deploying on some debian-based system.
+this assumes you are deploying on some debian-based system. you'll need nginx and postgresql, which
+are system services and so aren't managed by this project: `sudo apt install curl nginx postgresql`.
 
-for a production deployment, you'll need to install pipenv globally as opposed to just for the current user which is recommended in pipenv docs: `sudo apt install pipenv`. this is so that the pipenv binary is accessible in the systemd services.
+that's the whole list. **python and pipenv are no longer prerequisites, and pyenv is no longer used
+at all** - [mise](https://mise.jdx.dev) installs both at the exact versions this repo declares, and
+`./deploy/init.sh` installs mise itself if the host doesn't have it. there is also no longer any
+need to install pipenv globally via apt: the systemd units go through `mise exec`, so they find it
+without it being on the system PATH.
 
-once pipenv is installed, run `./deploy/init.sh` (sets up systemd services, does not start them).
+run `./deploy/init.sh` (checks prerequisites, installs the toolchain, sets up systemd services;
+does not start them). it's safe to re-run.
+
+#### which version of python?
+`.python-version` is the single source of truth, and mise reads it - `mise.toml` enables that and
+otherwise only pins pipenv. bump `.python-version` to change interpreters; the next `./deploy/run.sh`
+installs the new one and rebuilds the virtualenv on it automatically, with nothing to do on the
+host. don't run `mise use python@...`, which would add a competing pin to `mise.toml`.
 
 ### useful commands
 - run server: `pipenv run python manage.py runserver`

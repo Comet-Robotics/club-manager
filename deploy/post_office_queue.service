@@ -9,4 +9,5 @@ After=network.target postgresql.service
 Type=oneshot
 User=root
 WorkingDirectory=/root/clubManager
-ExecStart=pipenv --python /root/.pyenv/shims/python run python manage.py send_queued_mail
+# See the note in gunicorn.service about why this goes through mise.
+ExecStart=/usr/local/bin/mise exec -- pipenv run python manage.py send_queued_mail
