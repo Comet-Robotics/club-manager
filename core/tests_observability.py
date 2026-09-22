@@ -2,7 +2,7 @@ from unittest import mock
 
 from django.test import TestCase
 
-from clubManager import observability
+from clubManager import observability, settings
 from clubManager.observability import init_sentry, resolve_tenant
 from clubManager.utils import parse_bool
 
@@ -31,56 +31,67 @@ class InitSentryTests(TestCase):
     pinning down.
     """
 
+    def _init_sentry(self, *, debug=False, public_url="https://example.org", **overrides):
+        config = {
+            "sentry_enabled": True,
+            "dsn": "https://sentry.example/123",
+            "environment": "test",
+            "release": None,
+            "traces_sample_rate": 0.2,
+            "profile_session_sample_rate": 0.5,
+            "configured_tenant": "",
+        }
+        config.update(overrides)
+        return init_sentry(debug=debug, public_url=public_url, **config)
+
     def test_disabled_in_debug(self):
-        with mock.patch.dict("os.environ", {}, clear=False):
-            self.assertFalse(init_sentry(debug=True, public_url="https://example.org"))
+        self.assertFalse(self._init_sentry(debug=True))
 
     def test_disabled_when_flag_is_falsy(self):
-        with mock.patch.dict("os.environ", {"SENTRY_ENABLED": "0"}):
-            self.assertFalse(init_sentry(debug=False, public_url="https://example.org"))
+        self.assertFalse(self._init_sentry(sentry_enabled=False))
 
     def test_disabled_when_dsn_is_blank(self):
-        with mock.patch.dict("os.environ", {"SENTRY_DSN": ""}):
-            self.assertFalse(init_sentry(debug=False, public_url="https://example.org"))
+        self.assertFalse(self._init_sentry(dsn=""))
 
     def test_debug_wins_over_an_explicitly_enabled_flag(self):
         # Turning the flag on locally must not start reporting anyway.
-        with mock.patch.dict("os.environ", {"SENTRY_ENABLED": "1"}):
-            self.assertFalse(init_sentry(debug=True, public_url="https://example.org"))
+        self.assertFalse(self._init_sentry(debug=True, sentry_enabled=True))
 
-    def test_unparseable_flag_falls_back_to_enabled(self):
+    def test_unparseable_flag_falls_back_to_enabled_in_settings(self):
         # A typo in the env var shouldn't silently switch reporting off.
-        with mock.patch.dict("os.environ", {"SENTRY_ENABLED": "maybe", "SENTRY_DSN": ""}):
-            # Still disabled here, but by the blank DSN rather than the bad flag.
-            self.assertFalse(init_sentry(debug=False, public_url="https://example.org"))
+        with mock.patch.dict("os.environ", {"SENTRY_ENABLED": "maybe"}):
+            self.assertTrue(settings._env_value("SENTRY_ENABLED", True, parse_bool, "truth value"))
 
     def test_enabled_flag_uses_shared_truth_parser(self):
         with mock.patch.dict("os.environ", {"SENTRY_ENABLED": "  off  "}):
-            self.assertFalse(observability._env_value("SENTRY_ENABLED", True, parse_bool, "truth value"))
+            self.assertFalse(settings._env_value("SENTRY_ENABLED", True, parse_bool, "truth value"))
 
     def test_sample_rate_uses_shared_env_parser(self):
         with mock.patch.dict("os.environ", {"SENTRY_TRACES_SAMPLE_RATE": " 0.35 "}):
-            self.assertEqual(observability._env_value("SENTRY_TRACES_SAMPLE_RATE", 0.2, float, "number"), 0.35)
+            self.assertEqual(settings._env_value("SENTRY_TRACES_SAMPLE_RATE", 0.2, float, "number"), 0.35)
 
     def test_invalid_sample_rate_uses_default(self):
         with mock.patch.dict("os.environ", {"SENTRY_TRACES_SAMPLE_RATE": "not-a-number"}):
-            self.assertEqual(observability._env_value("SENTRY_TRACES_SAMPLE_RATE", 0.2, float, "number"), 0.2)
+            self.assertEqual(settings._env_value("SENTRY_TRACES_SAMPLE_RATE", 0.2, float, "number"), 0.2)
 
 
 class ResolveTenantTests(TestCase):
     """Instances share one Sentry project, so events must stay attributable."""
 
     def test_defaults_to_public_url_hostname(self):
-        with mock.patch.dict("os.environ", {"SENTRY_TENANT": ""}):
-            self.assertEqual(resolve_tenant("https://portal.cometrobotics.org/x"), "portal.cometrobotics.org")
+        self.assertEqual(
+            resolve_tenant("https://portal.cometrobotics.org/x", configured_tenant=""),
+            "portal.cometrobotics.org",
+        )
 
     def test_explicit_tenant_wins(self):
-        with mock.patch.dict("os.environ", {"SENTRY_TENANT": "comet-robotics"}):
-            self.assertEqual(resolve_tenant("https://portal.cometrobotics.org"), "comet-robotics")
+        self.assertEqual(
+            resolve_tenant("https://portal.cometrobotics.org", configured_tenant="comet-robotics"),
+            "comet-robotics",
+        )
 
     def test_falls_back_when_public_url_is_missing(self):
-        with mock.patch.dict("os.environ", {"SENTRY_TENANT": ""}):
-            self.assertEqual(resolve_tenant(None), "unknown")
+        self.assertEqual(resolve_tenant(None, configured_tenant=""), "unknown")
 
 
 class SpanAttributeTests(TestCase):
