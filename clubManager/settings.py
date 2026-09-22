@@ -21,6 +21,7 @@ from typing import TypeVar
 from urllib.parse import urlparse
 
 from clubManager.observability import init_sentry
+<<<<<<< HEAD
 from clubManager.utils import parse_bool
 
 
