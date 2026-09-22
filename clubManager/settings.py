@@ -19,6 +19,7 @@ from platformdirs import PlatformDirs
 from urllib.parse import urlparse
 
 from clubManager.observability import init_sentry
+from clubManager.utils import strtobool
 
 
 dirs = PlatformDirs(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True)
@@ -323,21 +324,6 @@ DISCORD_MEMBER_ROLE_ID = int(os.getenv("DISCORD_MEMBER_ROLE_ID", 0))
 
 ENABLE_SQUARE_PAYMENTS = bool(int(os.getenv("ENABLE_SQUARE_PAYMENTS", 0)))
 LOGOUT_REDIRECT_URL = "login"
-
-
-def strtobool(val):
-    """Convert a string representation of truth to true (1) or false (0).
-    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
-    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
-    'val' is anything else.
-    """
-    val = val.lower()
-    if val in ("y", "yes", "t", "true", "on", "1"):
-        return True
-    elif val in ("n", "no", "f", "false", "off", "0"):
-        return False
-    else:
-        raise ValueError("invalid truth value %r" % (val,))
 
 
 def resolve_feature_flags(
