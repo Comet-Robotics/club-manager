@@ -9,4 +9,4 @@ After=network.target postgresql.service
 Type=oneshot
 User=root
 WorkingDirectory=/root/clubManager
-ExecStart=pipenv --python /root/.pyenv/shims/python run python manage.py cleanup_mail --days 90 --delete-attachments
+ExecStart=/usr/local/bin/mise exec -- pipenv run python manage.py cleanup_mail --days 90 --delete-attachments

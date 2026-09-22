@@ -1,25 +1,42 @@
-script_path=$(realpath "${BASH_SOURCE:-$0}")
-echo "The absolute path is $script_path"
-BASE_PATH=$(dirname $script_path)
-echo "The BASE_PATH is $BASE_PATH"
+#!/usr/bin/env bash
 
-ln -s $BASE_PATH/gunicorn.service /etc/systemd/system/gunicorn.service
-ln -s $BASE_PATH/gunicorn.socket /etc/systemd/system/gunicorn.socket
-ln -s $BASE_PATH/discord_bot.service /etc/systemd/system/discord_bot.service
-ln -s $BASE_PATH/post_office_queue.service /etc/systemd/system/post_office_queue.service
-ln -s $BASE_PATH/post_office_queue.timer /etc/systemd/system/post_office_queue.timer
-ln -s $BASE_PATH/post_office_cleanup.service /etc/systemd/system/post_office_cleanup.service
-ln -s $BASE_PATH/post_office_cleanup.timer /etc/systemd/system/post_office_cleanup.timer
-ln -s $BASE_PATH/clubManager.nginx.conf /etc/nginx/sites-available/clubManager
-ln -s /etc/nginx/sites-available/clubManager /etc/nginx/sites-enabled/clubManager
+set -e
 
+BASE_PATH="$(cd "$(dirname "${BASH_SOURCE:-$0}")" && pwd)"
+# shellcheck source=deploy/mise.sh
+source "$BASE_PATH/mise.sh"
+cd "$BASE_PATH/.."
 
-systemctl enable discord_bot.service
-systemctl enable gunicorn.socket
-systemctl enable gunicorn.service
+missing=()
+for cmd in curl sudo nginx psql systemctl; do
+  command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd")
+done
+if [[ ${#missing[@]} -gt 0 ]]; then
+  echo "ERROR: missing system prerequisites: ${missing[*]}" >&2
+  echo "On a debian-based host: apt install curl sudo nginx postgresql" >&2
+  echo "Nothing has been changed on this host." >&2
+  exit 1
+fi
+
+ensure_mise
+install_toolchain
+
+link_system_mise
+
+for unit in gunicorn.service gunicorn.socket discord_bot.service \
+            post_office_queue.service post_office_queue.timer \
+            post_office_cleanup.service post_office_cleanup.timer; do
+  sudo ln -sfn "$BASE_PATH/$unit" "/etc/systemd/system/$unit"
+done
+sudo ln -sfn "$BASE_PATH/clubManager.nginx.conf" /etc/nginx/sites-available/clubManager
+sudo ln -sfn /etc/nginx/sites-available/clubManager /etc/nginx/sites-enabled/clubManager
+
+sudo systemctl enable discord_bot.service
+sudo systemctl enable gunicorn.socket
+sudo systemctl enable gunicorn.service
 # The timers are enabled, not the oneshot services they trigger.
-systemctl enable post_office_queue.timer
-systemctl enable post_office_cleanup.timer
+sudo systemctl enable post_office_queue.timer
+sudo systemctl enable post_office_cleanup.timer
 
-rm /etc/nginx/sites-enabled/default
+sudo rm -f /etc/nginx/sites-enabled/default
 sudo systemctl daemon-reload
