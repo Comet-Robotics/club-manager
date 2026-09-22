@@ -11,17 +11,27 @@ clubManager is a web app for managing all things related to club operations. Som
 ## dev setup 
 needs to be fleshed out, the deployment section will probably be helpful
 
-first, install deps and create virtualenv: `pipenv install`
+install [mise](https://mise.jdx.dev/getting-started.html), then let it set up the toolchain:
+
+```sh
+mise trust     # one-time, per clone
+mise install   # installs the Python in .python-version and the pipenv pinned in mise.toml
+```
+activate mise in your shell (`mise activate`, see its docs) so
+`python` and `pipenv` resolve to this project's versions; if you'd rather not, prefix the commands
+below with `mise exec --`.
+
+then install deps and create the virtualenv: `pipenv install --dev`
 obtain the config.ini from Jason or Mason for Square, place at root of project
 
 ## deployment
 
 ### first time setup
-you'll need to install python 3.11 (preferably via [pyenv](http://github.com/pyenv/pyenv?tab=readme-ov-file)), [pipenv](https://pipenv.pypa.io/en/latest/#install-pipenv-today), [nodejs](https://nodejs.org/en) (preferably via [nvm](http://github.com/nvm-sh/nvm?tab=readme-ov-file)), nginx, and postgresql before continuing. this assumes you are deploying on some debian-based system.
+this assumes you are deploying on some debian-based system. you'll need nginx and postgresql, which
+are system services and so aren't managed by this project: `sudo apt install curl nginx postgresql`.
 
-for a production deployment, you'll need to install pipenv globally as opposed to just for the current user which is recommended in pipenv docs: `sudo apt install pipenv`. this is so that the pipenv binary is accessible in the systemd services.
-
-once pipenv is installed, run `./deploy/init.sh` (sets up systemd services, does not start them).
+run `./deploy/init.sh` (checks prerequisites, installs the toolchain, sets up systemd services;
+does not start them). it's safe to re-run.
 
 ### useful commands
 - run server: `pipenv run python manage.py runserver`
