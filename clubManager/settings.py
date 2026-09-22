@@ -19,7 +19,7 @@ from platformdirs import PlatformDirs
 from urllib.parse import urlparse
 
 from clubManager.observability import init_sentry
-from clubManager.utils import strtobool
+from clubManager.utils import parse_bool
 
 
 dirs = PlatformDirs(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True)
@@ -348,7 +348,7 @@ def resolve_feature_flags(
         try:
             if value_from_env is None:
                 raise ValueError(f"Value for {env_var_name} is None")
-            value_as_bool = strtobool(value_from_env)
+            value_as_bool = parse_bool(value_from_env)
         except ValueError:
             flags_using_defaults.add(flag)
             value_as_bool = default_value
