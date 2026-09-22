@@ -87,7 +87,7 @@
                         </div>
                         {%endfor%}
                         
-                        {%if request.user.is_superuser%}
+                        {%if request.user.is_staff or request.user.is_superuser%}
                         <div class="nav-section">
                             <h2 class="section-title">Administration</h2>
                             <div class="sub-nav">
