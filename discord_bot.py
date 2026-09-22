@@ -47,8 +47,10 @@ from accounts.models import (
     UserStub,
 )
 from common.asyncutils import *
+from common.throttle import discord_registration_throttled
 from common.utils import is_valid_net_id, normalize_username
 from core.models import ServerSettings, User, UserProfile
+from django.utils import timezone
 from events.models import Attendance
 from payments.models import Term
 
@@ -288,6 +290,17 @@ class AccountCreationView(discord.ui.View):
             logger.exception("Unable to create account registration for Net ID %s", self.net_id)
             await interaction.edit_original_response(
                 content="We couldn't start your account registration. Please try again or contact an officer.",
+                view=None,
+            )
+            return
+
+        if await sync_to_async(discord_registration_throttled)(self.discord_user_id):
+            await sync_to_async(user_stub.delete)()
+            await interaction.edit_original_response(
+                content=(
+                    "We've sent a lot of registration emails recently. Please try again tomorrow, "
+                    "or ask an officer to set up your account."
+                ),
                 view=None,
             )
             return
