@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 
 from core.models import UserProfile
 from .forms import PaymentSignInForm
@@ -6,11 +7,12 @@ import configparser
 from django.utils import timezone
 import json
 from square.client import Client
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from django.views import View
-from payments.models import Payment, Product, PurchasedProduct
+from django.views.generic import RedirectView
+from payments.models import Payment, Product, PurchasedProduct, Term
 from django.db import transaction
 from pathlib import Path
 from .utilities import can_purchase_product, calculate_cost_with_square_fee
@@ -70,6 +72,22 @@ class PaymentSuccessView(View):
             self.template_name,
             {**layout_data, "product_name": product.name, "payment": payment, "message": message},
         )
+
+
+class CurrentDuesRedirectView(RedirectView):
+    """
+    Redirects to the payment page for the member dues of the term a user should pay for right now.
+
+    This gives us a stable, shareable URL for paying dues that never needs to be updated when a new term starts. It intentionally requires no authentication, since the payment flow it redirects to (`choose_user`) collects the username itself and is used by prospective members who do not have an account yet.
+    """
+
+    permanent = False
+
+    def get_redirect_url(self, *args, **kwargs):
+        term = Term.get_active_term_with_latest_end_date()
+        if term is None:
+            raise Http404("There is no term currently accepting member dues.")
+        return reverse("choose_user", kwargs={"product_id": term.product_id})
 
 
 class ChooseUserView(View):
