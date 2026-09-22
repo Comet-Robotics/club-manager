@@ -11,14 +11,13 @@ import logging
 import os
 from urllib.parse import urlparse
 
+from clubManager.utils import strtobool
+
 # Comet Robotics' hosted Sentry project. Every instance reports here by default so that
 # a breakage on any deployment is debuggable from one place; events are tagged with a
 # tenant (see `resolve_tenant`) to tell those deployments apart. An instance that wants
 # its own project can set SENTRY_DSN, or opt out entirely with SENTRY_ENABLED=0.
 DEFAULT_SENTRY_DSN = "https://474f3f624969b1b7f16b6243ed154185@o4512098201698304.ingest.us.sentry.io/4512098322743296"
-
-_TRUTHY = ("y", "yes", "t", "true", "on", "1")
-_FALSY = ("n", "no", "f", "false", "off", "0")
 
 
 def _env_flag(name: str, default: bool) -> bool:
@@ -26,13 +25,11 @@ def _env_flag(name: str, default: bool) -> bool:
     raw = os.getenv(name)
     if raw is None:
         return default
-    value = raw.strip().lower()
-    if value in _TRUTHY:
-        return True
-    if value in _FALSY:
-        return False
-    print(f"Warning: {name} is set to {raw!r}, which isn't a truth value. Using default {default}.")
-    return default
+    try:
+        return strtobool(raw)
+    except ValueError:
+        print(f"Warning: {name} is set to {raw!r}, which isn't a truth value. Using default {default}.")
+        return default
 
 
 def _env_float(name: str, default: float) -> float:
