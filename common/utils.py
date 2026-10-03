@@ -9,6 +9,15 @@ def is_valid_card_data(data: str):
     return data.isdigit() and len(data) == 16
 
 
+def normalize_username(username: str | None) -> str | None:
+    """
+    Canonical form of a username: trimmed and lowercased.
+    """
+    if username is None:
+        return None
+    return username.strip().lower()
+
+
 def is_valid_net_id(data: str):
     letters = data[0:3]
     numbers = data[3:]

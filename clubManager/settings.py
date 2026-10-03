@@ -181,6 +181,9 @@ CACHES = {
 }
 
 
+AUTHENTICATION_BACKENDS = ["common.auth.CaseInsensitiveModelBackend"]
+
+
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
@@ -378,7 +381,7 @@ def resolve_feature_flags(
 
 
 """
-Club Manager uses a trunk-based development workflow, meaning that all new functionality from feature branches gets merged straight into our main branch but gated behind a default-off feature flag until they are ready to be switched to default-on for the main release. 
+Club Manager uses a trunk-based development workflow, meaning that all new functionality from feature branches gets merged straight into our main branch but gated behind a default-off feature flag until they are ready to be switched to default-on for the main release.
 
 To configure feature flags at deploy time via environment variables, take the name of the flag and prepend "FLAG_" to it, and set it to a truthy or falsy string value. for example, the flag "AUTO_SERVER_SETTINGS_INIT" would be enabled with the environment variable "FLAG_AUTO_SERVER_SETTINGS_INIT" set to "true".
 """

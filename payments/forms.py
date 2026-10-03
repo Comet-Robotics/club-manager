@@ -12,7 +12,6 @@ class PaymentSignInForm(forms.Form):
 
     username = NetIDField(
         label="Net ID",
-        max_length=9,
         required=True,
         widget=forms.TextInput(attrs={"autofocus": True}),
     )

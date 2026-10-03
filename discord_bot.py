@@ -20,7 +20,7 @@ from core.emails import send_templated_email
 from accounts.models import AccountLink
 from core.models import ServerSettings, User, UserProfile
 from common.asyncutils import *
-from common.utils import is_valid_net_id
+from common.utils import is_valid_net_id, normalize_username
 from django.utils import timezone
 from events.models import Attendance
 from payments.models import Term
@@ -502,7 +502,7 @@ class ProfileEditView(discord.ui.Modal):
 
         def run():
             if making_new_profile:
-                user, created_user = User.objects.get_or_create(username=self.net_id.value)
+                user, created_user = User.objects.get_or_create(username=normalize_username(self.net_id.value))
                 self.user_profile = UserProfile.objects.create(user=user)
 
             if self.user_profile:
