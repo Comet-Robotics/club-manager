@@ -9,7 +9,7 @@ from platformdirs import user_runtime_dir
 
 from core.utilities import get_layout_data
 from .forms import EventForm, SignInForm, UserSearchForm, RSVPForm
-from .models import Attendance, CheckinMethod, Event, Reservation
+from .models import Attendance, SignInMethod, Event, Reservation
 from core.models import UserProfile
 from django.contrib.auth.models import User
 from django.contrib.admin.views.decorators import staff_member_required
@@ -34,8 +34,7 @@ def sign_in(request, event_id):
                 return redirect("lookup-user", event_id=event_id, student_id=student_id)
             user = user_profile.user
             form = SignInForm()
-            # TODO: switch all checkin verbage to "sign in" verbage for consistency 
-            success, meta = user_profile.check_in_to_event(current_event, CheckinMethod.STAFF_INITIATED)
+            success, meta = user_profile.sign_in_to_event(current_event, SignInMethod.STAFF_INITIATED)
 
             active_membership_terms = [term for term, _ in user_profile.get_active_membership_terms()]
             renewal_term = Term.get_active_term_with_latest_end_date()
@@ -44,7 +43,7 @@ def sign_in(request, event_id):
                 message = "nomember"
             elif needs_renewal:
                 message = "renewal"
-            elif meta.already_checked_in:
+            elif meta.already_signed_in:
                 message = "repeat"
             else:
                 message = "success"
