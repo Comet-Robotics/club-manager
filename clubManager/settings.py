@@ -486,6 +486,10 @@ FEATURE_FLAGS = resolve_feature_flags(
         #           Net ID as not found instead of offering to register it
         # - @jasonappah, 10/26/2026 - default off until the web registration flow is tested on Comet Robotics prod + ready for wider deployment
         "WEB_ACCOUNT_REGISTRATION": False,
+        # enabled: members can sign in to an event themselves by entering their Net ID at /events/<id>/self-sign-in/
+        # disabled: the self sign-in page 404s and the self sign-in QR button is hidden; staff sign-in by Comet Card is unaffected
+        # - @jasonappah, 10/03/2026 - default off
+        "SELF_CHECK_IN": False,
     },
     deprecated_flags=[
         # ServerSettings are always auto-created when needed; setup prompts always shown to superusers
