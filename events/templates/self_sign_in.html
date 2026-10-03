@@ -1,0 +1,105 @@
+{% extends "publicBase.html" %}
+{% block title %}Sign In - {{ event.event_name }}{% endblock %}
+{% block content %}
+{% load static %}
+
+<body>
+  <style>
+    .errorlist:first-child {
+      margin-top: 0;
+    }
+    .errorlist {
+      margin-top: 1rem;
+    }
+
+    /* Fix input text visibility - override inherited white text */
+    form input[type="text"] {
+      color: #1f2937;
+      background-color: #ffffff;
+    }
+  </style>
+  <div
+    class="flex min-h-screen bg-textDark w-screen text-white flex-col text-center"
+  >
+    <div
+      class="flex flex-col bg-primary w-full p-8 sm:p-12 gap-4 items-center justify-center"
+    >
+      {%if settings.logo%}
+      <img src="{{settings.logo.url}}" class="mb-6 w-32" alt="Logo" />
+      {%endif%}
+      <h1 class="font-mashine text-white text-lg">Event Sign-In</h1>
+      <h2 class="font-unbounded text-white text-3xl">
+        {{ event.event_name }}
+      </h2>
+      <p>Enter your Net ID to sign in for this event.</p>
+    </div>
+    <div
+      class="flex flex-col bg-textDark w-full p-12 gap-4 items-center justify-center"
+    >
+      {% if message == "success" %}
+      <div role="alert" class="alert alert-success">
+        <h3 class="font-unbounded text-lg">You're Signed In!</h3>
+        <p>
+          {{ user.first_name }} {{ user.last_name }} ({{ user.username }}) is
+          checked in for {{ event.event_name }}.
+        </p>
+      </div>
+      {% elif message == "repeat" %}
+      <div role="alert" class="alert alert-warning">
+        <h3 class="font-unbounded text-lg">Already Signed In</h3>
+        <p>
+          {{ user.first_name }} {{ user.last_name }} ({{ user.username }}) was
+          already signed in. Nothing to do.
+        </p>
+      </div>
+      {% elif message == "not_found" %}
+      <div role="alert" class="alert alert-info">
+        <h3 class="font-unbounded text-lg">No Account Found</h3>
+        <p>We couldn't find an account for that Net ID.</p>
+        <p>
+          Create an account for this event, then come back and sign in.
+        </p>
+        {% if next_step_url %}
+        <a href="{{ next_step_url }}" class="btn btn-neutral mt-2">
+          Create Account
+        </a>
+        {% endif %}
+      </div>
+      {% elif message == "not_member" %}
+      <div role="alert" class="alert alert-warning">
+        <h3 class="font-unbounded text-lg">Dues Not Paid</h3>
+        <p>
+          {{ user.first_name }} {{ user.last_name }} ({{ user.username }}) isn't
+          paid up on dues for this term, so we didn't record a sign-in.
+        </p>
+        {% if next_step_url %}
+        <a href="{{ next_step_url }}" class="btn btn-neutral mt-2">
+          Pay Dues
+        </a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if not_linked %}
+      <div role="alert" class="alert alert-info">
+        <h3 class="font-unbounded text-lg">Discord Not Linked</h3>
+        <p>
+          You're signed in, but your Discord account isn't linked yet. Run
+          <code>/link {{ user.username }}</code> in Discord to link it.
+        </p>
+      </div>
+      {% endif %}
+
+      <form
+        method="post"
+        class="flex flex-col gap-2 items-center justify-center"
+      >
+        {% csrf_token %} {{ form.as_p }}
+        <button class="btn w-max btn-neutral" type="submit">
+          Sign In
+        </button>
+      </form>
+    </div>
+  </div>
+</body>
+{% endblock %}
