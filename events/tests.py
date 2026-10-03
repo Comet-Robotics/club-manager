@@ -1,4 +1,5 @@
-from django.test import TestCase, Client
+from django.conf import settings
+from django.test import TestCase, Client, override_settings
 from django.contrib.auth.models import User
 from django.utils import timezone
 
@@ -65,6 +66,7 @@ class LookupUserViewTest(TestCase):
         self.assertQuerySetEqual(response.context["users"], [])
 
 
+@override_settings(FEATURE_FLAGS={**settings.FEATURE_FLAGS, "SELF_CHECK_IN": True})
 class SelfSignInViewTest(TestCase):
     """The member-facing self sign-in flow at /events/<id>/self-sign-in/."""
 
@@ -162,4 +164,25 @@ class SelfSignInViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(response.context.get("message"))
         self.assertTrue(response.context["form"].errors)
+        self.assertFalse(Attendance.objects.exists())
+
+
+class SelfCheckInFeatureFlagTest(TestCase):
+    """Self sign-in ships default-off behind the SELF_CHECK_IN flag."""
+
+    def setUp(self):
+        self.event = Event.objects.create(event_name="Test Event", event_date=timezone.now())
+
+    def test_flag_defaults_off(self):
+        self.assertIn("SELF_CHECK_IN", settings.FEATURE_FLAGS)
+        self.assertFalse(settings.FEATURE_FLAGS["SELF_CHECK_IN"])
+
+    @override_settings(FEATURE_FLAGS={**settings.FEATURE_FLAGS, "SELF_CHECK_IN": False})
+    def test_disabled_flag_hides_the_page(self):
+        response = self.client.get(f"/events/{self.event.pk}/self-sign-in/")
+        self.assertEqual(response.status_code, 404)
+
+    @override_settings(FEATURE_FLAGS={**settings.FEATURE_FLAGS, "SELF_CHECK_IN": False})
+    def test_disabled_flag_creates_no_attendance(self):
+        self.client.post(f"/events/{self.event.pk}/self-sign-in/", {"username": "abc123456"})
         self.assertFalse(Attendance.objects.exists())

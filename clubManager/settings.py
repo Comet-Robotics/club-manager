@@ -388,6 +388,10 @@ FEATURE_FLAGS = resolve_feature_flags(
         # disabled: transactional emails use HTML strings that are inlined in sending code
         # - @jasonappah, 09/10/2026 - default off
         "NEW_TRANSACTIONAL_EMAIL_TEMPLATES": False,
+        # enabled: members can sign in to an event themselves by entering their Net ID at /events/<id>/self-sign-in/
+        # disabled: the self sign-in page 404s and the self sign-in QR button is hidden; staff sign-in by Comet Card is unaffected
+        # - @jasonappah, 10/03/2026 - default off
+        "SELF_CHECK_IN": False,
     },
     deprecated_flags=[
         # ServerSettings are always auto-created when needed; setup prompts always shown to superusers

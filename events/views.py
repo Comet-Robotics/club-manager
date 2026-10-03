@@ -2,6 +2,7 @@ from django.forms.models import model_to_dict
 from django.utils import timezone
 from io import StringIO
 from csv import DictWriter
+from django.conf import settings
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
 from django.http import Http404, HttpResponse
@@ -66,6 +67,10 @@ def sign_in(request, event_id):
     )
 
 
+def self_check_in_enabled() -> bool:
+    return settings.FEATURE_FLAGS["SELF_CHECK_IN"]
+
+
 def self_sign_in_dues_url() -> str | None:
     """Link to the payment page for the current term's dues, if a term is active."""
     term = Term.get_current_term()
@@ -78,6 +83,9 @@ def self_sign_in(request, event_id):
     instead of swiping a Comet Card. This is recorded as SignInMethod.SELF_QR
     because members reach the page by scanning the event's QR code.
     """
+    if not self_check_in_enabled():
+        raise Http404("Self sign-in is not enabled.")
+
     layout_data = get_layout_data(request)
     event = get_object_or_404(Event, pk=event_id)
 
