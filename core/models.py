@@ -53,9 +53,9 @@ class Diet(models.Model):
         return self.name
 
 @dataclass
-class CheckInMetadata:
+class SignInMetadata:
   is_not_member: bool
-  already_checked_in: bool | None
+  already_signed_in: bool | None
   attendance: Attendance
 
 
@@ -91,22 +91,22 @@ class UserProfile(models.Model):
     date_of_birth = models.DateField(null=True, blank=True)
     comet_card_serial_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
 
-    def check_in_to_event(self, event: Event, check_in_method: str) -> tuple[bool, CheckInMetadata]:
+    def sign_in_to_event(self, event: Event, sign_in_method: str) -> tuple[bool, SignInMetadata]:
       """
-      Checks a user into a given event. 
+      Signs a user into a given event. 
 
       Returns a tuple:
-        bool: true if the check-in was successful, false otherwise. for all current use-cases, this bool will always be true, but eventually we should stop people from checking in to an event if they haven't paid member dues past a certain point (which should also be configurable)
-        CheckInMetadata: messages which explain the decision / can optionally be surfaced as warnings to the user
+        bool: true if the sign-in was successful, false otherwise. for all current use-cases, this bool will always be true, but eventually we should stop people from signing in to an event if they haven't paid member dues past a certain point (which should also be configurable)
+        SignInMetadata: messages which explain the decision / can optionally be surfaced as warnings to the user
         
       """
       _, purchased_product = self.is_member()
       is_member = bool(purchased_product)
       
-      attendance, is_first_check_in = Attendance.objects.get_or_create(event=event, user=self.user, checkin_method=check_in_method)
+      attendance, is_first_sign_in = Attendance.objects.get_or_create(event=event, user=self.user, sign_in_method=sign_in_method)
       
-      return True, CheckInMetadata(
-        already_checked_in=not is_first_check_in,
+      return True, SignInMetadata(
+        already_signed_in=not is_first_sign_in,
         is_not_member=not is_member,
         attendance=attendance
       )

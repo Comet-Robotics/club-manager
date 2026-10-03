@@ -59,19 +59,19 @@ class Event(models.Model):
         )
 
 
-class CheckinMethod(models.TextChoices):
-    SELF_QR = "self_qr", _("Self Check-in via QR Code")
-    STAFF_INITIATED = "staff_initiated", _("Staff Initiated Check-in")
+class SignInMethod(models.TextChoices):
+    SELF_QR = "self_qr", _("Self Sign-In via QR Code")
+    STAFF_INITIATED = "staff_initiated", _("Staff Initiated Sign-In")
 
 
 class Attendance(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="attendances")
     timestamp = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
-    checkin_method = models.CharField(
+    sign_in_method = models.CharField(
         max_length=20,
-        choices=CheckinMethod.choices,
-        default=CheckinMethod.STAFF_INITIATED,
+        choices=SignInMethod.choices,
+        default=SignInMethod.STAFF_INITIATED,
     )
 
     def __str__(self):
