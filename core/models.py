@@ -1,8 +1,10 @@
+from dataclasses import dataclass
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 
 from common.major import get_majors
+from events.models import Attendance, Event
 from payments.models import PurchasedProduct, Term
 from django.utils import timezone
 from datetime import timedelta
@@ -51,6 +53,13 @@ class Diet(models.Model):
         return self.name
 
 
+@dataclass
+class SignInMetadata:
+    is_not_member: bool
+    already_signed_in: bool | None
+    attendance: Attendance
+
+
 class UserProfile(models.Model):
     class GenderChoice(models.TextChoices):
         MALE = "M", _("Man")
@@ -82,6 +91,26 @@ class UserProfile(models.Model):
     )  # TODO: get rid of default=True and fix UserProfile creation with null field
     date_of_birth = models.DateField(null=True, blank=True)
     comet_card_serial_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
+
+    def sign_in_to_event(self, event: Event, sign_in_method: str) -> tuple[bool, SignInMetadata]:
+        """
+        Signs a user into a given event.
+
+        Returns a tuple:
+          bool: true if the sign-in was successful, false otherwise. for all current use-cases, this bool will always be true, but eventually we should stop people from signing in to an event if they haven't paid member dues past a certain point (which should also be configurable)
+          SignInMetadata: messages which explain the decision / can optionally be surfaced as warnings to the user
+
+        """
+        _, purchased_product = self.is_member()
+        is_member = bool(purchased_product)
+
+        attendance, is_first_sign_in = Attendance.objects.get_or_create(
+            event=event, user=self.user, sign_in_method=sign_in_method
+        )
+
+        return True, SignInMetadata(
+            already_signed_in=not is_first_sign_in, is_not_member=not is_member, attendance=attendance
+        )
 
     def is_minor(self):
         assert self.date_of_birth is not None
