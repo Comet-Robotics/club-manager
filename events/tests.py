@@ -2,8 +2,9 @@ from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.utils import timezone
 
-from events.models import Event
+from events.models import Attendance, Event, SignInMethod
 from events.views import LOOKUP_USER_LIMIT
+from payments.models import Payment, Product, PurchasedProduct, Term
 
 
 class LookupUserViewTest(TestCase):
@@ -62,3 +63,103 @@ class LookupUserViewTest(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertQuerySetEqual(response.context["users"], [])
+
+
+class SelfSignInViewTest(TestCase):
+    """The member-facing self sign-in flow at /events/<id>/self-sign-in/."""
+
+    def setUp(self):
+        self.client = Client()
+        self.event = Event.objects.create(event_name="Test Event", event_date=timezone.now())
+        self.product = Product.objects.create(
+            name="Fall Dues", description="Fall membership dues", amount_cents=1000, max_purchases_per_user=-1
+        )
+        self.term = Term.objects.create(
+            name="Fall 2026",
+            start_date=timezone.now().date() - timezone.timedelta(days=30),
+            end_date=timezone.now().date() + timezone.timedelta(days=30),
+            product=self.product,
+        )
+
+    def _make_member(self, username="abc123456", discord_id="12345"):
+        user = User.objects.create_user(username=username, first_name="Alice", last_name="Smith")
+        payment = Payment.objects.create(user=user, amount_cents=1000, completed_at=timezone.now())
+        PurchasedProduct.objects.create(payment=payment, product=self.product)
+        if discord_id:
+            profile = user.userprofile
+            profile.discord_id = discord_id
+            profile.save()
+        return user
+
+    def _post(self, username):
+        return self.client.post(f"/events/{self.event.pk}/self-sign-in/", {"username": username})
+
+    def test_get_renders_form_without_authentication(self):
+        response = self.client.get(f"/events/{self.event.pk}/self-sign-in/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("form", response.context)
+        self.assertIsNone(response.context.get("message"))
+
+    def test_member_signs_in_and_is_recorded_as_self_qr(self):
+        user = self._make_member()
+
+        response = self._post("abc123456")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["message"], "success")
+        self.assertEqual(response.context["user"], user)
+        self.assertFalse(response.context.get("not_linked"))
+        attendance = Attendance.objects.get(event=self.event, user=user)
+        self.assertEqual(attendance.sign_in_method, SignInMethod.SELF_QR)
+
+    def test_net_id_is_matched_case_insensitively(self):
+        user = self._make_member()
+
+        response = self._post("ABC123456")
+
+        self.assertEqual(response.context["message"], "success")
+        self.assertTrue(Attendance.objects.filter(event=self.event, user=user).exists())
+
+    def test_unknown_net_id_offers_next_step_and_records_nothing(self):
+        response = self._post("zzz999999")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["message"], "not_found")
+        self.assertTrue(response.context["next_step_url"])
+        self.assertFalse(Attendance.objects.exists())
+
+    def test_signing_in_twice_reports_repeat(self):
+        self._make_member()
+
+        self._post("abc123456")
+        response = self._post("abc123456")
+
+        self.assertEqual(response.context["message"], "repeat")
+        self.assertEqual(Attendance.objects.count(), 1)
+
+    def test_non_member_is_shown_a_dues_link(self):
+        user = User.objects.create_user(username="nop123456", first_name="No", last_name="Pay")
+
+        response = self._post("nop123456")
+
+        self.assertEqual(response.context["message"], "not_member")
+        self.assertEqual(response.context["next_step_url"], f"/payments/{self.product.pk}/pay/")
+        # Attendance is still recorded; only the warning differs.
+        self.assertTrue(Attendance.objects.filter(event=self.event, user=user).exists())
+
+    def test_unlinked_member_is_told_how_to_link_discord(self):
+        self._make_member(discord_id=None)
+
+        response = self._post("abc123456")
+
+        self.assertEqual(response.context["message"], "success")
+        self.assertTrue(response.context["not_linked"])
+        self.assertContains(response, "/link abc123456")
+
+    def test_malformed_net_id_is_rejected(self):
+        response = self._post("not-a-net-id")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.context.get("message"))
+        self.assertTrue(response.context["form"].errors)
+        self.assertFalse(Attendance.objects.exists())

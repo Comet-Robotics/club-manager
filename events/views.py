@@ -3,14 +3,16 @@ from django.utils import timezone
 from io import StringIO
 from csv import DictWriter
 from django.shortcuts import get_object_or_404, render, redirect
+from django.urls import reverse
 from django.http import Http404, HttpResponse
 from django.db.models import Q
 from platformdirs import user_runtime_dir
 
 from core.utilities import get_layout_data
-from .forms import EventForm, SignInForm, UserSearchForm, RSVPForm
+from .forms import EventForm, SignInForm, SelfSignInForm, UserSearchForm, RSVPForm
 from .models import Attendance, SignInMethod, Event, Reservation
 from core.models import UserProfile
+from payments.models import Term
 from django.contrib.auth.models import User
 from django.contrib.admin.views.decorators import staff_member_required
 from .tables import UserTable, LinkUserTable
@@ -62,6 +64,54 @@ def sign_in(request, event_id):
     return render(
         request, "sign_in.html", {**layout_data, "form": form, "event_id": event_id, "event_name": event_name}
     )
+
+
+def self_sign_in_dues_url() -> str | None:
+    """Link to the payment page for the current term's dues, if a term is active."""
+    term = Term.get_current_term()
+    return reverse("choose_user", kwargs={"product_id": term.product_id}) if term else None
+
+
+def self_sign_in(request, event_id):
+    """
+    Member-facing self sign-in. A member identifies themselves with their Net ID
+    instead of swiping a Comet Card. This is recorded as SignInMethod.SELF_QR
+    because members reach the page by scanning the event's QR code.
+    """
+    layout_data = get_layout_data(request)
+    event = get_object_or_404(Event, pk=event_id)
+
+    context = {**layout_data, "event": event, "form": SelfSignInForm()}
+
+    if request.method == "POST":
+        form = SelfSignInForm(request.POST)
+        context["form"] = form
+
+        if form.is_valid():
+            username = form.cleaned_data["username"]
+            user = User.objects.filter(username=username).select_related("userprofile").first()
+
+            if user is None:
+                # No registration page exists yet, so point at the RSVP flow, which
+                # is the only public entry point that creates a user.
+                context["message"] = "not_found"
+                context["next_step_url"] = reverse("rsvp", kwargs={"event_id": event.pk})
+            else:
+                _, meta = user.userprofile.sign_in_to_event(event, SignInMethod.SELF_QR)
+                context["user"] = user
+                context["status"] = meta.attendance
+
+                if meta.already_signed_in:
+                    context["message"] = "repeat"
+                elif meta.is_not_member:
+                    context["message"] = "not_member"
+                    context["next_step_url"] = self_sign_in_dues_url()
+                else:
+                    context["message"] = "success"
+                    if not user.userprofile.discord_id:
+                        context["not_linked"] = True
+
+    return render(request, "self_sign_in.html", context)
 
 
 @staff_member_required
