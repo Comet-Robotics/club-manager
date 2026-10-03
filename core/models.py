@@ -52,11 +52,12 @@ class Diet(models.Model):
     def __str__(self):
         return self.name
 
+
 @dataclass
 class SignInMetadata:
-  is_not_member: bool
-  already_signed_in: bool | None
-  attendance: Attendance
+    is_not_member: bool
+    already_signed_in: bool | None
+    attendance: Attendance
 
 
 class UserProfile(models.Model):
@@ -92,25 +93,24 @@ class UserProfile(models.Model):
     comet_card_serial_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
 
     def sign_in_to_event(self, event: Event, sign_in_method: str) -> tuple[bool, SignInMetadata]:
-      """
-      Signs a user into a given event. 
+        """
+        Signs a user into a given event.
 
-      Returns a tuple:
-        bool: true if the sign-in was successful, false otherwise. for all current use-cases, this bool will always be true, but eventually we should stop people from signing in to an event if they haven't paid member dues past a certain point (which should also be configurable)
-        SignInMetadata: messages which explain the decision / can optionally be surfaced as warnings to the user
-        
-      """
-      _, purchased_product = self.is_member()
-      is_member = bool(purchased_product)
-      
-      attendance, is_first_sign_in = Attendance.objects.get_or_create(event=event, user=self.user, sign_in_method=sign_in_method)
-      
-      return True, SignInMetadata(
-        already_signed_in=not is_first_sign_in,
-        is_not_member=not is_member,
-        attendance=attendance
-      )
+        Returns a tuple:
+          bool: true if the sign-in was successful, false otherwise. for all current use-cases, this bool will always be true, but eventually we should stop people from signing in to an event if they haven't paid member dues past a certain point (which should also be configurable)
+          SignInMetadata: messages which explain the decision / can optionally be surfaced as warnings to the user
 
+        """
+        _, purchased_product = self.is_member()
+        is_member = bool(purchased_product)
+
+        attendance, is_first_sign_in = Attendance.objects.get_or_create(
+            event=event, user=self.user, sign_in_method=sign_in_method
+        )
+
+        return True, SignInMetadata(
+            already_signed_in=not is_first_sign_in, is_not_member=not is_member, attendance=attendance
+        )
 
     def is_minor(self):
         assert self.date_of_birth is not None
