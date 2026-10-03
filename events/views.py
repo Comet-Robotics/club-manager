@@ -1,5 +1,6 @@
 from django.forms.models import model_to_dict
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from io import StringIO
 from csv import DictWriter
 from django.conf import settings
@@ -8,6 +9,8 @@ from django.urls import reverse
 from django.http import Http404, HttpResponse
 from django.db.models import Q
 from platformdirs import user_runtime_dir
+import re
+import segno
 
 from core.utilities import get_layout_data
 from .forms import EventForm, SignInForm, SelfSignInForm, UserSearchForm, RSVPForm
@@ -120,6 +123,62 @@ def self_sign_in(request, event_id):
                         context["not_linked"] = True
 
     return render(request, "self_sign_in.html", context)
+
+
+def qr_code_svg(data: str) -> str:
+    """
+    Render `data` as an inline QR code SVG.
+
+    segno emits a fixed width/height with no viewBox, which would force the
+    template to pick the display size. Adding a viewBox lets CSS size the code for
+    screen or print without distorting it.
+
+    The viewBox has to cover segno's full drawing area, which is the symbol plus
+    its quiet zone -- larger than the matrix. Sizing it from the matrix instead
+    crops the code and it stops scanning, so take the extent segno reports.
+    """
+    svg = segno.make(data).svg_inline(scale=1)
+    width = re.search(r'<svg[^>]*\bwidth="(\d+)"', svg)
+    height = re.search(r'<svg[^>]*\bheight="(\d+)"', svg)
+    if not width or not height:
+        raise ValueError("Could not determine the dimensions of the generated QR code.")
+
+    return svg.replace(
+        "<svg ",
+        f'<svg viewBox="0 0 {width.group(1)} {height.group(1)}" preserveAspectRatio="xMidYMid meet" ',
+        1,
+    )
+
+
+@staff_member_required
+def self_sign_in_qr(request, event_id):
+    """
+    Staff-facing page pairing the event's self sign-in link with a QR code that
+    encodes it, so the page can be projected at the door or printed on a poster.
+    """
+    if not self_check_in_enabled():
+        raise Http404("Self sign-in is not enabled.")
+
+    layout_data = get_layout_data(request)
+    event = get_object_or_404(Event, pk=event_id)
+
+    path = reverse("self_sign_in", kwargs={"event_id": event.pk})
+    # Prefer PUBLIC_URL so the QR points at the canonical domain rather than
+    # whatever host the staff member happens to be browsing from.
+    base = settings.PUBLIC_URL.rstrip("/") if settings.PUBLIC_URL else ""
+    sign_in_url = f"{base}{path}" if base else request.build_absolute_uri(path)
+
+    return render(
+        request,
+        "self_sign_in_qr.html",
+        {
+            **layout_data,
+            "event": event,
+            "sign_in_url": sign_in_url,
+            # segno only emits path data and numbers, so there is nothing to escape.
+            "qr_svg": mark_safe(qr_code_svg(sign_in_url)),
+        },
+    )
 
 
 @staff_member_required
