@@ -35,6 +35,7 @@ django-naomi = "*"
 css-inline = "*"
 inscriptis = "*"
 django-post-office = "*"
+segno = "*"
 
 [dev-packages]
 types-beautifulsoup4 = "*"

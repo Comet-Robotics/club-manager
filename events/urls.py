@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     path("<int:event_id>/sign-in/", views.sign_in, name="sign_in"),
     path("<int:event_id>/self-sign-in/", views.self_sign_in, name="self_sign_in"),
+    path("<int:event_id>/self-sign-in-qr/", views.self_sign_in_qr, name="self_sign_in_qr"),
     # TODO: what are these routes for? AFAICT they aren't used anywhere...
     path("<int:event_id>/pass-sign-in/<int:user_id>", views.pass_sign_in, name="pass_sign_in"),
     path("<int:event_id>/pass-link/<int:user_id>/<int:student_id>/", views.pass_link, name="pass_link"),
