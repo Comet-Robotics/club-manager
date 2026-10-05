@@ -18,10 +18,7 @@ class ClubManagerAdminConfig(AdminConfig):
         super().ready()
 
         from django.contrib import admin
-        from django.contrib.auth.models import User
         from post_office.models import EmailTemplate
-
-        from common.admin import LowercaseUsernameUserAdmin
 
         # post_office can render mail from templates stored in the database, but we don't use
         # that: transactional mail is rendered from the Django templates in
@@ -31,11 +28,3 @@ class ClubManagerAdminConfig(AdminConfig):
         #
         # Email, Log, and Attachment stay registered - those are the record of what we sent.
         admin.site.unregister(EmailTemplate)
-
-        # Swap in a User admin that surfaces a duplicate Net ID as a field error rather than an
-        # IntegrityError from the LOWER(username) unique index (issue #72). This has to happen
-        # here rather than in an app's own admin module: those are imported *during*
-        # autodiscover, and django.contrib.auth comes after them in INSTALLED_APPS, so our
-        # registration would be overwritten by the stock one.
-        admin.site.unregister(User)
-        admin.site.register(User, LowercaseUsernameUserAdmin)

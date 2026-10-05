@@ -10,6 +10,9 @@ The pre_save signal keeps new ORM writes canonical, but signals are bypassed by 
 and ``queryset.update``. The functional unique index is what makes case-insensitivity a
 property of the schema rather than a convention. Together they mean only one casing can exist,
 so existing ``=`` lookups stay correct without every call site changing.
+
+The canonical form is ``strip().lower()``, i.e. ``LOWER(BTRIM(username))`` in SQL. The
+collision check, the rewrite, and the index all use that same expression.
 """
 
 from django.db import migrations
@@ -34,13 +37,12 @@ def do_lowercase_usernames(apps, schema_editor):
 
 
 ADD_LOWERCASE_UNIQUE_INDEX = (
-    "CREATE UNIQUE INDEX IF NOT EXISTS auth_user_username_lower_uniq ON auth_user (LOWER(username))"
+    "CREATE UNIQUE INDEX IF NOT EXISTS auth_user_username_lower_uniq ON auth_user (LOWER(BTRIM(username)))"
 )
 DROP_LOWERCASE_UNIQUE_INDEX = "DROP INDEX IF EXISTS auth_user_username_lower_uniq"
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core", "0029_serversettings_contact_email_and_more"),
         ("auth", "0012_alter_user_first_name_max_length"),
