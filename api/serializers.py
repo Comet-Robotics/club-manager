@@ -1,6 +1,7 @@
 from django.contrib.auth.models import Group, User
 from payments.models import Product, PurchasedProduct
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 from events.models import Event
 
 
@@ -8,6 +9,13 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
         fields = ["url", "id", "username", "email", "groups", "first_name", "last_name"]
+        extra_kwargs = {
+            # The DB enforces uniqueness on LOWER(BTRIM(username)) (migration 0030), but
+            # DRF's auto-generated UniqueValidator is an exact match, so a case-variant
+            # duplicate would pass validation and 500 on the index. Check iexact so the
+            # API returns 400 like it did before the index existed.
+            "username": {"validators": [UniqueValidator(queryset=User.objects.all(), lookup="iexact")]},
+        }
 
 
 class ProductSerializer(serializers.HyperlinkedModelSerializer):

@@ -1,7 +1,8 @@
 from typing import Any
 from django import forms
 
-from common.utils import is_valid_card_data, is_valid_net_id
+from common.forms import NetIDField
+from common.utils import is_valid_card_data
 from events.models import Event
 from .utils import format_card_data
 
@@ -16,18 +17,6 @@ class CometCardField(forms.CharField):
         super().validate(value)
         if not is_valid_card_data(value):
             raise forms.ValidationError("Invalid Card Data!")
-
-
-class NetIDField(forms.CharField):
-    net_id = forms.CharField()
-
-    def to_python(self, value):
-        return value.lower()
-
-    def validate(self, value):
-        super().validate(value)
-        if not is_valid_net_id(value):
-            raise forms.ValidationError("Invalid Net ID!")
 
 
 class SignInForm(forms.Form):
@@ -50,7 +39,7 @@ class UserSearchForm(forms.Form):
 class RSVPForm(forms.Form):
     first_name = forms.CharField(label="First Name", max_length=100)
     last_name = forms.CharField(label="Last Name", max_length=100)
-    net_id = NetIDField(label="Net ID", max_length=20)
+    net_id = NetIDField(label="Net ID")
 
 
 class EventForm(forms.ModelForm):

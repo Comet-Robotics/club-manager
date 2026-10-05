@@ -137,3 +137,148 @@ class PostOfficeAdminTest(TestCase):
         self.assertEqual(detail.status_code, 200)
         self.assertContains(detail, stored.message_id.strip("<>"))
         self.assertContains(detail, "HTML Body")
+
+
+class NormalizeUsernameTest(TestCase):
+    def test_none_stays_none(self):
+        from common.utils import normalize_username
+
+        self.assertIsNone(normalize_username(None))
+
+    def test_strips_and_lowercases(self):
+        from common.utils import normalize_username
+
+        self.assertEqual(normalize_username("  ABC000001 "), "abc000001")
+        self.assertEqual(normalize_username("abc000001"), "abc000001")
+        self.assertEqual(normalize_username(""), "")
+
+
+class UsernameNormalizationHelpersTest(TestCase):
+    def _drop_canonical_index(self):
+        # The test database has migration 0030's functional unique index applied, which
+        # makes a colliding state unrepresentable -- the fixture UPDATE itself would
+        # 500. These tests exercise the pre-migration guard, so drop the index first.
+        # DDL is transactional in Postgres, so TestCase rollback restores it.
+        from django.db import connection
+
+        with connection.cursor() as cursor:
+            cursor.execute("DROP INDEX IF EXISTS auth_user_username_lower_uniq")
+
+    def test_pre_save_signal_canonicalizes_orm_writes(self):
+        user = User.objects.create_user("  QRS000010 ", password="pw")
+        user.refresh_from_db()
+        self.assertEqual(user.username, "qrs000010")
+
+    def test_find_case_collisions_detects_case_and_whitespace_variants(self):
+        from common.username_normalization import find_case_collisions
+
+        self._drop_canonical_index()
+
+        keeper = User.objects.create_user("aaa000001", password="pw")
+        other = User.objects.create_user("zzz999999", password="pw")
+        User.objects.filter(pk=other.pk).update(username="AAA000001")
+
+        collisions = find_case_collisions(User)
+        self.assertIn("aaa000001", collisions)
+        self.assertEqual(len(collisions), 1)
+        keeper.refresh_from_db()
+        self.assertEqual(keeper.username, "aaa000001")
+
+    def test_find_case_collisions_detects_whitespace_variant(self):
+        from common.username_normalization import find_case_collisions
+
+        self._drop_canonical_index()
+        User.objects.create_user("bbb000002", password="pw")
+        padded = User.objects.create_user("zzz999998", password="pw")
+        User.objects.filter(pk=padded.pk).update(username="  BBB000002 ")
+
+        self.assertIn("bbb000002", find_case_collisions(User))
+
+    def test_lowercase_usernames_rewrites_case_and_whitespace(self):
+        from common.username_normalization import find_case_collisions, lowercase_usernames
+
+        upper = User.objects.create_user("ccc000003", password="pw")
+        User.objects.filter(pk=upper.pk).update(username="CCC000003")
+        padded = User.objects.create_user("ddd000004", password="pw")
+        User.objects.filter(pk=padded.pk).update(username="  DDD000004 ")
+
+        lowercase_usernames(User)
+
+        upper.refresh_from_db()
+        padded.refresh_from_db()
+        self.assertEqual(upper.username, "ccc000003")
+        self.assertEqual(padded.username, "ddd000004")
+        self.assertEqual(find_case_collisions(User), [])
+
+
+class CaseInsensitiveBackendTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("ghi000005", password="correct-pw")
+
+    def test_exact_login_still_works(self):
+        from django.contrib.auth import authenticate
+
+        self.assertIsNotNone(authenticate(username="ghi000005", password="correct-pw"))
+
+    def test_uppercase_and_padded_login_work(self):
+        from django.contrib.auth import authenticate
+
+        self.assertIsNotNone(authenticate(username="GHI000005", password="correct-pw"))
+        self.assertIsNotNone(authenticate(username="  ghi000005  ", password="correct-pw"))
+
+    def test_wrong_password_unknown_and_inactive_rejected(self):
+        from django.contrib.auth import authenticate
+
+        self.assertIsNone(authenticate(username="ghi000005", password="wrong-pw"))
+        self.assertIsNone(authenticate(username="nosuchuser1", password="whatever"))
+        self.assertIsNone(authenticate(username=None, password="correct-pw"))
+        self.user.is_active = False
+        self.user.save()
+        self.assertIsNone(authenticate(username="GHI000005", password="correct-pw"))
+
+    def test_ambiguous_collision_refuses_to_guess(self):
+        from django.contrib.auth import authenticate
+        from django.db import connection
+
+        with connection.cursor() as cursor:
+            cursor.execute("DROP INDEX IF EXISTS auth_user_username_lower_uniq")
+        dupe = User.objects.create_user("zzz999997", password="correct-pw")
+        User.objects.filter(pk=dupe.pk).update(username="GHI000005")
+        self.assertIsNone(authenticate(username="ghi000005", password="correct-pw"))
+
+
+class UserAdminSmokeTest(TestCase):
+    def setUp(self):
+        self.client.force_login(User.objects.create_superuser("officer", "officer@example.com", "pw"))
+        self.member = User.objects.create_user("jkl000006", password="pw")
+
+    def test_add_page_renders(self):
+        self.assertEqual(self.client.get(reverse("admin:auth_user_add")).status_code, 200)
+
+    def test_change_page_renders_without_password_hash_field(self):
+        response = self.client.get(reverse("admin:auth_user_change", args=[self.member.pk]))
+        self.assertEqual(response.status_code, 200)
+        # Stock UserChangeForm renders the password hash read-only, not as an editable field.
+        self.assertContains(response, "Raw passwords are not stored")
+
+    def test_add_page_rejects_case_variant_duplicate(self):
+        response = self.client.post(
+            reverse("admin:auth_user_add"),
+            {
+                "username": "JKL000006",
+                "password1": "some-long-test-password",
+                "password2": "some-long-test-password",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(User.objects.filter(username="JKL000006").exists())
+
+
+class UserSerializerCaseInsensitiveTest(TestCase):
+    def test_case_variant_duplicate_fails_validation_not_db(self):
+        from api.serializers import UserSerializer
+
+        User.objects.create_user("mno000007", password="pw")
+        serializer = UserSerializer(data={"username": "MNO000007"})
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("username", serializer.errors)

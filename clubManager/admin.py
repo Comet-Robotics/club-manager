@@ -4,6 +4,9 @@ Project-wide admin customizations.
 Installed in place of ``django.contrib.admin`` in ``INSTALLED_APPS``, which is what lets the
 tweaks below run *after* every app's ``admin`` module has been imported - including the ones in
 third-party apps, which we would otherwise have no chance to adjust.
+
+This module is the app config, so it is imported before the app registry is ready. Nothing
+here may touch models at import time; those imports belong inside ``ready``.
 """
 
 from django.contrib.admin.apps import AdminConfig
