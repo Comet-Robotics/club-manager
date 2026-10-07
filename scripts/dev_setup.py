@@ -120,6 +120,19 @@ def _effective_dev_pgdata() -> str:
     return os.environ.get("DEV_PGDATA") or dotenv_values(ROOT / ".env").get("DEV_PGDATA") or ""
 
 
+def _pg_ctl(bin_dir: Path) -> Path:
+    """Path to pg_ctl in a bin directory.
+
+    Returns the extensionless path when nothing is there, so callers can just
+    test .exists() on the result. Windows spells it pg_ctl.exe.
+    """
+    plain = bin_dir / "pg_ctl"
+    if plain.exists():
+        return plain
+    exe = bin_dir / "pg_ctl.exe"
+    return exe if exe.exists() else plain
+
+
 def _pgserver_usable() -> bool:
     """True if pgserver is installed *with* working Postgres binaries.
 
@@ -131,7 +144,7 @@ def _pgserver_usable() -> bool:
         from pgserver._commands import POSTGRES_BIN_PATH
     except (ImportError, AttributeError):
         return False
-    return POSTGRES_BIN_PATH is not None and (POSTGRES_BIN_PATH / "pg_ctl").exists()
+    return POSTGRES_BIN_PATH is not None and _pg_ctl(Path(POSTGRES_BIN_PATH)).exists()
 
 
 def _mise_postgres_dir() -> Path | None:
@@ -146,7 +159,7 @@ def _mise_postgres_dir() -> Path | None:
     if result.returncode != 0:
         return None
     path = Path(result.stdout.strip())
-    return path if (path / "bin" / "pg_ctl").exists() else None
+    return path if _pg_ctl(path / "bin").exists() else None
 
 
 def _env(name: str) -> str:
@@ -169,9 +182,9 @@ def _find_pg_bin_dir() -> Path | None:
     if not override:
         return _mise_postgres_dir()
     path = Path(override).expanduser()
-    if (path / "bin" / "pg_ctl").exists():
+    if _pg_ctl(path / "bin").exists():
         return path
-    if (path / "pg_ctl").exists():  # given the bin dir; pgserver wants its parent
+    if _pg_ctl(path).exists():  # given the bin dir; pgserver wants its parent
         return path.parent
     return None
 
@@ -181,7 +194,7 @@ def _pg_major(pg_root: Path) -> str | None:
     from the directory name, so it has to match the binaries we actually link."""
     try:
         out = subprocess.run(
-            [str(pg_root / "bin" / "pg_ctl"), "--version"],
+            [str(_pg_ctl(pg_root / "bin")), "--version"],
             capture_output=True,
             text=True,
             timeout=30,
@@ -223,7 +236,7 @@ def _link_postgres_binaries(pg_dir: Path) -> None:
     major = _pg_major(pg_dir)
     if major is None:
         raise SystemExit(
-            f"dev_setup: {pg_dir / 'bin' / 'pg_ctl'} didn't report a PostgreSQL "
+            f"dev_setup: {_pg_ctl(pg_dir / 'bin')} didn't report a PostgreSQL "
             "version. Is DEV_PG_BIN_DIR pointing at a PostgreSQL install?"
         )
 
