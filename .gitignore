@@ -87,6 +87,7 @@ local_settings.py
 
 .env
 db.sqlite3
+/.postgresql_data/
 /venv/
 config.ini
 cert.pem
