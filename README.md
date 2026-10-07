@@ -84,51 +84,15 @@ Once that's done, run `mise run server` and you should officially be up and runn
 <details>
 <summary>Windows: read this first</summary>
 
-Windows needs a bit more, for two reasons: our lockfile was generated on macOS, and on Windows on ARM two of our tools have no native build.
+Windows needs one bit of explaining, and there's one thing we don't support.
 
-**Our `Pipfile.lock` was resolved on macOS,** and pipenv applies dependency markers from the Pipfile rather than from an existing lock - so on Windows it asks for `uvloop`, which doesn't support Windows and fails to build. `mise run new-developer-setup` handles this for you: if the install fails it re-resolves the lock for your machine and retries. Nothing to do up front.
+**Your `Pipfile.lock` gets re-resolved.** Ours was resolved on macOS, and pipenv applies dependency markers from the Pipfile rather than from an existing lock - so on Windows the first install asks for `uvloop`, which doesn't support Windows and fails to build. `mise run new-developer-setup` handles that for you: if the install fails it re-resolves the lock for your machine and retries. Nothing to do up front.
 
 One side effect: your `Pipfile.lock` will show up as modified in `git status` afterwards. That's expected - **don't commit it**, or you'll hand everyone else a lockfile shaped for your OS.
 
-**2a. On Intel/AMD Windows (x86_64):** nothing else. `mise` provides Python and PostgreSQL here, and everything above works normally.
+**Windows on ARM (e.g. a Windows VM on an Apple Silicon Mac) isn't supported.** Several packages we depend on - `psycopg2-binary` most importantly - publish no ARM Windows wheels, so pip has to build them from source, which needs Visual Studio build tools. Use an x86_64 machine or VM and everything above works as written.
 
-**2b. On Windows on ARM (e.g. a Windows VM on an Apple Silicon Mac):** two extra steps, because two things have no ARM build.
-
-*Python.* `mise` can install our Python here, but it's a native ARM build, and several packages we depend on - `psycopg2-binary` most importantly - don't publish ARM Windows wheels. Pip would try to build them from source, which needs Visual Studio build tools. So use an **x86_64** Python instead, which Windows runs emulated and which has wheels for everything. [uv](https://docs.astral.sh/uv/) will install one:
-
-```powershell
-mise install uv@0.12.17
-$env:PATH = "$(mise where uv@0.12.17);$env:USERPROFILE\.local\bin;$env:PATH"
-
-uv python install 3.11.13
-uv tool install "pipenv==2026.8.0"
-```
-
-Then run setup through pipenv rather than `mise run`, pointing it at that interpreter:
-
-```powershell
-$py = uv python find 3.11.13
-& $py scripts/ensure_dependencies.py $py
-pipenv run python scripts/dev_setup.py
-```
-
-The first command installs your dependencies, re-resolving `Pipfile.lock` for Windows if it needs to (see above).
-
-That last command is what `mise run new-developer-setup` wraps, and it prints each step as it goes. Launch things with `pipenv run python manage.py runserver` and `pipenv run python discord_bot.py` in place of `mise run server` / `mise run bot`.
-
-*PostgreSQL.* `mise` can't install PostgreSQL for Windows ARM either, so install it and point the dev database at it:
-
-```powershell
-winget install PostgreSQL.PostgreSQL.14
-```
-
-then add this to your `.env`:
-
-```sh
-DEV_PG_BIN_DIR = 'C:\Program Files\PostgreSQL\14'
-```
-
-That gives you the same PostgreSQL 14 as production. `DEV_PG_BIN_DIR` also works on any platform if you'd rather use a PostgreSQL you already have.
+**Want to use a PostgreSQL you already have?** Set `DEV_PG_BIN_DIR` in your `.env` to a PostgreSQL install - either its root directory or its `bin` directory - and setup will run your dev database from that one instead of installing its own.
 </details>
 
 From here on out, you can manage your local Club Manager instance through `mise exec` and `mise run`. Here's a sample of some commands you'll end up using as a developer.
