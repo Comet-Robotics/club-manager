@@ -33,6 +33,7 @@ sys.path.insert(0, str(ROOT))
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "clubManager.settings")
 
+
 def ensure_env(root: Path) -> None:
     """Create .env from .env.example if it doesn't exist yet."""
     env_file = root / ".env"
@@ -78,9 +79,7 @@ def ensure_github_auth() -> None:
         return
     print("    I'm opening a browser window - approve the login there, then come back here.")
     print("    When it asks about authenticating Git, say yes so pushes work too.")
-    subprocess.run(
-        ["gh", "auth", "login", "--hostname", "github.com", "--git-protocol", "https", "--web"]
-    )
+    subprocess.run(["gh", "auth", "login", "--hostname", "github.com", "--git-protocol", "https", "--web"])
 
 
 def _git_helper_has_github_creds() -> bool:
@@ -101,11 +100,7 @@ def _git_helper_has_github_creds() -> bool:
         )
     except (OSError, subprocess.TimeoutExpired):
         return False
-    return (
-        probe.returncode == 0
-        and "username=" in probe.stdout
-        and "password=" in probe.stdout
-    )
+    return probe.returncode == 0 and "username=" in probe.stdout and "password=" in probe.stdout
 
 
 # pgserver = lifecycle management (initdb-if-missing, socket/port handling,
@@ -239,9 +234,7 @@ def _link_postgres_binaries(pg_dir: Path) -> None:
 
     if sys.platform == "win32":
         print(f"==> linking PostgreSQL {major} into pgserver (directory junction)")
-        made = subprocess.run(
-            ["cmd", "/c", "mklink", "/J", str(link), str(pg_dir)], capture_output=True, text=True
-        )
+        made = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(pg_dir)], capture_output=True, text=True)
         if made.returncode != 0:
             print(f"    junction failed ({made.stdout.strip() or made.stderr.strip()}), copying instead")
             shutil.copytree(pg_dir, link, symlinks=True)
