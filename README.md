@@ -81,6 +81,46 @@ Then run these commands after reopening your terminal:
 
 Once that's done, run `mise run server` and you should officially be up and running! Open the link that the command prints to your terminal (probably http://127.0.0.1:8000/) and login with the username and password that the setup command gave you previously.
 
+<details>
+<summary>Windows: read this first</summary>
+
+Windows needs two extra steps, because of how our dependencies are locked.
+
+**1. Re-lock before installing.** Our committed `Pipfile.lock` was generated on macOS, and pipenv doesn't apply per-platform markers from a lockfile generated elsewhere - so on Windows it tries to install `uvloop`, which doesn't support Windows and fails to build. Run this once in your clone:
+
+```sh
+pipenv lock
+```
+
+That resolves the lock for Windows (dropping `uvloop`), after which `pipenv install --dev` works. You'll see `Pipfile.lock` show up as modified in `git status` afterwards - that's expected, and **don't commit it**, or you'll hand everyone else a lockfile shaped for your machine.
+
+**2a. On Intel/AMD Windows (x86_64):** nothing else. `mise` provides Python and PostgreSQL here, and everything above works normally.
+
+**2b. On Windows on ARM (e.g. a Windows VM on an Apple Silicon Mac):** `mise` can't install our pinned Python 3.11.11 on this platform - there is no Windows ARM build of it - so `mise run` won't work. `mise` itself is fine, so use it to get [uv](https://docs.astral.sh/uv/), and let uv handle Python and pipenv:
+
+```powershell
+mise install uv@0.12.17
+$env:PATH = "$(mise where uv@0.12.17);$env:USERPROFILE\.local\bin;$env:PATH"
+
+uv python install 3.11.11
+uv tool install "pipenv==2026.8.0"
+
+pipenv lock
+pipenv install --dev
+pipenv run python scripts/dev_setup.py
+```
+
+That last command is what `mise run new-developer-setup` wraps, and it prints each step as it goes. Run your app with `pipenv run python manage.py runserver` and `pipenv run python discord_bot.py` instead of `mise run server` / `mise run bot`.
+
+On ARM you'll also need to point the dev database at a PostgreSQL install, since `mise` can't provide PostgreSQL for Windows ARM either. Run `winget install PostgreSQL.PostgreSQL.14`, then add this to your `.env`:
+
+```sh
+DEV_PG_BIN_DIR = 'C:\Program Files\PostgreSQL\14'
+```
+
+Setup then links that install in and runs your dev database on PostgreSQL 14 - the same version as production.
+</details>
+
 From here on out, you can manage your local Club Manager instance through `mise exec` and `mise run`. Here's a sample of some commands you'll end up using as a developer.
 
 ```sh
