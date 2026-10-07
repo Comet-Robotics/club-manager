@@ -18,6 +18,7 @@ Override the default admin credentials with env vars (dev only):
 """
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -153,11 +154,69 @@ def _mise_postgres_dir() -> Path | None:
     return path if (path / "bin" / "pg_ctl").exists() else None
 
 
-def _link_postgres_binaries(pg_dir: Path) -> None:
-    """Expose mise's PostgreSQL where pgserver looks for it.
+def _env(name: str) -> str:
+    """Read a setting from the environment, falling back to .env."""
+    return os.environ.get(name) or dotenv_values(ROOT / ".env").get(name) or ""
 
-    Symlinks need admin or Developer Mode on Windows, so use a directory
-    junction there - it needs neither.
+
+def _find_pg_bin_dir() -> Path | None:
+    """Locate a PostgreSQL install to run the dev database from.
+
+    DEV_PG_BIN_DIR wins when set - that is the escape hatch for platforms mise
+    can't supply binaries for (no conda-forge win-arm64 PostgreSQL exists), and
+    for anyone who already has PostgreSQL installed. Otherwise use mise's.
+
+    Returns the install *root* (the directory containing bin/), which is what
+    pgserver expects to find linked in; accepts either that or its bin
+    directory as input.
+    """
+    override = _env("DEV_PG_BIN_DIR")
+    if not override:
+        return _mise_postgres_dir()
+    path = Path(override).expanduser()
+    if (path / "bin" / "pg_ctl").exists():
+        return path
+    if (path / "pg_ctl").exists():  # given the bin dir; pgserver wants its parent
+        return path.parent
+    return None
+
+
+def _pg_major(pg_root: Path) -> str | None:
+    """Ask pg_ctl what version it is, e.g. '14' - pgserver reads the version
+    from the directory name, so it has to match the binaries we actually link."""
+    try:
+        out = subprocess.run(
+            [str(pg_root / "bin" / "pg_ctl"), "--version"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        ).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    match = re.search(r"(\d+)(?:\.\d+)?\s*$", out.strip())
+    return match.group(1) if match else None
+
+
+def _remove_link(link: Path) -> None:
+    """Delete an existing symlink or Windows junction, if present."""
+    if not link.exists() and not link.is_symlink():
+        return
+    try:
+        link.unlink()
+    except OSError:
+        # Windows junctions need rmdir rather than unlink.
+        try:
+            link.rmdir()
+        except OSError:
+            shutil.rmtree(link, ignore_errors=True)
+
+
+def _link_postgres_binaries(pg_dir: Path) -> None:
+    """Expose a PostgreSQL install where pgserver looks for it.
+
+    pgserver scans site-packages for `pgserver_binaries/pg*/bin`. Symlinks need
+    admin or Developer Mode on Windows, so use a directory junction there - it
+    needs neither.
     """
     import site
 
@@ -165,20 +224,29 @@ def _link_postgres_binaries(pg_dir: Path) -> None:
         site_dir = Path(site.getsitepackages()[0])
     except (ImportError, IndexError):
         return
-    link = site_dir / "pgserver_binaries" / f"pg{POSTGRES_VERSION}"
-    if link.exists():
-        return
+
+    major = _pg_major(pg_dir)
+    if major is None:
+        raise SystemExit(
+            f"dev_setup: {pg_dir / 'bin' / 'pg_ctl'} didn't report a PostgreSQL "
+            "version. Is DEV_PG_BIN_DIR pointing at a PostgreSQL install?"
+        )
+
+    link = site_dir / "pgserver_binaries" / f"pg{major}"
+    # Replace a stale link - it may point at a different install than we want.
+    _remove_link(link)
     link.parent.mkdir(parents=True, exist_ok=True)
-    print(f"==> linking mise's PostgreSQL {POSTGRES_VERSION} into pgserver")
+
     if sys.platform == "win32":
-        # mklink /J takes (link, target) and needs no elevation.
+        print(f"==> linking PostgreSQL {major} into pgserver (directory junction)")
         made = subprocess.run(
             ["cmd", "/c", "mklink", "/J", str(link), str(pg_dir)], capture_output=True, text=True
-        ).returncode == 0
-        if not made:
-            print("    junction failed, copying the binaries instead")
+        )
+        if made.returncode != 0:
+            print(f"    junction failed ({made.stdout.strip() or made.stderr.strip()}), copying instead")
             shutil.copytree(pg_dir, link, symlinks=True)
     else:
+        print(f"==> linking PostgreSQL {major} into pgserver")
         link.symlink_to(pg_dir, target_is_directory=True)
 
 
@@ -192,28 +260,42 @@ def ensure_pgserver() -> None:
     """
     if not _effective_dev_pgdata():
         return
-    if _pgserver_usable():
+
+    using_override = bool(_env("DEV_PG_BIN_DIR"))
+
+    # With an explicit DEV_PG_BIN_DIR, relink even if pgserver already looks
+    # usable - it may be pointed at the wrong PostgreSQL.
+    if _pgserver_usable() and not using_override:
         print("==> pgserver already installed, skipping")
         return
 
-    if shutil.which("mise") is None:
-        raise SystemExit(
-            "dev_setup: 'mise' not found, so I can't install PostgreSQL. Run this "
-            "via `mise run new-developer-setup`, or install mise first."
-        )
+    if not using_override:
+        if shutil.which("mise") is None:
+            raise SystemExit(
+                "dev_setup: 'mise' not found, so I can't install PostgreSQL. Run this "
+                "via `mise run new-developer-setup`, install mise, or set DEV_PG_BIN_DIR "
+                "to an existing PostgreSQL install."
+            )
+        print(f"==> installing PostgreSQL {POSTGRES_VERSION} via mise (one-time, for the local dev database)")
+        if subprocess.run(["mise", "install", f"postgres@{POSTGRES_VERSION}"]).returncode != 0:
+            raise SystemExit(
+                f"dev_setup: `mise install postgres@{POSTGRES_VERSION}` failed. No "
+                "PostgreSQL build exists for this platform via mise (e.g. Windows on "
+                "ARM). Install PostgreSQL yourself - on Windows: "
+                "`winget install PostgreSQL.PostgreSQL.14` - then set DEV_PG_BIN_DIR "
+                "in .env to its bin directory, or comment out DEV_PGDATA and set DB_*."
+            )
 
-    print(f"==> installing pgserver + PostgreSQL {POSTGRES_VERSION} (one-time, for the local dev database)")
-    if subprocess.run(["mise", "install", f"postgres@{POSTGRES_VERSION}"]).returncode != 0:
-        raise SystemExit(f"dev_setup: `mise install postgres@{POSTGRES_VERSION}` failed.")
-
-    pg_dir = _mise_postgres_dir()
+    pg_dir = _find_pg_bin_dir()
     if pg_dir is None:
         raise SystemExit(
-            f"dev_setup: mise installed postgres@{POSTGRES_VERSION} but I can't find its "
-            "binaries. Use system Postgres instead, then comment out DEV_PGDATA and set "
-            "the DB_* variables in .env."
+            f"dev_setup: could not find a usable PostgreSQL {POSTGRES_VERSION} install "
+            "(looked for pg_ctl). Set DEV_PG_BIN_DIR in .env to an existing PostgreSQL "
+            "bin directory, or comment out DEV_PGDATA and set the DB_* variables to use "
+            "a server that's already running."
         )
 
+    print("==> installing pgserver (one-time, for the local dev database)")
     install = subprocess.run([sys.executable, "-m", "pip", "install", FORK_PGSERVER_WHEEL])
     if install.returncode != 0:
         raise SystemExit("dev_setup: could not install the pgserver package.")
@@ -222,10 +304,11 @@ def ensure_pgserver() -> None:
 
     if not _pgserver_usable():
         raise SystemExit(
-            "dev_setup: pgserver installed but still can't see the PostgreSQL binaries. "
-            "Use system Postgres instead: comment out DEV_PGDATA and set DB_* in .env."
+            f"dev_setup: pgserver installed but still can't use the PostgreSQL binaries "
+            f"in {pg_dir}. Check that pg_ctl runs there, or comment out DEV_PGDATA and "
+            "set DB_* in .env."
         )
-    print(f"==> pgserver ready, using PostgreSQL {POSTGRES_VERSION} from mise")
+    print(f"==> pgserver ready, running on PostgreSQL {POSTGRES_VERSION} from {pg_dir}")
 
 
 def main() -> None:
