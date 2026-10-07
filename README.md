@@ -12,7 +12,7 @@ It's also used by RoboSub who hosts their own instance of Club Manager.
 
 ## Technical Details
 
-This app is written in Python using the Django web framework. [This page](https://www.djangoproject.com/start/) has a decent overview of what Django offers which you should read over - its a less than 5 min read). We use PostgreSQL as the database.
+This app is written in Python using the Django web framework. [This page](https://www.djangoproject.com/start/) has a decent overview of what Django offers which you should read over - its a less than 5 min read. We use PostgreSQL as the database.
 
 For Comet Robotics, the app is deployed in a virtual machine on a server at our booth in the Makerspace. More details on the deployment and infrastructure stuff is on the CROUTON Committee ClickUp - to be added, ask an officer in Discord.
 
@@ -36,7 +36,7 @@ git config --global user.name "Your Name"
 git config --global user.email "you@example.com"
 ```
 
-Now download ("clone") your own copy of Club Manager into a folder of your choice - your Documents folder or wherever you keep projects is fine as long as it doesn't get synced by a cloud storage provider like OneDrive or iCloud Drive.
+Now download ("clone") your own copy of Club Manager into a folder of your choice - your Documents folder or wherever you keep projects is fine, as long as it doesn't get synced by a cloud storage provider like OneDrive or iCloud Drive.
 
 ```sh
 git clone https://github.com/Comet-Robotics/club-manager.git
@@ -55,28 +55,30 @@ To work on Club Manager, you'll need to install some more software. We'll walk y
   - **package manager**: a tool that takes a list of all the external Python libraries that our code depends on ([here's the list if you're curious](./Pipfile)), and downloads them for us. 
   - **virtual environment manager**: pipenv automatically creates virtual environments - which are a mechanism to make sure that every project has its own folder for storing its external libraries, isolated from any other projects. this is important because without virtual environments, when you run `pip install django==5.1` you install django 5.1 **globally** - for every program or project on your computer that uses python. this can cause issues if, for example, one project on your computer needs django 5.1, but another needs django 6. 
 
-### Installing System Prerequisites Using `mise`
+### Installing System Prerequisites Using [`mise`](https://mise.jdx.dev)
 
-`mise` is a tool that helps with installing software on your computer. Here, we'll use it to install the correct versions of Python and pipenv. `mise` installs specific software versions from a list (see [mise.toml](./mise.toml) and [.python-version](./python-version)), making sure that every developer's development environments should be running the same software versions, installed the same way as each other and as our production server. 
+[`mise`](https://mise.jdx.dev) is a tool that helps with installing software on your computer. Here, we'll use it to install the correct versions of Python and pipenv. `mise` installs specific software versions from a list (see [mise.toml](./mise.toml) and [.python-version](./python-version)), making sure that every developer's development environments should be running the same software versions, installed the same way as each other and as our production server. 
 
-Having everyone's development environment set up the exact same way, with the same versions which makes it easier to troubleshoot and reproduce issues locally, because we can generally eliminate environmental differences as a potential source of issues.
+Having everyone's development environment set up the exact same way, with the same software versions, makes it easier to troubleshoot and reproduce issues locally, because we can generally eliminate environmental differences as a potential source of problems.
 
 <details>
-<summary>ok but what if i already have python and/or pipenv installed differently...</summary>
+<summary>ok, but what if i already have python and/or pipenv installed and don't want to reinstall?</summary>
 
-If you have python and/or pipenv installed on your computer already, or want to install it manually instead of using `mise`, you _can_ do that, but I (Jason) personally would not recommend this and don't intend to help people who have dev environment issues who do this, for the reasons mentioned above and for my own sanity. sorry not sorry :see_no_evil:
+i would still recommend installing using `mise`. `mise` will install its own isolated copies of python and pipenv separate from other installs of those tools on your system. it should not conflict with other installs on your system. 
+
+However, if you really want to use existing installs or manage your installations some other way instead of using `mise`, you _can_ do that. the [mise.toml](./mise.toml) and [.python-version](./python-version)) specify the exact versions of these tools you should install. 
+
+If you run into issues with Club Manager running with this setup, I (Jason) would recommend falling back to installing with `mise`. I don't intend to spend extensive amounts of time supporting dev environment issues caused by deviating from the steps above, for the reasons mentioned above and for my own sanity. sorry not sorry :see_no_evil:
 </details>
 
 Follow the steps on [this page](https://mise.jdx.dev/getting-started.html) to install `mise`. Once you're done, close and reopen your terminal.
 
 Then run these commands while in your clone of club-manager:
 
-```sh
-mise trust      # one-time: marks this repo's mise config as safe to run
-mise run new-developer-setup  # automatically installs system prereqs mentioned above. then runs the setup command which does a lot: helps you get your git logged in, installs dependencies using pipenv, creates your .env, sets up the database, creates a default admin login
-```
+- `mise trust`: this is a one time command that marks this repo's mise config as safe to run
+- `mise run new-developer-setup`: automatically installs system prereqs mentioned above. then runs the setup command which does a lot: helps you get your git logged in, installs dependencies using pipenv, creates your .env, sets up the database, creates a default admin login
 
-Once that's done, run `mise run server` and you should officially be up and running!
+Once that's done, run `mise run server` and you should officially be up and running! Open the link that the command prints to your terminal (probably http://127.0.0.1:8000/) and login with the username and password that the setup command gave you previously.
 
 From here on out, you can manage your local Club Manager instance through `mise exec` and `mise run`. Here's a sample of some commands you'll end up using as a developer.
 
@@ -98,6 +100,8 @@ mise exec -- python --version         # one-off command with project tools: chec
 These are some additional tools you may want to install as well, but these are optional. These run on all desktop OSes.
 - **TablePlus**: tool to visually interact with data in database engines, execute SQL queries, etc. [Download here.](https://tableplus.com)
 - **Visual Studio Code**: simple code editor that most people use. Here's [a link to download it](https://code.visualstudio.com), but feel free to use the editor of your choice if you have a different one you prefer.
+
+----
 
 ## Production Deployment Setup
 

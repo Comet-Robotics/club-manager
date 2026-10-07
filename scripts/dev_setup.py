@@ -58,6 +58,9 @@ ADMIN_PASSWORD = os.environ.get("DEV_ADMIN_PASSWORD", "adm123456")
 
 def ensure_github_auth() -> None:
     """Log into the GitHub CLI (HTTPS) unless already authenticated."""
+    if _git_helper_has_github_creds():
+        print("==> Git already has HTTPS credentials for github.com, skipping")
+        return
     if shutil.which("gh") is None:
         print("==> gh (GitHub CLI) not found - install it with: mise install")
         print("    skipping GitHub login (you'll need it to push / open PRs)")
@@ -68,12 +71,37 @@ def ensure_github_auth() -> None:
     print("==> GitHub login")
     print("    You need a free GitHub account (https://github.com/signup).")
     if not sys.stdin.isatty():
-        print("    No terminal here, so run `gh auth login` yourself to finish logging in.")
+        print("    No terminal here, so run `mise exec -- gh auth login` yourself to finish logging in.")
         return
     print("    I'm opening a browser window - approve the login there, then come back here.")
     print("    When it asks about authenticating Git, say yes so pushes work too.")
     subprocess.run(
         ["gh", "auth", "login", "--hostname", "github.com", "--git-protocol", "https", "--web"]
+    )
+
+
+def _git_helper_has_github_creds() -> bool:
+    """True if git's credential helper already has github.com HTTPS creds.
+
+    Asks the helper non-interactively (prompting disabled, so this can never
+    hang waiting for input) - covers auth set up outside the gh CLI.
+    """
+    try:
+        env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+        probe = subprocess.run(
+            ["git", "credential", "fill"],
+            input="protocol=https\nhost=github.com\n\n",
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=15,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return (
+        probe.returncode == 0
+        and "username=" in probe.stdout
+        and "password=" in probe.stdout
     )
 
 
