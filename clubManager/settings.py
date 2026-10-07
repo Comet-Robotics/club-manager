@@ -152,6 +152,38 @@ DATABASES = {
         "PORT": str(os.getenv("DB_PORT")),  # default PostgreSQL port
     }
 }
+_dev_pgdata = os.getenv("DEV_PGDATA")
+if _dev_pgdata:
+    try:
+        import pgserver
+    except ImportError:
+        raise RuntimeError(
+            "DEV_PGDATA is set but the 'pgserver' package is not installed. "
+            "Run: pipenv install --dev"
+        )
+
+    _dev_pgdata_path = Path(_dev_pgdata).expanduser()
+    if not _dev_pgdata_path.is_absolute():
+        _dev_pgdata_path = (BASE_DIR / _dev_pgdata_path).resolve()
+    _dev_pgdata_path.parent.mkdir(parents=True, exist_ok=True)
+
+    _dev_server = pgserver.get_server(_dev_pgdata_path)
+    _dev_info = _dev_server.get_postmaster_info()
+    if _dev_info.socket_dir is not None:
+        _dev_host, _dev_port = str(_dev_info.socket_dir), ""
+    else:
+        _dev_host, _dev_port = str(_dev_info.hostname), str(_dev_info.port or "")
+
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "postgres",
+        "USER": "postgres",
+        "PASSWORD": "",
+        "HOST": _dev_host,
+        "PORT": _dev_port,
+    }
+    print(f"Using dev pgserver database at {_dev_pgdata_path} (host={_dev_host}).")
+    print(f"Database Connection String/URL: postgresql://postgres@/postgres?host={_dev_host}")
 
 
 # Cache

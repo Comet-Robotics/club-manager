@@ -1,7 +1,26 @@
 [settings]
-idiomatic_version_file_enable_tools = ["python"]
+idiomatic_version_file_enable_tools = ["python"] # tells mise to look at .python-version to know what version of python to install. useful because we previously recommended pyenv for installing python, which looks at that file to determine what python version to use. this way we don't need to force people off of pyenv yet
 
 [tools]
-# pypi: installs need uv or pipx present; a bare server has neither.
-uv = "0.12.17"
-"pypi:pipenv" = { version = "2026.8.0", depends = ["uv"] }
+pipx = "1.17.11" # pipx solely exists so that mise can use it to install pipenv - the project does not directly depend on pipx
+"pypi:pipenv" = { version = "2026.8.0", depends = ["pipx"] }
+gh = "2.102.0" # GitHub CLI - used for Git authentication (gh auth login) and everyday PR workflows
+
+[tasks.server]
+description = "Run the Django dev server"
+run = "pipenv run python manage.py runserver"
+
+[tasks.bot]
+description = "Run the Discord bot"
+run = "pipenv run python discord_bot.py"
+
+[tasks.manage]
+description = "Run any Django management command, e.g. `mise run manage -- migrate`"
+run = "pipenv run python manage.py"
+
+[tasks.new-developer-setup]
+description = "First-time dev setup: install deps, GitHub login, create .env, migrate, create cache table, create default superuser (safe to re-run)"
+run = [
+  "pipenv install --dev",
+  "pipenv run python scripts/dev_setup.py",
+]
