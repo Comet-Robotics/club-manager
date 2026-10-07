@@ -2,8 +2,8 @@
 idiomatic_version_file_enable_tools = ["python"] # tells mise to look at .python-version to know what version of python to install. useful because we previously recommended pyenv for installing python, which looks at that file to determine what python version to use. this way we don't need to force people off of pyenv yet
 
 [tools]
-pipx = "1.17.11" # pipx solely exists so that mise can use it to install pipenv - the project does not directly depend on pipx
-"pypi:pipenv" = { version = "2026.8.0", depends = ["pipx"] }
+uv = "0.12.17" # bootstrap only, NOT a project dependency: mise's pypi: backend needs uv to install pipenv. uv rather than pipx because mise resolves pipx through aqua, which has no Windows builds
+"pypi:pipenv" = { version = "2026.8.0", depends = ["uv"] }
 gh = "2.102.0" # GitHub CLI - used for Git authentication (gh auth login) and everyday PR workflows
 
 [tasks.server]
