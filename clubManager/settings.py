@@ -159,8 +159,10 @@ if _dev_pgdata:
     except (ImportError, AttributeError):
         # AttributeError: the fork imports fine but finds no Postgres binaries.
         raise RuntimeError(
-            "DEV_PGDATA is set but the 'pgserver' package is not installed. "
-            "Run: mise run new-developer-setup (installs it automatically). "
+            "DEV_PGDATA is set but pgserver is not usable "
+            "(not installed, or its PostgreSQL binaries are missing). "
+            "Run: mise run new-developer-setup. If that fails, fall back to "
+            "system Postgres: comment out DEV_PGDATA and set DB_* in .env."
         )
 
     _dev_pgdata_path = Path(_dev_pgdata).expanduser()

@@ -18,7 +18,6 @@ Override the default admin credentials with env vars (dev only):
 """
 
 import os
-import platform
 import shutil
 import subprocess
 import sys
@@ -108,15 +107,16 @@ def _git_helper_has_github_creds() -> bool:
     )
 
 
-PGSERVER_VERSION = "0.1.4"
-
-# The fork splits pgserver into a pure-Python manager plus per-version binary
-# wheels - including linux/aarch64, which upstream never published. Installed
-# from its rolling `latest` release (dev-only dependency, versions pinned).
-FORK_RELEASE = "https://github.com/alexandre-fundcraft/pgserver/releases/download/latest"
-FORK_PGSERVER_WHEEL = f"{FORK_RELEASE}/pgserver-0.3.0-py3-none-any.whl"
-FORK_PG17_AARCH64_WHEEL = (
-    f"{FORK_RELEASE}/pgserver_postgres_17-0.3.0-py3-none-manylinux_2_17_aarch64.whl"
+# pgserver = lifecycle management (initdb-if-missing, socket/port handling,
+# refcounted shutdown) but its own wheels don't cover every platform we develop
+# on, and the version it ships drifts from production. So: install the fork's
+# pure-Python manager (no binaries), then point it at the PostgreSQL that mise
+# installed. pgserver discovers binaries by scanning site-packages for
+# `pgserver_binaries/pg*/bin`, so a symlink (junction on Windows) into mise's
+# install directory is all it takes - no patching, no vendoring.
+POSTGRES_VERSION = "14"  # match production; see README
+FORK_PGSERVER_WHEEL = (
+    "https://github.com/alexandre-fundcraft/pgserver/releases/download/latest/pgserver-0.3.0-py3-none-any.whl"
 )
 
 
@@ -125,7 +125,11 @@ def _effective_dev_pgdata() -> str:
 
 
 def _pgserver_usable() -> bool:
-    """True if pgserver is installed *with* working Postgres binaries."""
+    """True if pgserver is installed *with* working Postgres binaries.
+
+    Importing pgserver raises AttributeError when it finds no binaries, since
+    it resolves them at import time - hence catching that too.
+    """
     try:
         import pgserver  # noqa: F401
         from pgserver._commands import POSTGRES_BIN_PATH
@@ -134,38 +138,94 @@ def _pgserver_usable() -> bool:
     return POSTGRES_BIN_PATH is not None and (POSTGRES_BIN_PATH / "pg_ctl").exists()
 
 
-def _is_arm_linux() -> bool:
-    return sys.platform.startswith("linux") and platform.machine() in ("aarch64", "arm64")
+def _mise_postgres_dir() -> Path | None:
+    """Absolute path to the PostgreSQL install mise manages, if there is one."""
+    if shutil.which("mise") is None:
+        return None
+    result = subprocess.run(
+        ["mise", "where", f"postgres@{POSTGRES_VERSION}"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return None
+    path = Path(result.stdout.strip())
+    return path if (path / "bin" / "pg_ctl").exists() else None
+
+
+def _link_postgres_binaries(pg_dir: Path) -> None:
+    """Expose mise's PostgreSQL where pgserver looks for it.
+
+    Symlinks need admin or Developer Mode on Windows, so use a directory
+    junction there - it needs neither.
+    """
+    import site
+
+    try:
+        site_dir = Path(site.getsitepackages()[0])
+    except (ImportError, IndexError):
+        return
+    link = site_dir / "pgserver_binaries" / f"pg{POSTGRES_VERSION}"
+    if link.exists():
+        return
+    link.parent.mkdir(parents=True, exist_ok=True)
+    print(f"==> linking mise's PostgreSQL {POSTGRES_VERSION} into pgserver")
+    if sys.platform == "win32":
+        # mklink /J takes (link, target) and needs no elevation.
+        made = subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(link), str(pg_dir)], capture_output=True, text=True
+        ).returncode == 0
+        if not made:
+            print("    junction failed, copying the binaries instead")
+            shutil.copytree(pg_dir, link, symlinks=True)
+    else:
+        link.symlink_to(pg_dir, target_is_directory=True)
 
 
 def ensure_pgserver() -> None:
     """Install pgserver on demand if the dev flow needs it and it's missing.
 
-    pgserver can't live in the Pipfile: upstream ships no wheels for ARM Linux,
-    which would break `pipenv install` there. Install it here instead - only
-    when DEV_PGDATA asks for it. ARM Linux gets the fork's split packages
-    (pure manager + prebuilt PG17 aarch64 binaries); everything else gets
-    upstream from PyPI. If that fails, say so plainly and point at system
-    Postgres.
+    Kept out of the Pipfile: the binary wheels don't exist for every platform
+    we develop on, which would break `pipenv install` there. Installed here
+    instead, and only when DEV_PGDATA asks for it. If that fails, say so
+    plainly and point at system Postgres.
     """
     if not _effective_dev_pgdata():
         return
     if _pgserver_usable():
         print("==> pgserver already installed, skipping")
         return
-    if _is_arm_linux():
-        print("==> installing pgserver for ARM Linux (one-time, for the local dev database)")
-        packages = [FORK_PGSERVER_WHEEL, FORK_PG17_AARCH64_WHEEL]
-    else:
-        print("==> installing pgserver (one-time, for the local dev database)")
-        packages = [f"pgserver=={PGSERVER_VERSION}"]
-    install = subprocess.run([sys.executable, "-m", "pip", "install", *packages])
-    if install.returncode != 0 or not _pgserver_usable():
+
+    if shutil.which("mise") is None:
         raise SystemExit(
-            "dev_setup: could not install a working pgserver here. Use system "
-            "Postgres instead: `sudo apt install postgresql`, then comment out "
-            "DEV_PGDATA and set the DB_* variables in .env."
+            "dev_setup: 'mise' not found, so I can't install PostgreSQL. Run this "
+            "via `mise run new-developer-setup`, or install mise first."
         )
+
+    print(f"==> installing pgserver + PostgreSQL {POSTGRES_VERSION} (one-time, for the local dev database)")
+    if subprocess.run(["mise", "install", f"postgres@{POSTGRES_VERSION}"]).returncode != 0:
+        raise SystemExit(f"dev_setup: `mise install postgres@{POSTGRES_VERSION}` failed.")
+
+    pg_dir = _mise_postgres_dir()
+    if pg_dir is None:
+        raise SystemExit(
+            f"dev_setup: mise installed postgres@{POSTGRES_VERSION} but I can't find its "
+            "binaries. Use system Postgres instead, then comment out DEV_PGDATA and set "
+            "the DB_* variables in .env."
+        )
+
+    install = subprocess.run([sys.executable, "-m", "pip", "install", FORK_PGSERVER_WHEEL])
+    if install.returncode != 0:
+        raise SystemExit("dev_setup: could not install the pgserver package.")
+
+    _link_postgres_binaries(pg_dir)
+
+    if not _pgserver_usable():
+        raise SystemExit(
+            "dev_setup: pgserver installed but still can't see the PostgreSQL binaries. "
+            "Use system Postgres instead: comment out DEV_PGDATA and set DB_* in .env."
+        )
+    print(f"==> pgserver ready, using PostgreSQL {POSTGRES_VERSION} from mise")
 
 
 def main() -> None:
