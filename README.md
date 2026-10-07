@@ -84,31 +84,53 @@ Once that's done, run `mise run server` and you should officially be up and runn
 <details>
 <summary>Windows: read this first</summary>
 
-Windows needs two extra steps, because of how our dependencies are locked.
+Windows needs a bit more, for two reasons: our lockfile was generated on macOS, and on Windows on ARM two of our tools have no native build. On Intel/AMD Windows, do the re-lock below and then carry on with `mise run new-developer-setup` as normal.
 
-**1. Re-lock before installing.** Our committed `Pipfile.lock` was generated on macOS, and pipenv doesn't apply per-platform markers from a lockfile generated elsewhere - so on Windows it tries to install `uvloop`, which doesn't support Windows and fails to build. Run this once in your clone:
+**1. Re-lock before installing.** Our committed `Pipfile.lock` was generated on macOS, and pipenv doesn't apply per-platform markers from a lockfile generated elsewhere - so on Windows it tries to install `uvloop`, which doesn't support Windows and fails to build. Run this in your clone **before** `mise run new-developer-setup`:
 
 ```sh
-pipenv lock
+mise exec -- pipenv lock
 ```
 
-That resolves the lock for Windows (dropping `uvloop`), after which `pipenv install --dev` works. You'll see `Pipfile.lock` show up as modified in `git status` afterwards - that's expected, and **don't commit it**, or you'll hand everyone else a lockfile shaped for your machine.
+That resolves the lock for Windows (dropping `uvloop`), after which installing dependencies works. You'll see `Pipfile.lock` show up as modified in `git status` afterwards - that's expected, and **don't commit it**, or you'll hand everyone else a lockfile shaped for your machine.
 
 **2a. On Intel/AMD Windows (x86_64):** nothing else. `mise` provides Python and PostgreSQL here, and everything above works normally.
 
-**2b. On Windows on ARM (e.g. a Windows VM on an Apple Silicon Mac):** everything above works, with one exception - `mise` can't install PostgreSQL here, because there's no Windows ARM build of it. Install it yourself, then point the dev database at it:
+**2b. On Windows on ARM (e.g. a Windows VM on an Apple Silicon Mac):** two extra steps, because two things have no ARM build.
+
+*Python.* `mise` can install our Python here, but it's a native ARM build, and several packages we depend on - `psycopg2-binary` most importantly - don't publish ARM Windows wheels. Pip would try to build them from source, which needs Visual Studio build tools. So use an **x86_64** Python instead, which Windows runs emulated and which has wheels for everything. [uv](https://docs.astral.sh/uv/) will install one:
+
+```powershell
+mise install uv@0.12.17
+$env:PATH = "$(mise where uv@0.12.17);$env:USERPROFILE\.local\bin;$env:PATH"
+
+uv python install 3.11.13
+uv tool install "pipenv==2026.8.0"
+```
+
+Then run setup through pipenv rather than `mise run`, pointing pipenv at that interpreter:
+
+```powershell
+mise exec -- pipenv lock
+pipenv install --dev --python 3.11.13
+pipenv run python scripts/dev_setup.py
+```
+
+That last command is what `mise run new-developer-setup` wraps, and it prints each step as it goes. Launch things with `pipenv run python manage.py runserver` and `pipenv run python discord_bot.py` in place of `mise run server` / `mise run bot`.
+
+*PostgreSQL.* `mise` can't install PostgreSQL for Windows ARM either, so install it and point the dev database at it:
 
 ```powershell
 winget install PostgreSQL.PostgreSQL.14
 ```
 
-and add this to your `.env`:
+then add this to your `.env`:
 
 ```sh
 DEV_PG_BIN_DIR = 'C:\Program Files\PostgreSQL\14'
 ```
 
-Setup then uses that install for your dev database, still on PostgreSQL 14 - the same version as production. This also works on any platform if you'd rather use a PostgreSQL you already have.
+That gives you the same PostgreSQL 14 as production. `DEV_PG_BIN_DIR` also works on any platform if you'd rather use a PostgreSQL you already have.
 </details>
 
 From here on out, you can manage your local Club Manager instance through `mise exec` and `mise run`. Here's a sample of some commands you'll end up using as a developer.
