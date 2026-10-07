@@ -50,7 +50,7 @@ Everything below should run from inside this `club-manager` folder.
 To work on Club Manager, you'll need to install some more software. We'll walk you through installing everything in the next section. 
 
 - **PostgreSQL 14**: database engine that stores all Club Manager data
-- **Python 3.11.11**: programming language that Club Manager's backend is written in. you **must have this specific version installed** - newer versions have bugs with the Django version we're using, and older ones aren't compatible with some Python language features we use.
+- **Python 3.11.13**: programming language that Club Manager's backend is written in. you **must have this specific version installed** - newer versions have bugs with the Django version we're using, and older ones aren't compatible with some Python language features we use.
 - **Pipenv**: this is our **package manager** and **virtual environment manager**
   - **package manager**: a tool that takes a list of all the external Python libraries that our code depends on ([here's the list if you're curious](./Pipfile)), and downloads them for us. 
   - **virtual environment manager**: pipenv automatically creates virtual environments - which are a mechanism to make sure that every project has its own folder for storing its external libraries, isolated from any other projects. this is important because without virtual environments, when you run `pip install django==5.1` you install django 5.1 **globally** - for every program or project on your computer that uses python. this can cause issues if, for example, one project on your computer needs django 5.1, but another needs django 6. 
@@ -96,29 +96,19 @@ That resolves the lock for Windows (dropping `uvloop`), after which `pipenv inst
 
 **2a. On Intel/AMD Windows (x86_64):** nothing else. `mise` provides Python and PostgreSQL here, and everything above works normally.
 
-**2b. On Windows on ARM (e.g. a Windows VM on an Apple Silicon Mac):** `mise` can't install our pinned Python 3.11.11 on this platform - there is no Windows ARM build of it - so `mise run` won't work. `mise` itself is fine, so use it to get [uv](https://docs.astral.sh/uv/), and let uv handle Python and pipenv:
+**2b. On Windows on ARM (e.g. a Windows VM on an Apple Silicon Mac):** everything above works, with one exception - `mise` can't install PostgreSQL here, because there's no Windows ARM build of it. Install it yourself, then point the dev database at it:
 
 ```powershell
-mise install uv@0.12.17
-$env:PATH = "$(mise where uv@0.12.17);$env:USERPROFILE\.local\bin;$env:PATH"
-
-uv python install 3.11.11
-uv tool install "pipenv==2026.8.0"
-
-pipenv lock
-pipenv install --dev
-pipenv run python scripts/dev_setup.py
+winget install PostgreSQL.PostgreSQL.14
 ```
 
-That last command is what `mise run new-developer-setup` wraps, and it prints each step as it goes. Run your app with `pipenv run python manage.py runserver` and `pipenv run python discord_bot.py` instead of `mise run server` / `mise run bot`.
-
-On ARM you'll also need to point the dev database at a PostgreSQL install, since `mise` can't provide PostgreSQL for Windows ARM either. Run `winget install PostgreSQL.PostgreSQL.14`, then add this to your `.env`:
+and add this to your `.env`:
 
 ```sh
 DEV_PG_BIN_DIR = 'C:\Program Files\PostgreSQL\14'
 ```
 
-Setup then links that install in and runs your dev database on PostgreSQL 14 - the same version as production.
+Setup then uses that install for your dev database, still on PostgreSQL 14 - the same version as production. This also works on any platform if you'd rather use a PostgreSQL you already have.
 </details>
 
 From here on out, you can manage your local Club Manager instance through `mise exec` and `mise run`. Here's a sample of some commands you'll end up using as a developer.
