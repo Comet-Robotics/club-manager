@@ -84,15 +84,11 @@ Once that's done, run `mise run server` and you should officially be up and runn
 <details>
 <summary>Windows: read this first</summary>
 
-Windows needs a bit more, for two reasons: our lockfile was generated on macOS, and on Windows on ARM two of our tools have no native build. On Intel/AMD Windows, do the re-lock below and then carry on with `mise run new-developer-setup` as normal.
+Windows needs a bit more, for two reasons: our lockfile was generated on macOS, and on Windows on ARM two of our tools have no native build.
 
-**1. Re-lock before installing.** Our committed `Pipfile.lock` was generated on macOS, and pipenv doesn't apply per-platform markers from a lockfile generated elsewhere - so on Windows it tries to install `uvloop`, which doesn't support Windows and fails to build. Run this in your clone **before** `mise run new-developer-setup`:
+**Our `Pipfile.lock` was resolved on macOS,** and pipenv applies dependency markers from the Pipfile rather than from an existing lock - so on Windows it asks for `uvloop`, which doesn't support Windows and fails to build. `mise run new-developer-setup` handles this for you: if the install fails it re-resolves the lock for your machine and retries. Nothing to do up front.
 
-```sh
-mise exec -- pipenv lock
-```
-
-That resolves the lock for Windows (dropping `uvloop`), after which installing dependencies works. You'll see `Pipfile.lock` show up as modified in `git status` afterwards - that's expected, and **don't commit it**, or you'll hand everyone else a lockfile shaped for your machine.
+One side effect: your `Pipfile.lock` will show up as modified in `git status` afterwards. That's expected - **don't commit it**, or you'll hand everyone else a lockfile shaped for your OS.
 
 **2a. On Intel/AMD Windows (x86_64):** nothing else. `mise` provides Python and PostgreSQL here, and everything above works normally.
 
@@ -108,13 +104,15 @@ uv python install 3.11.13
 uv tool install "pipenv==2026.8.0"
 ```
 
-Then run setup through pipenv rather than `mise run`, pointing pipenv at that interpreter:
+Then run setup through pipenv rather than `mise run`, pointing it at that interpreter:
 
 ```powershell
-mise exec -- pipenv lock
-pipenv install --dev --python 3.11.13
+$py = uv python find 3.11.13
+& $py scripts/ensure_dependencies.py $py
 pipenv run python scripts/dev_setup.py
 ```
+
+The first command installs your dependencies, re-resolving `Pipfile.lock` for Windows if it needs to (see above).
 
 That last command is what `mise run new-developer-setup` wraps, and it prints each step as it goes. Launch things with `pipenv run python manage.py runserver` and `pipenv run python discord_bot.py` in place of `mise run server` / `mise run bot`.
 

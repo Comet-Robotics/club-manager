@@ -9,7 +9,8 @@ way to detect that up front - we just try, and on failure re-resolve the lock
 for this machine and retry once.
 
 Runs as the first step of `mise run new-developer-setup`, before dev_setup.py,
-which needs the virtualenv to already exist.
+which needs the virtualenv to already exist. Takes an optional argument: the
+interpreter to build the virtualenv with, defaulting to our pinned version.
 """
 
 import subprocess
@@ -28,8 +29,11 @@ def pipenv(*args: str) -> int:
     return subprocess.run(["pipenv", *args], cwd=ROOT).returncode
 
 
-def main() -> int:
-    version = pinned_python_version()
+def main(argv: list[str]) -> int:
+    # Callers on a platform where the pinned interpreter can't install our
+    # dependencies (Windows on ARM needs an x86_64 build) pass the interpreter
+    # to use explicitly.
+    version = argv[1] if len(argv) > 1 else pinned_python_version()
 
     if pipenv("install", "--dev", "--python", version) == 0:
         return 0
@@ -52,4 +56,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv))
