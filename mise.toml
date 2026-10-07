@@ -20,11 +20,11 @@ run = "pipenv run python manage.py"
 
 [tasks.new-developer-setup]
 description = "First-time dev setup: install deps, GitHub login, create .env, migrate, create cache table, create default superuser (safe to re-run)"
-# --python is required: without it pipenv builds the virtualenv from whatever
-# interpreter pipenv itself runs under, which is not the version we pin. Pin by
-# exact version (resolved from .python-version) rather than by name or PATH,
-# since pipenv does not reliably pick the first `python` it finds.
+# Dependencies are installed by a script rather than a bare `pipenv install` so
+# it can re-resolve Pipfile.lock when that lock wasn't built for this platform
+# (see scripts/ensure_dependencies.py), and so the virtualenv gets the exact
+# pinned Python - without --python, pipenv uses its own interpreter instead.
 run = [
-  "pipenv install --dev --python {{ tools.python.version }}",
+  "python scripts/ensure_dependencies.py",
   "pipenv run python scripts/dev_setup.py",
 ]
