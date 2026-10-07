@@ -156,10 +156,11 @@ _dev_pgdata = os.getenv("DEV_PGDATA")
 if _dev_pgdata:
     try:
         import pgserver
-    except ImportError:
+    except (ImportError, AttributeError):
+        # AttributeError: the fork imports fine but finds no Postgres binaries.
         raise RuntimeError(
             "DEV_PGDATA is set but the 'pgserver' package is not installed. "
-            "Run: pipenv install --dev"
+            "Run: mise run new-developer-setup (installs it automatically). "
         )
 
     _dev_pgdata_path = Path(_dev_pgdata).expanduser()

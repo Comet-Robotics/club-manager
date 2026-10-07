@@ -18,10 +18,13 @@ Override the default admin credentials with env vars (dev only):
 """
 
 import os
+import platform
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+from dotenv import dotenv_values
 
 # Running as `python scripts/dev_setup.py` puts scripts/ (not the repo root)
 # on sys.path, so add the root (parent of this file) for `clubManager`.
@@ -105,11 +108,72 @@ def _git_helper_has_github_creds() -> bool:
     )
 
 
+PGSERVER_VERSION = "0.1.4"
+
+# The fork splits pgserver into a pure-Python manager plus per-version binary
+# wheels - including linux/aarch64, which upstream never published. Installed
+# from its rolling `latest` release (dev-only dependency, versions pinned).
+FORK_RELEASE = "https://github.com/alexandre-fundcraft/pgserver/releases/download/latest"
+FORK_PGSERVER_WHEEL = f"{FORK_RELEASE}/pgserver-0.3.0-py3-none-any.whl"
+FORK_PG17_AARCH64_WHEEL = (
+    f"{FORK_RELEASE}/pgserver_postgres_17-0.3.0-py3-none-manylinux_2_17_aarch64.whl"
+)
+
+
+def _effective_dev_pgdata() -> str:
+    return os.environ.get("DEV_PGDATA") or dotenv_values(ROOT / ".env").get("DEV_PGDATA") or ""
+
+
+def _pgserver_usable() -> bool:
+    """True if pgserver is installed *with* working Postgres binaries."""
+    try:
+        import pgserver  # noqa: F401
+        from pgserver._commands import POSTGRES_BIN_PATH
+    except (ImportError, AttributeError):
+        return False
+    return POSTGRES_BIN_PATH is not None and (POSTGRES_BIN_PATH / "pg_ctl").exists()
+
+
+def _is_arm_linux() -> bool:
+    return sys.platform.startswith("linux") and platform.machine() in ("aarch64", "arm64")
+
+
+def ensure_pgserver() -> None:
+    """Install pgserver on demand if the dev flow needs it and it's missing.
+
+    pgserver can't live in the Pipfile: upstream ships no wheels for ARM Linux,
+    which would break `pipenv install` there. Install it here instead - only
+    when DEV_PGDATA asks for it. ARM Linux gets the fork's split packages
+    (pure manager + prebuilt PG17 aarch64 binaries); everything else gets
+    upstream from PyPI. If that fails, say so plainly and point at system
+    Postgres.
+    """
+    if not _effective_dev_pgdata():
+        return
+    if _pgserver_usable():
+        print("==> pgserver already installed, skipping")
+        return
+    if _is_arm_linux():
+        print("==> installing pgserver for ARM Linux (one-time, for the local dev database)")
+        packages = [FORK_PGSERVER_WHEEL, FORK_PG17_AARCH64_WHEEL]
+    else:
+        print("==> installing pgserver (one-time, for the local dev database)")
+        packages = [f"pgserver=={PGSERVER_VERSION}"]
+    install = subprocess.run([sys.executable, "-m", "pip", "install", *packages])
+    if install.returncode != 0 or not _pgserver_usable():
+        raise SystemExit(
+            "dev_setup: could not install a working pgserver here. Use system "
+            "Postgres instead: `sudo apt install postgresql`, then comment out "
+            "DEV_PGDATA and set the DB_* variables in .env."
+        )
+
+
 def main() -> None:
     ensure_github_auth()
 
     # Before Django loads settings, so a just-created .env applies to this run.
     ensure_env(ROOT)
+    ensure_pgserver()
 
     django.setup()
 

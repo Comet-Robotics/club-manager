@@ -37,7 +37,6 @@ inscriptis = "*"
 django-post-office = "*"
 
 [dev-packages]
-pgserver = "*"
 types-beautifulsoup4 = "*"
 types-requests = "*"
 django-types = "*"

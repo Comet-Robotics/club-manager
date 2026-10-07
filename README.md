@@ -66,15 +66,16 @@ Having everyone's development environment set up the exact same way, with the sa
 
 i would still recommend installing using `mise`. `mise` will install its own isolated copies of python and pipenv separate from other installs of those tools on your system. it should not conflict with other installs on your system. 
 
-However, if you really want to use existing installs or manage your installations some other way instead of using `mise`, you _can_ do that. the [mise.toml](./mise.toml) and [.python-version](./python-version)) specify the exact versions of these tools you should install. 
+However, if you really want to use existing installs or manage your installations some other way instead of using `mise`, you _can_ do that. the [mise.toml](./mise.toml) and [.python-version](./python-version) files specify the exact versions of these tools you should install. 
 
 If you run into issues with Club Manager running with this setup, I (Jason) would recommend falling back to installing with `mise`. I don't intend to spend extensive amounts of time supporting dev environment issues caused by deviating from the steps above, for the reasons mentioned above and for my own sanity. sorry not sorry :see_no_evil:
 </details>
 
 Follow the steps on [this page](https://mise.jdx.dev/getting-started.html) to install `mise`. Once you're done, close and reopen your terminal.
 
-Then run these commands while in your clone of club-manager:
+Then run these commands after reopening your terminal:
 
+- `cd club-manager`: move your terminal into your Club Manager clone. you'll need to tweak this command based on the file path you cloned the repository to.
 - `mise trust`: this is a one time command that marks this repo's mise config as safe to run
 - `mise run new-developer-setup`: automatically installs system prereqs mentioned above. then runs the setup command which does a lot: helps you get your git logged in, installs dependencies using pipenv, creates your .env, sets up the database, creates a default admin login
 
