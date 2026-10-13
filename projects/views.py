@@ -1,4 +1,6 @@
 from datetime import timedelta, datetime
+from typing import Any
+
 from django.http.request import HttpRequest
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -23,19 +25,31 @@ CURRENT_EVENT_WINDOW = timedelta(hours=4)
 
 
 class CanManageProjectMixin(UserPassesTestMixin):
-    def test_func(self):
+    request: HttpRequest
+    kwargs: dict[str, Any]
+
+    def test_func(self) -> bool:
+        user = self.request.user
+        if not user.is_authenticated:
+            return False
         project_id = self.kwargs["project_id"]
         project = Project.objects.get(pk=project_id)
 
-        return Project.user_can_manage_project(self.request.user, project)
+        return Project.user_can_manage_project(user, project)
 
 
 class CanManageTeamMixin(UserPassesTestMixin):
-    def test_func(self):
+    request: HttpRequest
+    kwargs: dict[str, Any]
+
+    def test_func(self) -> bool:
+        user = self.request.user
+        if not user.is_authenticated:
+            return False
         team_id = self.kwargs["team_id"]
         team = Team.objects.get(pk=team_id)
 
-        return Team.user_can_manage_team(self.request.user, team)
+        return Team.user_can_manage_team(user, team)
 
 
 class EventView(CanManageProjectMixin, SingleTableView):
@@ -62,7 +76,10 @@ def update_team_members(request: HttpRequest, team_id: int):
         return HttpResponseBadRequest()
     team = get_object_or_404(Team, pk=team_id)
 
-    if not Team.user_can_manage_team(request.user, team):
+    u = request.user
+    if not u.is_authenticated:
+        return HttpResponseForbidden()
+    if not Team.user_can_manage_team(u, team):
         return HttpResponseForbidden()
 
     member = get_object_or_404(User, pk=member_id)
@@ -96,7 +113,7 @@ class MembersView(CanManageProjectMixin, MultiTableMixin, TemplateView):
     template_name = "project_members.html"
 
     def get_tables(self, *args, **kwargs):
-        project_id = self.kwargs.get("project_id")
+        project_id = self.kwargs["project_id"]
         project = Project.objects.get(pk=project_id)
         teams = project.all_teams()
 

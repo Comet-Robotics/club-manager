@@ -59,7 +59,7 @@ class AtomicDatabaseCache(DatabaseCache):
                 cursor.execute(
                     "SELECT {column} FROM {table} WHERE {column} = %s FOR UPDATE".format(
                         column=cache_key_column,
-                        table=quote_name(self._table),
+                        table=quote_name(self._table),  # type: ignore[attr-defined]
                     ),
                     [locked_key],
                 )
