@@ -118,9 +118,10 @@ class UserProfile(models.Model):
         if for_term:
             term = for_term
         else:
-            term = Term.get_current_term()
-            if not term:
+            maybe_term = Term.get_current_term()
+            if not maybe_term:
                 raise Exception("No current Term found.")
+            term = maybe_term
 
         purchased_product = PurchasedProduct.objects.filter(
             payment__user=self.user, product=term.product, payment__is_successful=True

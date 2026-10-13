@@ -4,6 +4,7 @@ from computedfields.models import ComputedFieldsModel, computed
 from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models.functions import Now
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from typing_extensions import deprecated
@@ -42,14 +43,14 @@ class Term(models.Model):
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    product: Product = models.OneToOneField(Product, on_delete=models.CASCADE)
+    product = models.OneToOneField(Product, on_delete=models.CASCADE)
 
     @staticmethod
     @deprecated(
         "Use one of the undeprecated term query utilities (get_active_terms, get_active_term_with_earliest_end_date, get_active_term_with_latest_end_date) which have explicit handling for term overlaps instead."
     )
     def get_current_term() -> "Term | None":
-        return Term.objects.filter(start_date__lte=models.functions.Now(), end_date__gte=models.functions.Now()).first()
+        return Term.objects.filter(start_date__lte=Now(), end_date__gte=Now()).first()
 
     @staticmethod
     def get_active_terms() -> models.QuerySet["Term"]:
@@ -183,11 +184,9 @@ class PurchasedProduct(models.Model):
     A PurchasedProduct is an object representing a product that a user has purchased.
     """
 
-    product: Product = models.ForeignKey(Product, on_delete=models.CASCADE, null=False)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=False)
     quantity = models.IntegerField(default=1, validators=[MinValueValidator(1)], null=False)
-    payment: Payment = models.ForeignKey(
-        Payment, on_delete=models.CASCADE, related_name="purchased_products", null=False
-    )
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name="purchased_products", null=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

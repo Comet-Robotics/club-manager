@@ -24,7 +24,7 @@ class Command(BaseCommand):
 
             connection = connections[router.db_for_write(cache.cache_model_class)]
             if connection.vendor != "postgresql":
-                self.stdout.write(f"Skipping '{cache._table}': UNLOGGED is a PostgreSQL feature.")
+                self.stdout.write(f"Skipping '{cache._table}': UNLOGGED is a PostgreSQL feature.")  # type: ignore[attr-defined]
                 continue
 
             # An UNLOGGED table skips the write-ahead log, so cache writes are cheaper and
@@ -32,8 +32,8 @@ class Command(BaseCommand):
             # a crash and are not replicated - both fine for a cache, whose contents are
             # by definition reconstructible. Note ALTER ... SET UNLOGGED rewrites the table
             # under an exclusive lock, which is instant for a table this size.
-            table = connection.ops.quote_name(cache._table)
+            table = connection.ops.quote_name(cache._table)  # type: ignore[attr-defined]
             with connection.cursor() as cursor:
                 cursor.execute(f"ALTER TABLE {table} SET UNLOGGED")
 
-            self.stdout.write(self.style.SUCCESS(f"Cache table '{cache._table}' is UNLOGGED."))
+            self.stdout.write(self.style.SUCCESS(f"Cache table '{cache._table}' is UNLOGGED."))  # type: ignore[attr-defined]
