@@ -11,33 +11,15 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import datetime
 import os
 import tempfile
-from typing import Union
-
-import django_stubs_ext
-
-django_stubs_ext.monkeypatch()
-
 from dotenv import load_dotenv
 from platformdirs import PlatformDirs
 from urllib.parse import urlparse
 
 
-class _CIDirs:
-    def __init__(self) -> None:
-        self._tmp = Path(tempfile.mkdtemp())
-
-    @property
-    def site_data_path(self) -> Path:
-        return self._tmp
-
-
-# Use temp directory in CI environments to avoid permission issues with platformdirs
-if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
-    dirs: Union[_CIDirs, PlatformDirs] = _CIDirs()
-else:
-    dirs = PlatformDirs(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True)
+dirs = PlatformDirs(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True)
 
 load_dotenv()
 
@@ -77,12 +59,12 @@ else:
 
 INSTALLED_APPS = [
     "core.apps.CoreConfig",
-    "posters.apps.PostersConfig",
     "events.apps.EventsConfig",
     "payments.apps.PaymentsConfig",
     "accounts.apps.AccountsConfig",
     "projects.apps.ProjectsConfig",
-    "django.contrib.admin",
+    # Subclasses django.contrib.admin so it can adjust third-party admin registrations.
+    "clubManager.admin.ClubManagerAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -93,24 +75,15 @@ INSTALLED_APPS = [
     "django_extensions",
     "computedfields",
     "more_admin_filters",
-    "rest_framework",
-    "drf_spectacular",
     "multiselectfield",
     "colorfield",
+    "naomi",
+    "post_office",
 ]
 
+if DEBUG:
+    INSTALLED_APPS.append("debug_toolbar")
 
-REST_FRAMEWORK = {
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-}
-
-SPECTACULAR_SETTINGS = {
-    "TITLE": "Comet Robotics Club Manager API",
-    "DESCRIPTION": "Link shortener, attendance tracking, Discord bot, and other utilities for managing club operations",
-    "VERSION": "0.1.0",
-    "SERVE_INCLUDE_SCHEMA": True,
-    # OTHER SETTINGS
-}
 
 DISABLE_CSRF = False
 
@@ -123,6 +96,11 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+if DEBUG:
+    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
+
+INTERNAL_IPS = ["127.0.0.1"]
 
 ROOT_URLCONF = "clubManager.urls"
 
@@ -157,6 +135,33 @@ DATABASES = {
         "PASSWORD": str(os.getenv("DB_PASSWORD")),
         "HOST": str(os.getenv("DB_HOST")),
         "PORT": str(os.getenv("DB_PORT")),  # default PostgreSQL port
+    }
+}
+
+
+# Cache
+# https://docs.djangoproject.com/en/5.0/topics/cache/
+
+# The cache has to be *shared*, not just present: gunicorn runs several worker processes,
+# and anything counted or memoized in the cache is only correct if every worker sees the
+# same entries. The database backend gets that from the Postgres instance we already run,
+# so a deploy does not grow a Redis or memcached alongside it. The table is created by
+# `manage.py setup_cache_table` (Django's `createcachetable` plus
+# `ALTER TABLE ... SET UNLOGGED`, so cache writes skip the WAL), which deploy/run.sh runs
+# right after `migrate`.
+#
+# This is the general-purpose cache for the whole instance - rate limits, page fragments,
+# a `cache_page` on an expensive report, anything else that wants a shared cache should
+# use it rather than stand up a second one.
+#
+# The backend is our own subclass only because Django's `DatabaseCache` inherits a
+# non-atomic `incr` (get, add, set in Python), which loses increments when two workers
+# race on the same key. `common.cache.AtomicDatabaseCache` takes a row lock first; it is
+# otherwise the stock database backend.
+CACHES = {
+    "default": {
+        "BACKEND": "common.cache.AtomicDatabaseCache",
+        "LOCATION": "django_cache",
     }
 }
 
@@ -196,8 +201,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = "static/"
-STATIC_ROOT = os.getenv("STATIC_ROOT")
-MEDIA_ROOT = dirs.site_data_path / "media"
+STATIC_ROOT = str(Path(os.getenv("STATIC_ROOT", "./static")).resolve())
+
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT") or dirs.user_data_path / "media").resolve()
 MEDIA_URL = "/media/"
 
 # Default primary key field type
@@ -209,13 +215,77 @@ LOGIN_REDIRECT_URL = "/profile/"
 SQUARE_APPLE_MERCHANT_ID = os.getenv("SQUARE_APPLE_MERCHANT_ID")
 
 # Email Settings
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = str(os.getenv("SMTP_SERVER"))
-EMAIL_PORT = int(os.getenv("SMTP_PORT", 0))
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = str(os.getenv("SMTP_USER"))
-EMAIL_HOST_PASSWORD = str(os.getenv("SMTP_PASS"))
-EMAIL_FROM = str(os.getenv("EMAIL_FROM"))
+_dev_only_email_from = "dev@clubmanager.local"
+EMAIL_FROM = os.getenv("EMAIL_FROM", _dev_only_email_from)
+
+EMAIL_HOST = os.getenv("SMTP_SERVER")
+EMAIL_PORT = int(os.getenv("SMTP_PORT", -1))
+EMAIL_HOST_USER = os.getenv("SMTP_USER")
+EMAIL_HOST_PASSWORD = os.getenv("SMTP_PASS")
+
+unset_email_config = [
+    source_environment_variable
+    for (source_environment_variable, is_correctly_set) in {
+        "SMTP_SERVER": EMAIL_HOST is not None,
+        "SMTP_PORT": EMAIL_PORT != -1,
+        "SMTP_USER": EMAIL_HOST_USER is not None,
+        "SMTP_PASS": EMAIL_HOST_PASSWORD is not None,
+        "EMAIL_FROM": EMAIL_FROM != _dev_only_email_from,
+    }.items()
+    if is_correctly_set is False
+]
+
+if len(unset_email_config) > 0:
+    print("Defaulting to local only email backend because not all required environment variables are set correctly.")
+    print(f"These email environment variables are not currently set correctly: {unset_email_config}")
+    _email_delivery_backend = "naomi.mail.backends.naomi.NaomiBackend"
+    EMAIL_FILE_PATH = Path(tempfile.mkdtemp(prefix="comet-robotics-club-manager-dev-emails"))
+else:
+    print("Using SMTP email sending backend - config looks correct.")
+    _email_delivery_backend = "django.core.mail.backends.smtp.EmailBackend"
+
+# Every outgoing message goes through django-post_office rather than straight to the delivery
+# backend. `post_office.EmailBackend` writes the message to the database first, then hands it to
+# the backend chosen above, which is what gives us a copy of everything we have ever sent, a log
+# row per delivery attempt, and a "Post Office" section in the admin where an officer can read a
+# message a member says they never received and resend it.
+#
+# Anything that calls `django.core.mail` - `send_mail`, `EmailMultiAlternatives.send()`,
+# `core.emails.send_templated_email` - is covered by this, so no call site has to know about it.
+EMAIL_BACKEND = "post_office.EmailBackend"
+
+POST_OFFICE = {
+    # The backend post_office actually delivers through, once the message is persisted.
+    "BACKENDS": {"default": _email_delivery_backend},
+    # Deliver in the same request or command that created the message, the way a bare
+    # `send_mail()` does, instead of leaving it in the queue for `send_queued_mail` to pick up.
+    # Queued delivery would mean a member waits on the mail timer for their account link email,
+    # and it would silently drop mail on any host where the timer is not installed. The queue is
+    # still there for scheduled mail, retries, and the admin's "requeue" action - the
+    # post_office_queue systemd timer (see deploy/) drains it.
+    "DEFAULT_PRIORITY": "now",
+    # 2 = write a Log row for every delivery attempt, successful or failed. The whole point of
+    # routing through post_office here is having that history, so never drop the successes.
+    "LOG_LEVEL": 2,
+    # Generate and store a Message-ID for every message, so the ID we keep in the database is the
+    # same one the recipient's mail server and our SMTP provider's logs report. Without this,
+    # post_office stores nothing and each message gets whatever Message-ID the SMTP library
+    # invents at send time, which we would have no record of.
+    "MESSAGE_ID_ENABLED": True,
+    # A retry budget for queued mail. Mail sent with priority "now" is not retried - the
+    # exception surfaces to the caller instead - but anything requeued from the admin gets a few
+    # spaced-out attempts before it is left as failed.
+    "MAX_RETRIES": 3,
+    "RETRY_INTERVAL": datetime.timedelta(minutes=15),
+}
+
+# post_office defaults the Message-ID domain to socket.getfqdn(), which on a container or VPS is
+# usually "localhost" or some internal hostname. A Message-ID that does not match the sending
+# domain is a well-known spam signal, so derive it from PUBLIC_URL when we have one.
+_message_id_domain = urlparse(PUBLIC_URL).hostname if PUBLIC_URL else None
+if _message_id_domain:
+    POST_OFFICE["MESSAGE_ID_FQDN"] = _message_id_domain
 
 API_SECRET = str(os.getenv("API_SECRET"))
 DISCORD_API_PORT = int(os.getenv("DISCORD_API_PORT", 2468))
@@ -231,6 +301,7 @@ DISCORD_TEAM_LEAD_ROLE_ID = int(os.getenv("DISCORD_TEAM_LEAD_ROLE_ID", 0))
 DISCORD_MEMBER_ROLE_ID = int(os.getenv("DISCORD_MEMBER_ROLE_ID", 0))
 
 ENABLE_SQUARE_PAYMENTS = bool(int(os.getenv("ENABLE_SQUARE_PAYMENTS", 0)))
+LOGOUT_REDIRECT_URL = "login"
 
 
 def strtobool(val):
@@ -248,12 +319,19 @@ def strtobool(val):
         raise ValueError("invalid truth value %r" % (val,))
 
 
-def resolve_feature_flags(flags_with_defaults: dict[str, bool]) -> dict[str, bool]:
+def resolve_feature_flags(
+    *,
+    flags_with_defaults: dict[str, bool],
+    deprecated_flags: list[str],
+) -> dict[str, bool]:
     """
     returns a dictionary of feature flags with their resolved values - whether from environment variable or falling back to their default value.
 
     key: flag name. looks for an environment variable with the name 'FLAG_{flag_name}'
     value: default value for the flag. if not set, defaults to False.
+
+    deprecated_flags: flag names that are no longer used. if the corresponding
+    FLAG_{name} environment variable is still set, a warning is printed so it can be removed.
     """
     resolved_flags = {}
     flags_using_defaults: set[str] = set()
@@ -271,6 +349,16 @@ def resolve_feature_flags(flags_with_defaults: dict[str, bool]) -> dict[str, boo
         resolved_flags[flag] = value_as_bool
 
     print(f"Feature flags using default values: {flags_using_defaults}")
+
+    set_deprecated_env_vars = [
+        f"FLAG_{flag}" for flag in deprecated_flags if os.environ.get(f"FLAG_{flag}") is not None
+    ]
+    if set_deprecated_env_vars:
+        print(
+            "The following feature flag environment variables are deprecated and can be deleted: "
+            f"{set_deprecated_env_vars}"
+        )
+
     return resolved_flags
 
 
@@ -280,11 +368,17 @@ Club Manager uses a trunk-based development workflow, meaning that all new funct
 To configure feature flags at deploy time via environment variables, take the name of the flag and prepend "FLAG_" to it, and set it to a truthy or falsy string value. for example, the flag "AUTO_SERVER_SETTINGS_INIT" would be enabled with the environment variable "FLAG_AUTO_SERVER_SETTINGS_INIT" set to "true".
 """
 FEATURE_FLAGS = resolve_feature_flags(
-    {
-        # enabled: ServerSettings are auto created when needed, displays configuration prompts to superusers on new instances
-        # disabled: ServerSettings needs to be manually created in Django Admin, users will encounter Django errors if this is not done
+    flags_with_defaults={
+        # enabled: transactional emails are rendered from the templates in core/templates/email/
+        # disabled: transactional emails use HTML strings that are inlined in sending code
+        # - @jasonappah, 09/10/2026 - default off
+        "NEW_TRANSACTIONAL_EMAIL_TEMPLATES": False,
+    },
+    deprecated_flags=[
+        # ServerSettings are always auto-created when needed; setup prompts always shown to superusers
         # - @jasonappah, 10/14/2025 - default off
         # - @jasonappah, 01/19/2026 - set default to True
-        "AUTO_SERVER_SETTINGS_INIT": True
-    }
+        # - @jasonappah, 09/16/2026 - permanently enabled + flag removed
+        "AUTO_SERVER_SETTINGS_INIT",
+    ],
 )

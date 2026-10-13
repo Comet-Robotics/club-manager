@@ -10,7 +10,7 @@ server {
     }
 
     location /static/ {
-    	alias /var/www/static/;
+    	alias "${STATIC_ROOT}/";
     }
 
     location /media/ {

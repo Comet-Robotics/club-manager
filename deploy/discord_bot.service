@@ -5,7 +5,7 @@ Wants=gunicorn.service
 [Service]
 User=root
 WorkingDirectory=/root/clubManager
-ExecStart=pipenv --python /root/.pyenv/shims/python run python discord_bot.py
+ExecStart=/usr/local/bin/mise exec -- pipenv run python discord_bot.py
 
 [Install]
 WantedBy=multi-user.target

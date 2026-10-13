@@ -1,3 +1,8 @@
+from functools import reduce
+from operator import or_
+from typing import Iterable
+
+from typing_extensions import deprecated
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
@@ -16,6 +21,21 @@ class ServerSettings(models.Model):
     accent_color_hex = ColorField(default="#4BC0FF")
     logo = models.ImageField(upload_to="logos")
     initial_setup_completed = models.BooleanField(default=False)
+    contact_email = models.EmailField(
+        blank=True,
+        help_text="Address members should reach out to with questions. Used as the Reply-To on transactional emails "
+        "and shown in their footer. Leave blank to omit it.",
+    )
+    mailing_address = models.TextField(
+        blank=True,
+        help_text="Physical mailing address shown in the footer of transactional emails. Spam filters treat a missing "
+        "postal address as a signal that mail is not from a real organization, so setting this improves "
+        "deliverability. Leave blank to omit it.",
+    )
+    website_url = models.URLField(
+        blank=True,
+        help_text="Public website linked from the footer of transactional emails. Leave blank to omit it.",
+    )
 
     class Meta:
         verbose_name = "server configuration"
@@ -90,6 +110,7 @@ class UserProfile(models.Model):
 
         return [(product.product.term, product) for product in purchased_products]
 
+    @deprecated("Use is_member_for_terms instead")
     def is_member(self, for_term: Term | None = None) -> tuple[Term, PurchasedProduct | None]:
         """
         Returns a tuple with the Term and PurchasedProduct object for the current member if the user is a member for the given term, or a tuple with the given Term and None if they are not a member.
@@ -106,6 +127,55 @@ class UserProfile(models.Model):
         )
 
         return term, purchased_product.first()
+
+    def is_member_for_terms(self, terms: Iterable[Term]) -> list[tuple[Term, PurchasedProduct]]:
+        """
+        Returns a list of (Term, PurchasedProduct) tuples for the given terms where the user is a member. If the user was not a member for any of the given terms, returns an empty list.
+        """
+        terms = list(terms)
+
+        purchased_products = PurchasedProduct.objects.filter(
+            payment__user=self.user, product__term__in=terms, payment__is_successful=True
+        ).select_related("product__term")
+
+        return [(product.product.term, product) for product in purchased_products]
+
+    def get_active_membership_terms(self) -> list[tuple[Term, PurchasedProduct]]:
+        """
+        Returns paid memberships for any currently active term.
+
+        Use this to answer "which active memberships does this user have today?"
+        """
+        # An empty term list short-circuits inside `is_member_for_terms`, so there is no need to
+        # check for active terms separately -- doing so would just add a query.
+        return self.is_member_for_terms(Term.get_active_terms())
+
+    def is_active_member(self) -> bool:
+        """
+        Returns whether the user has paid dues for any currently active term.
+
+        Use this to answer "is this user a member today?"
+        """
+        return len(self.get_active_membership_terms()) > 0
+
+    @staticmethod
+    def get_active_members() -> models.QuerySet[User]:
+        """
+        Returns a QuerySet of every user who has paid dues for at least one currently active term.
+
+        During a term overlap both the expiring term and the renewing term count, so anyone who has
+        paid either one is an active member.
+
+        This is the bulk counterpart to `is_active_member`: use it instead of looping over users and
+        calling `is_active_member()` on each one, which issues several queries per user.
+        """
+        member_queries = [term.get_members() for term in Term.get_active_terms()]
+        if len(member_queries) == 0:
+            return User.objects.none()
+
+        return User.objects.filter(
+            pk__in=reduce(or_, member_queries).values_list("payment__user_id", flat=True).distinct()
+        )
 
     @staticmethod
     def create_extended_user(net_id, comet_card_serial_number, first, last):
