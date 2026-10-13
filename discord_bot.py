@@ -1,7 +1,5 @@
 import os
 import time
-from functools import reduce
-
 import aiohttp
 from asgiref.sync import sync_to_async
 
@@ -179,19 +177,14 @@ async def respond_user_attendances(interaction: discord.Interaction, user_profil
 
 async def get_active_member_discord_ids():
     def run() -> list[int]:
-        active_terms = Term.get_active_terms()
-        member_queries = [term.get_members() for term in active_terms]
-        if len(member_queries) == 0:
-            return []
-
-        active_member_discord_ids = (
-            reduce(lambda x, y: x | y, member_queries)
-            .filter(payment__user__userprofile__discord_id__isnull=False)
-            .values_list("payment__user__userprofile__discord_id", flat=True)
+        discord_ids = (
+            UserProfile.get_active_members()
+            .exclude(userprofile__discord_id__isnull=True)
+            .values_list("userprofile__discord_id", flat=True)
             .distinct()
         )
 
-        return [int(discord_id) for discord_id in active_member_discord_ids]
+        return [int(discord_id) for discord_id in discord_ids if discord_id is not None]
 
     return await sync_to_async(run)()
 
@@ -376,13 +369,14 @@ async def profile(ctx: discord.ApplicationContext, net_id: str | None, discord_u
 
         # Membership Status
         def get_membership_status(user_profile: UserProfile):
-            today = timezone.now().date()
+            today = timezone.localdate()
 
             def term_names(names: set[str]):
                 return ", ".join(sorted(names))
 
-            active_terms = Term.get_active_terms().order_by("start_date", "end_date", "name")
-            active_terms_as_member = [term for term, _ in user_profile.is_member_for_terms(active_terms)]
+            # Names get sorted alphabetically for display below, so term ordering does not matter
+            # here and there is no need to sort the active terms first.
+            active_terms_as_member = [term for term, _ in user_profile.get_active_membership_terms()]
 
             active_term_names = {term.name for term in active_terms_as_member}
             body = "**Current Membership:** " + (
@@ -588,15 +582,18 @@ async def pay(ctx: discord.ApplicationContext):
             user = UserProfile.objects.get(discord_id=str(ctx.author.id))
         except:
             return None
-        active_terms = Term.get_active_terms()
+        active_terms = list(Term.get_active_terms())
         if not active_terms:
             # ctx.respond("No active terms available for payment.",  ephemeral=True)  # TODO: move to separate func to await
             pass
 
+        # One membership lookup for all terms rather than one per term.
+        paid_terms = {term for term, _ in user.get_active_membership_terms()}
+
         payment_links = [
             (
                 f"[Pay for {term.name}]({settings.PUBLIC_URL}/payments/{term.product.id}/pay/)"
-                + (" (you've already paid this term's dues)" if user.is_member_for_terms([term]) else "")
+                + (" (you've already paid this term's dues)" if term in paid_terms else "")
             )
             for term in active_terms
         ]

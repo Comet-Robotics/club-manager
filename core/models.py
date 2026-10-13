@@ -1,3 +1,5 @@
+from functools import reduce
+from operator import or_
 from typing import Iterable
 
 from typing_extensions import deprecated
@@ -134,7 +136,7 @@ class UserProfile(models.Model):
 
         purchased_products = PurchasedProduct.objects.filter(
             payment__user=self.user, product__term__in=terms, payment__is_successful=True
-        )
+        ).select_related("product__term")
 
         return [(product.product.term, product) for product in purchased_products]
 
@@ -144,11 +146,9 @@ class UserProfile(models.Model):
 
         Use this to answer "which active memberships does this user have today?"
         """
-        active_terms = Term.get_active_terms()
-        if not active_terms.exists():
-            return []
-
-        return self.is_member_for_terms(active_terms)
+        # An empty term list short-circuits inside `is_member_for_terms`, so there is no need to
+        # check for active terms separately -- doing so would just add a query.
+        return self.is_member_for_terms(Term.get_active_terms())
 
     def is_active_member(self) -> bool:
         """
@@ -157,6 +157,25 @@ class UserProfile(models.Model):
         Use this to answer "is this user a member today?"
         """
         return len(self.get_active_membership_terms()) > 0
+
+    @staticmethod
+    def get_active_members() -> models.QuerySet[User]:
+        """
+        Returns a QuerySet of every user who has paid dues for at least one currently active term.
+
+        During a term overlap both the expiring term and the renewing term count, so anyone who has
+        paid either one is an active member.
+
+        This is the bulk counterpart to `is_active_member`: use it instead of looping over users and
+        calling `is_active_member()` on each one, which issues several queries per user.
+        """
+        member_queries = [term.get_members() for term in Term.get_active_terms()]
+        if len(member_queries) == 0:
+            return User.objects.none()
+
+        return User.objects.filter(
+            pk__in=reduce(or_, member_queries).values_list("payment__user_id", flat=True).distinct()
+        )
 
     @staticmethod
     def create_extended_user(net_id, comet_card_serial_number, first, last):

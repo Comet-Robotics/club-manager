@@ -67,7 +67,10 @@ class Term(models.Model):
         - current member exports
         - voter eligibility checks before applying attendance requirements
         """
-        today = timezone.now().date()
+        # Term start/end dates are plain dates meaningful in the organization's local timezone, so
+        # compare against the local date. Using `timezone.now().date()` here would compare against
+        # the UTC date and resolve membership against the wrong day for part of each evening.
+        today = timezone.localdate()
         return Term.objects.filter(start_date__lte=today, end_date__gte=today)
 
     @staticmethod

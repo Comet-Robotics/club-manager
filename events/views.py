@@ -31,27 +31,21 @@ def sign_in(request, event_id):
                 user_profile = UserProfile.objects.get(comet_card_serial_number=student_id)
                 if user_profile:
                     user = user_profile.user
-                    valid_payment = user_profile.is_active_member()
+                    # Fetch the active memberships once and derive both the membership check and the
+                    # renewal check from it, rather than querying for each separately.
+                    active_membership_terms = [term for term, _ in user_profile.get_active_membership_terms()]
+                    valid_payment = len(active_membership_terms) > 0
                     renewal_term = Term.get_active_term_with_latest_end_date()
                     needs_renewal = (
-                        valid_payment
-                        and renewal_term is not None
-                        and not user_profile.is_member_for_terms([renewal_term])
+                        valid_payment and renewal_term is not None and renewal_term not in active_membership_terms
                     )
                     form = SignInForm()
                     status, created = Attendance.objects.get_or_create(event=current_event, user=user)
-                    if created:
-                        message = "success"
-                        if not valid_payment:
-                            message = "nomember"
-                        elif needs_renewal:
-                            message = "renewal"
-                    else:
-                        message = "repeat"
-                        if not valid_payment:
-                            message = "nomember"
-                        elif needs_renewal:
-                            message = "renewal"
+                    message = "success" if created else "repeat"
+                    if not valid_payment:
+                        message = "nomember"
+                    elif needs_renewal:
+                        message = "renewal"
             except UserProfile.DoesNotExist:
                 return redirect("lookup-user", event_id=event_id, student_id=student_id)
 

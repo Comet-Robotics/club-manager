@@ -8,12 +8,10 @@ import django
 django.setup()
 
 import csv
-from django.contrib.auth.models import User
+from core.models import UserProfile
 
 with open("members.csv", "w") as f:
     writer = csv.writer(f)
     writer.writerow(("LastName", "FirstName", "Email"))
-    for user in User.objects.all():
-        if not user.userprofile.is_active_member():
-            continue
+    for user in UserProfile.get_active_members():
         writer.writerow((user.last_name, user.first_name, user.username + "@utdallas.edu"))
