@@ -29,7 +29,8 @@ async-timeout = "*"
 django-multiselectfield = "*"
 django-colorfield = "*"
 platformdirs = "*"
-fastapi = {extras = ["standard"], version = "*"}
+fastapi = "*"
+uvicorn = "*" # no [standard] extras: they pull uvloop, which has no Windows build, and discord_bot.py sets loop="asyncio" anyway
 django-debug-toolbar = "*"
 django-naomi = "*"
 css-inline = "*"
