@@ -86,9 +86,7 @@ Once that's done, run `mise run server` and you should officially be up and runn
 
 Windows needs one bit of explaining, and there's one thing we don't support.
 
-**Your `Pipfile.lock` gets re-resolved.** Ours was resolved on macOS, and pipenv applies dependency markers from the Pipfile rather than from an existing lock - so on Windows the first install asks for `uvloop`, which doesn't support Windows and fails to build. `mise run new-developer-setup` handles that for you: if the install fails it re-resolves the lock for your machine and retries. Nothing to do up front.
-
-One side effect: your `Pipfile.lock` will show up as modified in `git status` afterwards. That's expected - **don't commit it**, or you'll hand everyone else a lockfile shaped for your OS.
+**Our `Pipfile.lock` works on Windows as-is.** It's resolved on macOS, so we keep every dependency installable there - nothing in it needs a compiler on Windows. If an install ever does fail, `mise run new-developer-setup` re-resolves the lock for your machine and retries, so you're never stuck. Should that happen, your `Pipfile.lock` will show up as modified in `git status` - **don't commit it**, or you'll hand everyone else a lockfile shaped for your OS.
 
 **Windows on ARM (e.g. a Windows VM on an Apple Silicon Mac) isn't supported.** Several packages we depend on - `psycopg2-binary` most importantly - publish no ARM Windows wheels, so pip has to build them from source, which needs Visual Studio build tools. Use an x86_64 machine or VM and everything above works as written.
 
