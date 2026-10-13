@@ -79,7 +79,7 @@ per-file-ignores = """
     """
     
 [tool.mypy]
-plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+plugins = ["mypy_django_plugin.main"]
 mypy_path = "./clubManager"
 ignore_missing_imports=true
 
