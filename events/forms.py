@@ -53,6 +53,28 @@ class RSVPForm(forms.Form):
     net_id = NetIDField(label="Net ID", max_length=20)
 
 
+class SelfSignInForm(forms.Form):
+    """
+    Members identify themselves with the Net ID stored as their username, so the
+    field is named `username` even though it is presented as a Net ID.
+    """
+
+    username = NetIDField(
+        label="Net ID",
+        max_length=20,
+        widget=forms.TextInput(
+            attrs={
+                "autofocus": True,
+                "autocomplete": "username",
+                "autocapitalize": "none",
+                "autocorrect": "off",
+                "spellcheck": "false",
+                "placeholder": "abc123456",
+            }
+        ),
+    )
+
+
 class EventForm(forms.ModelForm):
     project_id = forms.IntegerField(required=False, widget=forms.HiddenInput())
 
