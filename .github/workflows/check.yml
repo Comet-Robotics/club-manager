@@ -32,7 +32,12 @@ jobs:
       - name: Install dependencies
         run: pipenv install --dev --python "$(mise where python)/bin/python"
       - name: Create .env file
-        run: cp .env.example .env
+        run: |
+          cp .env.example .env
+          # CI runners don't install pgserver's PostgreSQL, and the checks below
+          # only need importable settings, not a live database: drop the dev
+          # database path so settings fall back to the placeholder DB_* values.
+          sed -i '/^DEV_PGDATA *=/d' .env
       - name: Run lint and type checking
         run: pipenv run ./scripts/lint.sh
       # Check if there are any outstanding Django migrations that need to be created
