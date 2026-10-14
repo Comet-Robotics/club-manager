@@ -13,6 +13,10 @@ Usage:
     OR
     mise run new-developer-setup
 
+    pipenv run python scripts/dev_setup.py --pgserver-only
+        Only create .env (if missing) and set up the pgserver database.
+        Used by CI, which needs a database but no login, migrate, or superuser.
+
 Override the default admin credentials with env vars (dev only):
     DEV_ADMIN_USERNAME, DEV_ADMIN_EMAIL, DEV_ADMIN_PASSWORD
 """
@@ -349,4 +353,11 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    if "--pgserver-only" in sys.argv:
+        # CI (and anywhere else that only needs the database): create .env if
+        # needed and set up the embedded PostgreSQL, without GitHub login,
+        # migrations, or the dev superuser.
+        ensure_env(ROOT)
+        ensure_pgserver()
+    else:
+        main()
