@@ -74,13 +74,12 @@ class Reservation(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
-    def rsvpBeforeEvent(event, user):
-        print("im called")
+    @staticmethod
+    def rsvpBeforeEvent(event: "Event", user: User) -> bool:
         reservation = Reservation.objects.filter(event=event, user=user).first()
-        if reservation.timestamp < event.event_date:
-            return True
-        else:
+        if reservation is None:
             return False
+        return reservation.timestamp < event.event_date
 
     def __str__(self):
         return str(self.event) + " - " + str(self.user)

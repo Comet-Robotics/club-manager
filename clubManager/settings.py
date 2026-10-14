@@ -59,7 +59,6 @@ else:
 
 INSTALLED_APPS = [
     "core.apps.CoreConfig",
-    "posters.apps.PostersConfig",
     "events.apps.EventsConfig",
     "payments.apps.PaymentsConfig",
     "accounts.apps.AccountsConfig",
@@ -76,8 +75,6 @@ INSTALLED_APPS = [
     "django_extensions",
     "computedfields",
     "more_admin_filters",
-    "rest_framework",
-    "drf_spectacular",
     "multiselectfield",
     "colorfield",
     "naomi",
@@ -87,18 +84,6 @@ INSTALLED_APPS = [
 if DEBUG:
     INSTALLED_APPS.append("debug_toolbar")
 
-
-REST_FRAMEWORK = {
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-}
-
-SPECTACULAR_SETTINGS = {
-    "TITLE": "Comet Robotics Club Manager API",
-    "DESCRIPTION": "Link shortener, attendance tracking, Discord bot, and other utilities for managing club operations",
-    "VERSION": "0.1.0",
-    "SERVE_INCLUDE_SCHEMA": True,
-    # OTHER SETTINGS
-}
 
 DISABLE_CSRF = False
 

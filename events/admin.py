@@ -1,4 +1,3 @@
-from collections.abc import Callable, Sequence
 from typing import Any
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -25,7 +24,7 @@ class UserAdmin(BaseUserAdmin):
 class EventAdmin(admin.ModelAdmin):
     readonly_fields = ["id"]
 
-    def get_fields(self, request: HttpRequest, obj: Any | None = ...) -> Sequence[Callable[..., Any] | str]:
+    def get_fields(self, request: HttpRequest, obj: Any | None = None) -> Any:
         fields = list(super().get_fields(request, obj))
         fields.remove("id")
         fields.insert(0, "id")
