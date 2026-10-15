@@ -1,0 +1,13 @@
+{% extends "errors/base.html" %}
+
+{% block title %}Something went wrong{% endblock %}
+{% block status_code %}500{% endblock %}
+{% block heading %}Something went wrong on our end{% endblock %}
+
+{% block body %}
+    <p>
+        This one isn't your fault &mdash; the request failed while we were handling it. It has
+        been reported automatically, so someone will see it.
+    </p>
+    <p>Trying again in a moment is usually worth a shot.</p>
+{% endblock %}

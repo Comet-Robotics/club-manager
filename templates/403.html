@@ -1,0 +1,13 @@
+{% extends "errors/base.html" %}
+
+{% block title %}Access denied{% endblock %}
+{% block status_code %}403{% endblock %}
+{% block heading %}You don't have access to that{% endblock %}
+
+{% block body %}
+    <p>
+        Your account isn't permitted to view this page. If you think it should be, ask an
+        officer to check your permissions.
+    </p>
+    <p>Otherwise, head back to the <a href="/">portal home page</a>.</p>
+{% endblock %}
