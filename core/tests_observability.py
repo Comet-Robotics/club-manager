@@ -31,18 +31,30 @@ class InitSentryTests(TestCase):
     pinning down.
     """
 
-    def _init_sentry(self, *, debug=False, public_url="https://example.org", **overrides):
-        config = {
-            "sentry_enabled": True,
-            "dsn": "https://sentry.example/123",
-            "environment": "test",
-            "release": None,
-            "traces_sample_rate": 0.2,
-            "profile_session_sample_rate": 0.5,
-            "configured_tenant": "",
-        }
-        config.update(overrides)
-        return init_sentry(debug=debug, public_url=public_url, **config)
+    def _init_sentry(
+        self,
+        *,
+        debug: bool = False,
+        public_url: str = "https://example.org",
+        sentry_enabled: bool = True,
+        dsn: str = "https://sentry.example/123",
+        environment: str = "test",
+        release: str | None = None,
+        traces_sample_rate: float = 0.2,
+        profile_session_sample_rate: float = 0.5,
+        configured_tenant: str = "",
+    ) -> bool:
+        return init_sentry(
+            debug=debug,
+            public_url=public_url,
+            sentry_enabled=sentry_enabled,
+            dsn=dsn,
+            environment=environment,
+            release=release,
+            traces_sample_rate=traces_sample_rate,
+            profile_session_sample_rate=profile_session_sample_rate,
+            configured_tenant=configured_tenant,
+        )
 
     def test_disabled_in_debug(self):
         self.assertFalse(self._init_sentry(debug=True))
