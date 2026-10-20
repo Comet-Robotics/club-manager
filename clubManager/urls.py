@@ -19,7 +19,9 @@ from django.contrib import admin
 from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.auth.views import LogoutView, PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView, PasswordResetCompleteView
 from events.views import club_events_view
+from accounts.views import CustomLoginView
 
 urlpatterns = [
     path("events/", include("events.urls")),
@@ -28,7 +30,12 @@ urlpatterns = [
     path("projects/", include("projects.urls")),
     path("club/events/", club_events_view, name="club_events"),
     path("admin/", admin.site.urls),
-    path("accounts/", include("django.contrib.auth.urls")),
+    path("accounts/login/", CustomLoginView.as_view(), name="login"),
+    path("accounts/logout/", LogoutView.as_view(), name="logout"),
+    path("accounts/password_reset/", PasswordResetView.as_view(), name="password_reset"),
+    path("accounts/password_reset/done/", PasswordResetDoneView.as_view(), name="password_reset_done"),
+    path("accounts/reset/<uidb64>/<token>/", PasswordResetConfirmView.as_view(), name="password_reset_confirm"),
+    path("accounts/reset/done/", PasswordResetCompleteView.as_view(), name="password_reset_complete"),
     path("accounts/", include("accounts.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

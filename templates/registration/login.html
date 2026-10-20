@@ -4,83 +4,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Sign in | {{ settings.organization_name }}</title>
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}">
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #f0f2f5;
-        }
-        .container {
-            display: flex;
-            width: 100%;
-            height: 100%;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 0;
-            overflow: hidden;
-        }
-        .image {
-            flex: 1;
-            background-image:  url('{% static 'core/splashbg.png' %}');
-            background-size: cover;
-        }
-        .form-container {
-            flex: .5;
-            background-color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        form {
-            width: 80%;
-        }
-        form h2 {
-            margin-bottom: 20px;
-            color: #333;
-        }
-        form input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        form button {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            background-color: #007bff;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        form button:hover {
-            background-color: #0056b3;
+        :root {
+            --primary: {{ settings.accent_color_hex }};
         }
     </style>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@0.475.0"></script>
 </head>
-<body>
-    <div class="container">
-        <div class="image">
+<body style="background-color: var(--white); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem;">
+    <main class="main-content" style="max-width: 384px; width: 100%; padding: 0;">
+        <div style="background-color: var(--white); width: 100%;">
+            <!-- Brand Lockup -->
+            <div style="display: flex; align-items: center; padding-bottom: 40px; gap: 12px; justify-content: center;">
+                <div style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex-shrink: 0; border-radius: 8px; background-color: var(--primary);">
+                    <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="13" cy="13" r="10.5625" stroke="white" stroke-width="2"/>
+                        <path d="M7.312 5.688L13 13.562L18.688 5.688" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span style="font-size: 16px; line-height: 24px; font-family: system-ui, sans-serif; font-weight: 600; color: var(--gray-900);">{{ settings.organization_name }}</span>
+            </div>
+
+            <!-- Heading Block -->
+            <div style="display: flex; flex-direction: column; padding-bottom: 32px; gap: 8px; align-items: center; text-align: center;">
+                <h1 style="font-size: 32px; letter-spacing: -0.02em; line-height: 40px; font-family: system-ui, sans-serif; font-weight: 600; color: var(--gray-900); margin: 0;">Sign in</h1>
+                <p style="font-size: 14px; line-height: 21px; font-family: system-ui, sans-serif; font-weight: 400; color: var(--gray-500); margin: 0;">Use your Comet Robotics account to continue.</p>
+            </div>
+
+            <!-- Login Form -->
+            <form method="post" novalidate style="display: flex; flex-direction: column; gap: 16px;">
+                {% csrf_token %}
+
+                <!-- Username Field -->
+                <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+                    <label for="{{ form.username.id_for_label }}" style="font-size: 14px; line-height: 21px; font-family: system-ui, sans-serif; font-weight: 500; color: var(--gray-700);">Username</label>
+                    <div style="display: flex; align-items: center; height: 44px; padding: 0 14px; border-radius: 6px; background-color: var(--white); border: 1px solid var(--gray-300);">
+                        {{ form.username }}
+                    </div>
+                    {% if form.username.errors %}
+                        <div style="color: var(--primary); font-size: 12px; margin-top: 4px;">{{ form.username.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Password Field -->
+                <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                        <label for="{{ form.password.id_for_label }}" style="font-size: 14px; line-height: 21px; font-family: system-ui, sans-serif; font-weight: 500; color: var(--gray-700); margin: 0;">Password</label>
+                        {% if FEATURE_FLAGS.ENABLE_PASSWORD_RESET %}
+                        <a href="{% url 'password_reset' %}" style="font-size: 13px; line-height: 20px; font-family: system-ui, sans-serif; font-weight: 400; color: var(--primary); text-decoration: none; white-space: nowrap;">Forgot password?</a>
+                        {% endif %}
+                    </div>
+                    <div style="display: flex; align-items: center; height: 44px; padding: 0 14px; border-radius: 6px; background-color: var(--white); border: 1px solid var(--gray-300);">
+                        {{ form.password }}
+                    </div>
+                    {% if form.password.errors %}
+                        <div style="color: var(--primary); font-size: 12px; margin-top: 4px;">{{ form.password.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Non-field errors -->
+                {% if form.non_field_errors %}
+                    <div style="color: var(--primary); font-size: 13px; text-align: center; padding: 8px; background-color: rgba(191, 30, 46, 0.1); border-radius: 6px; border: 1px solid rgba(191, 30, 46, 0.2);">
+                        {{ form.non_field_errors.0 }}
+                    </div>
+                {% endif %}
+
+                <!-- Sign in Button -->
+                <button type="submit" style="display: flex; align-items: center; justify-content: center; height: 44px; border-radius: 6px; background-color: var(--primary); color: var(--white); font-size: 14px; line-height: 21px; font-family: system-ui, sans-serif; font-weight: 600; border: none; cursor: pointer; width: 100%; transition: background-color 0.15s;">
+                    Sign in
+                </button>
+            </form>
+
+            <!-- Panel Footer -->
+            <div style="display: flex; flex-direction: column; padding-top: 28px; gap: 16px; width: 100%;">
+                <div style="height: 1px; background-color: var(--gray-200);"></div>
+                <p style="font-size: 13px; line-height: 20px; text-align: center; font-family: system-ui, sans-serif; font-weight: 400; color: var(--gray-500); margin: 0;">
+                    Trouble signing in? Reach out to a club officer on Discord.
+                </p>
+            </div>
         </div>
-        <div class="form-container">
-          <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Log In</button>
-          </form>    
-        </div>
-    </div>
+    </main>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Style form inputs to remove default styling
+        document.querySelectorAll('input[type="text"], input[type="password"]').forEach(input => {
+            input.style.width = '100%';
+            input.style.height = '100%';
+            input.style.border = 'none';
+            input.style.background = 'transparent';
+            input.style.outline = 'none';
+            input.style.fontSize = '14px';
+            input.style.fontFamily = 'system-ui, sans-serif';
+            input.style.color = 'var(--gray-900)';
+            input.style.padding = '0';
+        });
+
+        // Add focus styles to input containers
+        document.querySelectorAll('input[type="text"], input[type="password"]').forEach(input => {
+            const container = input.parentElement;
+            input.addEventListener('focus', () => {
+                container.style.borderColor = 'var(--primary)';
+                container.style.boxShadow = '0 0 0 3px rgba(191, 30, 46, 0.2)';
+            });
+            input.addEventListener('blur', () => {
+                container.style.borderColor = 'var(--gray-300)';
+                container.style.boxShadow = 'none';
+            });
+        });
+    </script>
 </body>
 </html>
-
-
-
