@@ -1,9 +1,5 @@
 """
 Lookups against Discord's HTTP API for the web side of the app.
-
-This lives outside `accounts.views` so that `accounts.models` can describe a pending
-Discord link when it writes a registration email. Views already import models, so the
-helper cannot stay there without making that import cycle.
 """
 
 from typing import TypedDict
@@ -12,9 +8,6 @@ import requests
 
 from clubManager import settings
 
-# Nothing here is on the critical path of a page: a slow or unreachable Discord should
-# degrade to "we could not look this up" rather than hold a request open until Gunicorn
-# gives up on the worker.
 DISCORD_API_TIMEOUT_SECONDS = 5
 
 
@@ -50,11 +43,6 @@ def get_discord_user(user_id: int, bot_token: str) -> DiscordUser | None:
 def describe_discord_user(discord_id: str) -> DiscordUser | None:
     """
     Who a Discord ID belongs to, or `None` if we cannot say.
-
-    Used to name a Discord account to the person being asked to approve it, which is a
-    nicety rather than a requirement: the ID is shown either way. Deliberately never
-    raises, so a missing bot token or a Discord outage cannot stop a registration email
-    going out or a registration page rendering.
     """
     # settings.py runs the environment variable through `str()`, so an unconfigured
     # deployment arrives here as the literal string "None" rather than an empty one.
