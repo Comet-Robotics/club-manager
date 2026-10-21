@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.forms import AuthenticationForm
+from django.urls import reverse
 from .models import AccountLink
-from core.models import UserProfile, ServerSettings
+from core.models import UserProfile
 from clubManager import settings
 from core.utilities import get_layout_data
 import requests
@@ -20,6 +21,19 @@ class CustomLoginView(LoginView):
         layout_data = get_layout_data(self.request)
         context.update(layout_data)
         return context
+
+
+class ClubLogoutView(LogoutView):
+    """
+    Log the user out and send them back to the sign in page with a notice.
+
+    The notice rides along as a query parameter rather than as a message
+    framework message, because logging out flushes the session and would take
+    any queued message with it.
+    """
+
+    def get_success_url(self):
+        return f"{reverse('login')}?logged_out=1"
 
 
 class LinkSocialView(View):
