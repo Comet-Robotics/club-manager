@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.http import HttpResponse, HttpResponseRedirect
@@ -76,12 +77,14 @@ def account_view(request):
 def server_settings_logo_form_view(request):
     if not request.method == "POST":
         return HttpResponse("Method not allowed", status=405)
-    settings = ServerSettings.objects.get()
-    form = ServerSettingsLogoForm(request.POST, request.FILES, instance=settings)
+    settings_obj = ServerSettings.objects.get()
+    form = ServerSettingsLogoForm(request.POST, request.FILES, instance=settings_obj)
     if form.is_valid():
         form.instance.initial_setup_completed = True
         form.save()
-
+        messages.success(request, "Logo uploaded successfully.")
+    else:
+        messages.error(request, "Failed to upload logo. Please check the file and try again.")
     return redirect("club_settings")
 
 
