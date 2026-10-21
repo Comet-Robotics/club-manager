@@ -54,9 +54,7 @@
             <div class="auth-field">
                 <div class="auth-label-row">
                     <label class="auth-label" for="{{ form.password.id_for_label }}">Password</label>
-                    {% if FEATURE_FLAGS.ENABLE_PASSWORD_RESET %}
-                        <a class="auth-link" href="{% url 'password_reset' %}">Forgot password?</a>
-                    {% endif %}
+                    <a class="auth-link" href="{% url 'password_reset' %}">Forgot password?</a>
                 </div>
                 {{ form.password }}
                 {% if form.password.errors %}

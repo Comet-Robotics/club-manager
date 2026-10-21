@@ -407,10 +407,6 @@ FEATURE_FLAGS = resolve_feature_flags(
         # disabled: transactional emails use HTML strings that are inlined in sending code
         # - @jasonappah, 09/10/2026 - default off
         "NEW_TRANSACTIONAL_EMAIL_TEMPLATES": False,
-        # enabled: show "Forgot password?" link on login page (requires email to be configured)
-        # disabled: hide "Forgot password?" link
-        # - @jasonappah, 10/20/2026 - default based on email config
-        "ENABLE_PASSWORD_RESET": len(unset_email_config) == 0,
     },
     deprecated_flags=[
         # ServerSettings are always auto-created when needed; setup prompts always shown to superusers
