@@ -21,6 +21,11 @@ event ID, and it omits the reference block entirely when Sentry is off.
 
             {% block body %}{% endblock %}
 
+            <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+                <button type="button" id="error-back" hidden class="min-h-12 cursor-pointer rounded border border-white px-6 py-3 font-semibold text-white hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Go back</button>
+                <a href="/" class="inline-flex min-h-12 items-center justify-center rounded bg-white px-6 py-3 font-semibold text-black hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Go to homepage</a>
+            </div>
+
             {% if sentry_event_id %}
                 <div class="mt-6 flex w-full flex-col items-center justify-center gap-2 border-t border-white/25 pt-6">
                     <p class="text-sm text-white">
@@ -39,6 +44,18 @@ event ID, and it omits the reference block entirely when Sentry is off.
         </div>
     </div>
     <script>
+        const errorBack = document.getElementById('error-back');
+        if (errorBack) {
+            errorBack.hidden = false;
+            errorBack.addEventListener('click', () => {
+                if (window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    window.location.assign('/');
+                }
+            });
+        }
+
         const copySentryEvent = document.getElementById('copy-sentry-event');
         if (copySentryEvent) {
             copySentryEvent.addEventListener('click', async () => {
