@@ -1,9 +1,10 @@
 from django.contrib.auth.models import User
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from clubManager import settings
 
 from common.major import get_major_from_netid
+from common.utils import normalize_username
 from core.models import UserProfile
 from payments.models import PurchasedProduct
 
@@ -52,6 +53,11 @@ async def update_roles_purchasedproduct_signal(sender, instance: PurchasedProduc
     valid, discord_id = await sync_to_async(is_member)()
     if valid:
         await add_member_role(int(discord_id))
+
+
+@receiver(pre_save, sender=User)
+def normalize_username_signal(sender, instance, **kwargs):
+    instance.username = normalize_username(instance.username)
 
 
 # Add UserProfile when User is created

@@ -39,7 +39,7 @@ from core.emails import send_templated_email
 
 from accounts.models import AccountLink
 from common.asyncutils import *
-from common.utils import is_valid_net_id
+from common.utils import is_valid_net_id, normalize_username
 from core.models import ServerSettings, User, UserProfile
 from events.models import Attendance
 from payments.models import Term
