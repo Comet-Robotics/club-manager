@@ -19,6 +19,10 @@ from django.template import loader
 
 from core.models import ServerSettings
 
+# The accent colour the error pages use. The organization's configured colour lives in
+# the database row, which the error pages cannot read, so they use this instead.
+ERROR_PAGE_ACCENT_COLOR_HEX = "#120F0E"
+
 
 def _transient_server_settings() -> ServerSettings:
     """
@@ -26,10 +30,12 @@ def _transient_server_settings() -> ServerSettings:
 
     Never saved and never queried, so the error pages render even when the database
     is what is broken. The organization's configured name and accent colour live in
-    the database row, which this cannot read, so the pages show the model's defaults
-    instead.
+    the database row, which this cannot read, so the pages fall back to the model's
+    defaults, with the accent colour set to the site's own.
     """
-    return ServerSettings()
+    settings_obj = ServerSettings()
+    settings_obj.accent_color_hex = ERROR_PAGE_ACCENT_COLOR_HEX
+    return settings_obj
 
 
 def _render(request: HttpRequest, template_name: str, status: int) -> HttpResponse:

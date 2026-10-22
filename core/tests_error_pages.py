@@ -61,4 +61,4 @@ class ErrorPageTests(TestCase):
         settings_obj = errors._transient_server_settings()
         self.assertIsNone(settings_obj.pk)
         self.assertEqual(settings_obj.organization_name, "Your Organization")
-        self.assertEqual(settings_obj.accent_color_hex, "#4BC0FF")
+        self.assertEqual(settings_obj.accent_color_hex, "#120F0E")

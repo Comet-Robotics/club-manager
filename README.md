@@ -212,8 +212,9 @@ The pages extend the public base template, so they look like the rest of the por
 rather than being a separate design. That template reads the organization's name and
 accent colour off `ServerSettings`, which lives in the database — and an error page has
 to render when the database is exactly what's broken. So the error handlers pass a
-transient, unsaved `ServerSettings` instead, which never queries and shows the model's
-defaults. A regression test asserts zero queries to keep it that way.
+transient, unsaved `ServerSettings` instead, which never queries: the organization name
+falls back to the model's default, and the accent colour is the site's own. A
+regression test asserts zero queries to keep it that way.
 
 ### checking that a deployment reports
 
