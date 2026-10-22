@@ -87,7 +87,11 @@ def server_settings_logo_form_view(request):
     else:
         messages.error(request, "Failed to upload logo. Please correct the errors below.")
         layout_data = get_layout_data(request)
-        return render(request, "server_settings.html", {**layout_data, "form": ServerSettingsForm(instance=layout_data["settings"]), "logo_form": form})
+        return render(
+            request,
+            "server_settings.html",
+            {**layout_data, "form": ServerSettingsForm(instance=layout_data["settings"]), "logo_form": form},
+        )
 
 
 @user_passes_test(lambda u: u.is_superuser)
