@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "90460264632074580698aa89ded79e373d52ad4ea7d2ccaee9c43e5c80cccf3a"
+            "sha256": "c7686f35b2357047f44ea450d699a3eb79222f77e4e0bfc9a11b875156074791"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -278,20 +278,20 @@
         },
         "boto3": {
             "hashes": [
-                "sha256:2e6fa2eef6decd7cbe5cf55b4ccc3218a3784630e54cb5e7e7f7074437dda281",
-                "sha256:5a3e7750325c22fab0957c41a500fe2f95a936c2bbcf5c18f58472ba5ffbb792"
+                "sha256:be704857751564a5cf69c5bbaadbfa01c22806409815c73563db42fbffe583a2",
+                "sha256:d9cac2eb921ce674970cef1c9ad750f85ee3a846aedcf188d18368fb9eb6da23"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.10'",
-            "version": "==1.43.113"
+            "version": "==1.43.114"
         },
         "botocore": {
             "hashes": [
-                "sha256:8908e4a5fe94a06801a7bf4c451717a38145cc4ffa41aaffa50665940b64b4fa",
-                "sha256:941d3f0e289540da7c49d5e2dc022f992e3638127a02a74a0c91df2661bd98ef"
+                "sha256:d1c441a22e93e158de5b1e026205f5d6d67a4545d10540c5090c62dccb3a9eca",
+                "sha256:f366fa4db518775632ad1eb128cd8203ca46396cecf37209d904f0bbc049ce90"
             ],
             "markers": "python_version >= '3.10'",
-            "version": "==1.43.113"
+            "version": "==1.43.114"
         },
         "cachecontrol": {
             "hashes": [
@@ -1873,6 +1873,17 @@
             ],
             "markers": "python_version >= '3.10'",
             "version": "==0.19.2"
+        },
+        "sentry-sdk": {
+            "extras": [
+                "django"
+            ],
+            "hashes": [
+                "sha256:0d2ffbc28ee2e63cbaf3d015e93b448cffcc3ef3be03a44704ad36ade72faa95",
+                "sha256:3e13ace4ffd0b3cc78288236edfc4e4bd90eb12a396cc5845fa10a58ff289f50"
+            ],
+            "markers": "python_version >= '3.6'",
+            "version": "==2.72.0"
         },
         "setuptools": {
             "hashes": [
