@@ -28,7 +28,9 @@ mise_exec pipenv run python manage.py migrate
 # done, so this is safe to run on every deploy.
 mise_exec pipenv run python manage.py setup_cache_table
 mise_exec pipenv run python manage.py collectstatic --noinput --clear
-find /var/www/static -type f -exec chmod 644 {} +
+
+STATIC_ROOT="$(mise_exec pipenv run python -c 'from clubManager import settings; print(settings.STATIC_ROOT)' | tail -n 1)"
+find "$STATIC_ROOT" -type f -exec chmod 644 {} +
 
 MEDIA_ROOT="$(mise_exec pipenv run python -c 'from clubManager import settings; print(settings.MEDIA_ROOT)' | tail -n 1)"
 if [[ "$MEDIA_ROOT" == /root/* ]]; then
