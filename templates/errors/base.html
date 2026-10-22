@@ -21,15 +21,52 @@ event ID, and it omits the reference block entirely when Sentry is off.
 
             {% block body %}{% endblock %}
 
+            <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+                <button type="button" id="error-back" hidden class="min-h-12 cursor-pointer rounded border border-white px-6 py-3 font-semibold text-white hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Go back</button>
+                <a href="/" class="inline-flex min-h-12 items-center justify-center rounded bg-white px-6 py-3 font-semibold text-black hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Go to homepage</a>
+            </div>
+
             {% if sentry_event_id %}
                 <div class="mt-6 flex w-full flex-col items-center justify-center gap-2 border-t border-white/25 pt-6">
                     <p class="text-sm text-white">
-                        Include this reference code if you report the problem &mdash; it lets a
-                        developer pull up exactly what happened.
+                        Include this reference code if you report the problem - this helps us get a better idea of what went wrong which makes it easier to debug issues!
                     </p>
-                    <code class="rounded bg-black/25 px-3 py-1 font-mono">{{ sentry_event_id }}</code>
+                    <button type="button" class="inline-flex cursor-pointer items-center gap-2 rounded bg-black/25 px-3 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" id="copy-sentry-event" aria-label="Copy reference code">
+                        <code class="font-mono" id="sentry-event-id">{{ sentry_event_id }}</code>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="9" y="9" width="13" height="13" rx="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                    </button>
+                    <p class="text-sm text-white" id="copy-sentry-status" role="status"></p>
                 </div>
             {% endif %}
         </div>
     </div>
+    <script>
+        const errorBack = document.getElementById('error-back');
+        if (errorBack) {
+            errorBack.hidden = false;
+            errorBack.addEventListener('click', () => {
+                if (window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    window.location.assign('/');
+                }
+            });
+        }
+
+        const copySentryEvent = document.getElementById('copy-sentry-event');
+        if (copySentryEvent) {
+            copySentryEvent.addEventListener('click', async () => {
+                const status = document.getElementById('copy-sentry-status');
+                try {
+                    await navigator.clipboard.writeText(document.getElementById('sentry-event-id').textContent.trim());
+                    status.textContent = 'Reference code copied.';
+                } catch {
+                    status.textContent = 'Could not copy. Please select and copy the reference code manually.';
+                }
+            });
+        }
+    </script>
 {% endblock %}

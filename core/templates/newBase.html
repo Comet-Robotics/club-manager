@@ -12,8 +12,7 @@
                 --primary: {{settings.accent_color_hex}};
             }
         </style>
-        <!-- Lucide Icons -->
-        <script src="https://unpkg.com/lucide@0.475.0"></script>
+        <script src="https://unpkg.com/lucide@0.475.0/dist/umd/lucide.min.js"></script>
         <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
         {% block head %}{% endblock %}
     </head>
@@ -30,11 +29,11 @@
                 <h1>{{settings.organization_name}} Portal</h1>
             </div>
             <div class="user-menu">
-                <button class="user-button" onclick="toggleDropdown()">
+                <button class="user-button" type="button" onclick="toggleDropdown()">
                     {% comment %} <div class="avatar">
                         <img src="/placeholder.svg?height=32&width=32" alt="User avatar">
                     </div> {% endcomment %}
-                    <span>{{request.user.first_name}} {{request.user.last_name}}</span>
+                    <span>{{ request.user.get_full_name|default:"Account" }}</span>
                     <i data-lucide="chevron-down"></i>
                 </button>
             </div>
