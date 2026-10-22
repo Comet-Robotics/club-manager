@@ -83,9 +83,11 @@ def server_settings_logo_form_view(request):
         form.instance.initial_setup_completed = True
         form.save()
         messages.success(request, "Logo uploaded successfully.")
+        return redirect("club_settings")
     else:
-        messages.error(request, "Failed to upload logo. Please check the file and try again.")
-    return redirect("club_settings")
+        messages.error(request, "Failed to upload logo. Please correct the errors below.")
+        layout_data = get_layout_data(request)
+        return render(request, "server_settings.html", {**layout_data, "form": ServerSettingsForm(instance=layout_data["settings"]), "logo_form": form})
 
 
 @user_passes_test(lambda u: u.is_superuser)
