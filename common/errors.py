@@ -10,10 +10,8 @@ The pages reuse the public base template, which reads the organization's name an
 accent colour off `settings`. That settings object is a transient, unsaved
 ServerSettings rather than the database row: the database may be exactly what is
 broken, and a query that fails or hangs turns a failed request into a failed error
-page. The branding the pages need comes from the environment instead.
+page. The model's own defaults are what the pages fall back to.
 """
-
-import os
 
 import sentry_sdk
 from django.http import HttpRequest, HttpResponse
@@ -26,17 +24,12 @@ def _transient_server_settings() -> ServerSettings:
     """
     An unsaved ServerSettings carrying the branding the error pages need.
 
-    The model defaults apply unless the environment overrides them, so a deployment
-    that has not set ORG_NAME and ACCENT_COLOR_HEX still gets a coherent page. These
-    are the values the deploy writes to .env, so keep them in sync with the Server
-    Settings an officer configures in the admin.
+    Never saved and never queried, so the error pages render even when the database
+    is what is broken. The organization's configured name and accent colour live in
+    the database row, which this cannot read, so the pages show the model's defaults
+    instead.
     """
-    settings_obj = ServerSettings()
-    if organization_name := os.getenv("ORG_NAME"):
-        settings_obj.organization_name = organization_name
-    if accent_color_hex := os.getenv("ACCENT_COLOR_HEX"):
-        settings_obj.accent_color_hex = accent_color_hex
-    return settings_obj
+    return ServerSettings()
 
 
 def _render(request: HttpRequest, template_name: str, status: int) -> HttpResponse:

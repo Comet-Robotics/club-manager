@@ -53,3 +53,12 @@ class ErrorPageTests(TestCase):
             with self.assertNumQueries(0):
                 for _status, handler, args in self._handlers():
                     handler(*args)
+
+    def test_pages_use_a_transient_server_settings(self):
+        # The branding comes from an unsaved ServerSettings, so the pages render with
+        # the model's defaults rather than whatever an admin has configured. Assert it
+        # is never saved, so nothing writes to the database on an error path.
+        settings_obj = errors._transient_server_settings()
+        self.assertIsNone(settings_obj.pk)
+        self.assertEqual(settings_obj.organization_name, "Your Organization")
+        self.assertEqual(settings_obj.accent_color_hex, "#4BC0FF")
