@@ -5,20 +5,6 @@ name: Check
 
 jobs:
   check:
-    # services:
-    #   postgres:
-    #     image: postgres:15-alpine
-    #     env:
-    #       POSTGRES_PASSWORD: DB_PASSWORD
-    #       POSTGRES_USER: DB_USERNAME
-    #       POSTGRES_DB: DB_NAME
-    #     options: >-
-    #       --health-cmd pg_isready
-    #       --health-interval 10s
-    #       --health-timeout 5s
-    #       --health-retries 5
-    #     ports:
-    #       - 5432:5432
     name: Check
     runs-on: ubuntu-latest
     steps:
@@ -33,12 +19,18 @@ jobs:
         run: pipenv install --dev --python "$(mise where python)/bin/python"
       - name: Create .env file
         run: cp .env.example .env
-      - name: Run lint
+      # The default .env runs the database on pgserver (an embedded PostgreSQL),
+      # so no docker postgres service is needed. This must run before anything
+      # that loads Django settings: importing settings starts pgserver when
+      # DEV_PGDATA is set.
+      - name: Set up pgserver database
+        run: pipenv run python scripts/dev_setup.py --pgserver-only
+      - name: Run lint and type checking
         run: pipenv run ./scripts/lint.sh
       # Check if there are any outstanding Django migrations that need to be created
       # This command exits with code 1 if there are outstanding migrations
       # Note: Database connection warnings are expected and do not affect the check
       - name: Check for outstanding migrations
         run: pipenv run python manage.py makemigrations --check --dry-run
-      # - name: Run tests
-      #   run: pipenv run python manage.py test
+      - name: Run tests
+        run: pipenv run python manage.py test

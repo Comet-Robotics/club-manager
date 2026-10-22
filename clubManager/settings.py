@@ -14,9 +14,14 @@ from pathlib import Path
 import datetime
 import os
 import tempfile
+from collections.abc import Callable
 from dotenv import load_dotenv
 from platformdirs import PlatformDirs
+from typing import TypeVar
 from urllib.parse import urlparse
+
+from clubManager.observability import init_sentry
+from clubManager.utils import parse_bool
 
 
 dirs = PlatformDirs(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True)
@@ -37,6 +42,49 @@ SECRET_KEY = str(os.getenv("SECRET_KEY"))
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(int(os.getenv("DEBUG", "0")))
+
+T = TypeVar("T")
+
+
+def _env_value(name: str, default: T, converter: Callable[[str], T], value_type: str) -> T:
+    """Read and convert an environment variable, falling back to ``default`` on errors."""
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        return converter(raw)
+    except ValueError:
+        print(f"Warning: {name} is set to {raw!r}, which isn't a {value_type}. Using default {default}.")
+        return default
+
+
+# Comet Robotics' hosted Sentry project. Every instance reports here by default so that a
+# breakage on any deployment is debuggable from one place; events are tagged with a tenant
+# to tell those deployments apart. An instance that wants its own project can set SENTRY_DSN,
+# or opt out entirely with SENTRY_ENABLED=0.
+DEFAULT_SENTRY_DSN = "https://474f3f624969b1b7f16b6243ed154185@o4512098201698304.ingest.us.sentry.io/4512098322743296"
+SENTRY_ENABLED = _env_value("SENTRY_ENABLED", True, parse_bool, "truth value")
+SENTRY_DSN = os.getenv("SENTRY_DSN", DEFAULT_SENTRY_DSN).strip()
+SENTRY_TENANT = os.getenv("SENTRY_TENANT", "").strip()
+SENTRY_ENVIRONMENT = os.getenv("SENTRY_ENVIRONMENT", "production")
+SENTRY_RELEASE = os.getenv("SENTRY_RELEASE") or None
+SENTRY_TRACES_SAMPLE_RATE = _env_value("SENTRY_TRACES_SAMPLE_RATE", 0.2, float, "number")
+SENTRY_PROFILE_SESSION_SAMPLE_RATE = _env_value("SENTRY_PROFILE_SESSION_SAMPLE_RATE", 0.5, float, "number")
+SENTRY_DEBUG_ENDPOINT = os.getenv("SENTRY_DEBUG_ENDPOINT")
+
+# Has to happen before Django loads any application code so the SDK can patch framework
+# internals. No-ops in local development and on instances that have opted out.
+SENTRY_INITIALIZED = init_sentry(
+    debug=DEBUG,
+    public_url=PUBLIC_URL,
+    sentry_enabled=SENTRY_ENABLED,
+    dsn=SENTRY_DSN,
+    environment=SENTRY_ENVIRONMENT,
+    release=SENTRY_RELEASE,
+    traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
+    profile_session_sample_rate=SENTRY_PROFILE_SESSION_SAMPLE_RATE,
+    configured_tenant=SENTRY_TENANT,
+)
 
 CSRF_COOKIE_SAMESITE = "Strict"
 SESSION_COOKIE_SAMESITE = "Strict"
@@ -59,7 +107,6 @@ else:
 
 INSTALLED_APPS = [
     "core.apps.CoreConfig",
-    "posters.apps.PostersConfig",
     "events.apps.EventsConfig",
     "payments.apps.PaymentsConfig",
     "accounts.apps.AccountsConfig",
@@ -76,8 +123,6 @@ INSTALLED_APPS = [
     "django_extensions",
     "computedfields",
     "more_admin_filters",
-    "rest_framework",
-    "drf_spectacular",
     "multiselectfield",
     "colorfield",
     "naomi",
@@ -87,18 +132,6 @@ INSTALLED_APPS = [
 if DEBUG:
     INSTALLED_APPS.append("debug_toolbar")
 
-
-REST_FRAMEWORK = {
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-}
-
-SPECTACULAR_SETTINGS = {
-    "TITLE": "Comet Robotics Club Manager API",
-    "DESCRIPTION": "Link shortener, attendance tracking, Discord bot, and other utilities for managing club operations",
-    "VERSION": "0.1.0",
-    "SERVE_INCLUDE_SCHEMA": True,
-    # OTHER SETTINGS
-}
 
 DISABLE_CSRF = False
 
@@ -152,6 +185,41 @@ DATABASES = {
         "PORT": str(os.getenv("DB_PORT")),  # default PostgreSQL port
     }
 }
+_dev_pgdata = os.getenv("DEV_PGDATA")
+if _dev_pgdata:
+    try:
+        import pgserver
+    except (ImportError, AttributeError):
+        # AttributeError: the fork imports fine but finds no Postgres binaries.
+        raise RuntimeError(
+            "DEV_PGDATA is set but pgserver is not usable "
+            "(not installed, or its PostgreSQL binaries are missing). "
+            "Run: mise run new-developer-setup. If that fails, fall back to "
+            "system Postgres: comment out DEV_PGDATA and set DB_* in .env."
+        )
+
+    _dev_pgdata_path = Path(_dev_pgdata).expanduser()
+    if not _dev_pgdata_path.is_absolute():
+        _dev_pgdata_path = (BASE_DIR / _dev_pgdata_path).resolve()
+    _dev_pgdata_path.parent.mkdir(parents=True, exist_ok=True)
+
+    _dev_server = pgserver.get_server(_dev_pgdata_path)
+    _dev_info = _dev_server.get_postmaster_info()
+    if _dev_info.socket_dir is not None:
+        _dev_host, _dev_port = str(_dev_info.socket_dir), ""
+    else:
+        _dev_host, _dev_port = str(_dev_info.hostname), str(_dev_info.port or "")
+
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "postgres",
+        "USER": "postgres",
+        "PASSWORD": "",
+        "HOST": _dev_host,
+        "PORT": _dev_port,
+    }
+    print(f"Using dev pgserver database at {_dev_pgdata_path} (host={_dev_host}).")
+    print(f"Database Connection String/URL: postgresql://postgres@/postgres?host={_dev_host}")
 
 
 # Cache
@@ -319,22 +387,6 @@ DISCORD_TEAM_LEAD_ROLE_ID = int(os.getenv("DISCORD_TEAM_LEAD_ROLE_ID", 0))
 DISCORD_MEMBER_ROLE_ID = int(os.getenv("DISCORD_MEMBER_ROLE_ID", 0))
 
 ENABLE_SQUARE_PAYMENTS = bool(int(os.getenv("ENABLE_SQUARE_PAYMENTS", 0)))
-LOGOUT_REDIRECT_URL = "login"
-
-
-def strtobool(val):
-    """Convert a string representation of truth to true (1) or false (0).
-    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
-    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
-    'val' is anything else.
-    """
-    val = val.lower()
-    if val in ("y", "yes", "t", "true", "on", "1"):
-        return True
-    elif val in ("n", "no", "f", "false", "off", "0"):
-        return False
-    else:
-        raise ValueError("invalid truth value %r" % (val,))
 
 
 def resolve_feature_flags(
@@ -359,7 +411,7 @@ def resolve_feature_flags(
         try:
             if value_from_env is None:
                 raise ValueError(f"Value for {env_var_name} is None")
-            value_as_bool = strtobool(value_from_env)
+            value_as_bool = parse_bool(value_from_env)
         except ValueError:
             flags_using_defaults.add(flag)
             value_as_bool = default_value

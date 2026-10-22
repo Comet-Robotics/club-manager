@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.http import HttpResponse, HttpResponseRedirect
@@ -76,13 +77,21 @@ def account_view(request):
 def server_settings_logo_form_view(request):
     if not request.method == "POST":
         return HttpResponse("Method not allowed", status=405)
-    settings = ServerSettings.objects.get()
-    form = ServerSettingsLogoForm(request.POST, request.FILES, instance=settings)
+    settings_obj = ServerSettings.objects.get()
+    form = ServerSettingsLogoForm(request.POST, request.FILES, instance=settings_obj)
     if form.is_valid():
         form.instance.initial_setup_completed = True
         form.save()
-
-    return redirect("club_settings")
+        messages.success(request, "Logo uploaded successfully.")
+        return redirect("club_settings")
+    else:
+        messages.error(request, "Failed to upload logo. Please correct the errors below.")
+        layout_data = get_layout_data(request)
+        return render(
+            request,
+            "server_settings.html",
+            {**layout_data, "form": ServerSettingsForm(instance=layout_data["settings"]), "logo_form": form},
+        )
 
 
 @user_passes_test(lambda u: u.is_superuser)
@@ -111,7 +120,10 @@ class AttendanceListView(ListView):
             self.request.user.is_staff or self.request.user.is_superuser or int(user_id) == self.request.user.id
         ):
             return Attendance.objects.order_by("-timestamp").filter(user_id=user_id)
-        return Attendance.objects.order_by("-timestamp").filter(user=self.request.user)
+        u = self.request.user
+        if u.is_authenticated:
+            return Attendance.objects.order_by("-timestamp").filter(user=u)
+        return Attendance.objects.none()
 
 
 @require_GET

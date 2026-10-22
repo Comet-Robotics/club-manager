@@ -4,83 +4,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Sign in | {{ settings.organization_name }}</title>
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}">
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #f0f2f5;
-        }
-        .container {
-            display: flex;
-            width: 100%;
-            height: 100%;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 0;
-            overflow: hidden;
-        }
-        .image {
-            flex: 1;
-            background-image:  url('{% static 'core/splashbg.png' %}');
-            background-size: cover;
-        }
-        .form-container {
-            flex: .5;
-            background-color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        form {
-            width: 80%;
-        }
-        form h2 {
-            margin-bottom: 20px;
-            color: #333;
-        }
-        form input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        form button {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            background-color: #007bff;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        form button:hover {
-            background-color: #0056b3;
+        :root {
+            --primary: {{ settings.accent_color_hex }};
         }
     </style>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@0.475.0"></script>
 </head>
-<body>
-    <div class="container">
-        <div class="image">
+<body class="auth-page">
+    <main class="auth-card">
+        <!-- Brand Lockup -->
+        <div class="auth-brand">
+            {% if settings.logo %}
+                <div class="auth-brand-mark">
+                    <img class="auth-brand-logo" src="{{ settings.logo.url }}" alt="{{ settings.organization_name }} logo">
+                </div>
+            {% endif %}
+            <span class="auth-brand-name">{{ settings.organization_name }}</span>
         </div>
-        <div class="form-container">
-          <form method="post">
+
+        <!-- Heading Block -->
+        <div class="auth-heading">
+            <h1 class="auth-title">Sign in</h1>
+            <p class="auth-subtitle">Use your {{ settings.organization_name }} account to continue.</p>
+        </div>
+
+        <!-- Logged out notice -->
+        {% if request.GET.logged_out %}
+            <p class="auth-notice">You have been logged out.</p>
+        {% endif %}
+
+        <!-- Login Form -->
+        <form method="post" class="auth-form" novalidate>
             {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Log In</button>
-          </form>    
+
+            <!-- Username Field -->
+            <div class="auth-field">
+                <label class="auth-label" for="{{ form.username.id_for_label }}">Username</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <p class="auth-error-text">{{ form.username.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Password Field -->
+            <div class="auth-field">
+                <div class="auth-label-row">
+                    <label class="auth-label" for="{{ form.password.id_for_label }}">Password</label>
+                    <a class="auth-link" href="{% url 'password_reset' %}">Forgot password?</a>
+                </div>
+                {{ form.password }}
+                {% if form.password.errors %}
+                    <p class="auth-error-text">{{ form.password.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Non-field errors -->
+            {% if form.non_field_errors %}
+                <p class="auth-error">{{ form.non_field_errors.0 }}</p>
+            {% endif %}
+
+            <!-- Sign in Button -->
+            <button type="submit" class="auth-submit">Sign in</button>
+        </form>
+
+        <!-- Panel Footer -->
+        <div class="auth-footer">
+            <div class="auth-divider"></div>
+            <p class="auth-note">Trouble signing in? Reach out to a club officer on Discord.</p>
         </div>
-    </div>
+    </main>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
 </body>
 </html>
-
-
-

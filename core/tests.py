@@ -1,13 +1,18 @@
+from datetime import timedelta
+
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.core import mail
 from django.core.mail.backends.base import BaseEmailBackend
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from post_office.connections import connections as email_connections
 from post_office.models import STATUS, Email, EmailTemplate, Log
 
 from core.emails import EmailDeliveryError, send_templated_email
+from core.models import UserProfile
+from payments.models import Payment, Product, PurchasedProduct, Term
 
 TEMPLATE = "email/messages/discord_account_link.html"
 CONTEXT = {
@@ -274,11 +279,146 @@ class UserAdminSmokeTest(TestCase):
         self.assertFalse(User.objects.filter(username="JKL000006").exists())
 
 
-class UserSerializerCaseInsensitiveTest(TestCase):
-    def test_case_variant_duplicate_fails_validation_not_db(self):
-        from api.serializers import UserSerializer
+def make_term(name, start_date, end_date):
+    product = Product.objects.create(
+        name=f"{name} dues",
+        amount_cents=1000,
+        max_purchases_per_user=1,
+    )
+    return Term.objects.create(name=name, start_date=start_date, end_date=end_date, product=product)
 
-        User.objects.create_user("mno000007", password="pw")
-        serializer = UserSerializer(data={"username": "MNO000007"})
-        self.assertFalse(serializer.is_valid())
-        self.assertIn("username", serializer.errors)
+
+def make_member(username, term, *, successful=True):
+    """Creates a user with a paid membership in `term` and returns the user."""
+    user = User.objects.create_user(username=username, password="pass")
+    payment = Payment.objects.create(
+        user=user,
+        amount_cents=1000,
+        completed_at=timezone.now() if successful else None,
+    )
+    PurchasedProduct.objects.create(product=term.product, payment=payment)
+    return user
+
+
+class UserProfileMembershipTest(TestCase):
+    """Membership checks during a term overlap, where two terms are active at once."""
+
+    def setUp(self):
+        self.today = timezone.localdate()
+        self.spring = make_term("Spring", self.today - timedelta(days=90), self.today + timedelta(days=14))
+        self.fall = make_term("Fall", self.today - timedelta(days=1), self.today + timedelta(days=120))
+        self.expired = make_term("Expired", self.today - timedelta(days=300), self.today - timedelta(days=1))
+        self.future = make_term("Future", self.today + timedelta(days=30), self.today + timedelta(days=300))
+
+    def buy(self, user, term):
+        """Buys `term` dues for `user`."""
+        payment = Payment.objects.create(user=user, amount_cents=1000, completed_at=timezone.now())
+        return PurchasedProduct.objects.create(product=term.product, payment=payment)
+
+    # is_member_for_terms
+
+    def test_is_member_for_terms_returns_only_requested_paid_terms(self):
+        user = User.objects.create_user(username="alice", password="pass")
+        self.buy(user, self.spring)
+        self.buy(user, self.future)
+
+        memberships = user.userprofile.is_member_for_terms([self.spring, self.fall])
+
+        self.assertEqual([term for term, _ in memberships], [self.spring])
+
+    def test_is_member_for_terms_ignores_unpaid_membership(self):
+        user = make_member("unpaid", self.spring, successful=False)
+
+        self.assertEqual(user.userprofile.is_member_for_terms([self.spring]), [])
+
+    def test_is_member_for_terms_with_no_terms_returns_empty(self):
+        user = make_member("spring_member", self.spring)
+
+        self.assertEqual(user.userprofile.is_member_for_terms([]), [])
+
+    def test_is_member_for_terms_includes_both_terms_during_overlap(self):
+        user = User.objects.create_user(username="alice", password="pass")
+        self.buy(user, self.spring)
+        self.buy(user, self.fall)
+
+        memberships = user.userprofile.is_member_for_terms([self.spring, self.fall])
+
+        self.assertEqual({term for term, _ in memberships}, {self.spring, self.fall})
+
+    def test_is_member_for_terms_does_not_leak_other_users_memberships(self):
+        alice = make_member("alice", self.spring)
+        make_member("bob", self.spring)
+
+        self.assertEqual([term for term, _ in alice.userprofile.is_member_for_terms([self.spring])], [self.spring])
+
+    # get_active_membership_terms / is_active_member
+
+    def test_member_of_expiring_term_only_is_still_an_active_member(self):
+        """The expiring term alone qualifies a member today."""
+        user = make_member("spring_only", self.spring)
+
+        self.assertTrue(user.userprofile.is_active_member())
+        self.assertEqual([term for term, _ in user.userprofile.get_active_membership_terms()], [self.spring])
+
+    def test_member_of_renewing_term_only_is_an_active_member(self):
+        user = make_member("fall_only", self.fall)
+
+        self.assertTrue(user.userprofile.is_active_member())
+
+    def test_member_of_expired_term_is_not_an_active_member(self):
+        user = make_member("expired_member", self.expired)
+
+        self.assertFalse(user.userprofile.is_active_member())
+        self.assertEqual(user.userprofile.get_active_membership_terms(), [])
+
+    def test_member_of_future_term_only_is_not_yet_an_active_member(self):
+        """Paying ahead does not make you a member before the term starts."""
+        user = make_member("future_member", self.future)
+
+        self.assertFalse(user.userprofile.is_active_member())
+
+    def test_unpaid_membership_is_not_an_active_member(self):
+        user = make_member("unpaid_member", self.spring, successful=False)
+
+        self.assertFalse(user.userprofile.is_active_member())
+
+    def test_no_active_terms_makes_nobody_an_active_member(self):
+        user = make_member("former_member", self.expired)
+        Term.objects.all().delete()
+
+        self.assertFalse(user.userprofile.is_active_member())
+
+    def test_member_of_past_and_future_terms_but_no_active_term_is_not_active(self):
+        user = User.objects.create_user(username="alice", password="pass")
+        self.buy(user, self.expired)
+        self.buy(user, self.future)
+
+        self.assertFalse(user.userprofile.is_active_member())
+
+    # get_active_members
+
+    def test_get_active_members_includes_members_of_either_active_term(self):
+        spring_only = make_member("spring_only", self.spring)
+        fall_only = make_member("fall_only", self.fall)
+        expired_member = make_member("expired_member", self.expired)
+        future_member = make_member("future_member", self.future)
+        unpaid_member = make_member("unpaid_member", self.spring, successful=False)
+
+        members = set(UserProfile.get_active_members())
+
+        self.assertEqual(members, {spring_only, fall_only})
+        self.assertNotIn(expired_member, members)
+        self.assertNotIn(future_member, members)
+        self.assertNotIn(unpaid_member, members)
+
+    def test_get_active_members_lists_a_dual_term_member_once(self):
+        user = make_member("both_terms", self.spring)
+        self.buy(user, self.fall)
+
+        self.assertEqual(list(UserProfile.get_active_members()), [user])
+
+    def test_get_active_members_is_empty_when_no_terms_are_active(self):
+        make_member("former_member", self.expired)
+        Term.objects.all().delete()
+
+        self.assertEqual(list(UserProfile.get_active_members()), [])

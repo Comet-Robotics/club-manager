@@ -1,41 +1,48 @@
-import aiohttp
-from asgiref.sync import sync_to_async
 import os
 import time
-
+import aiohttp
+from asgiref.sync import sync_to_async
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "clubManager.settings")
+import discord
+import django
+from discord.ext import pages  # type: ignore[attr-defined]
+
 from clubManager import settings
 
-import django
-import discord
-from discord.ext import pages
+# Importing settings above already initialized Sentry, so this process is covered; it
+# just needs re-tagging, since settings.py assumes it is being loaded by the web app.
+# Sentry's FastAPI integration picks up the API below automatically -- it was enabled
+# during that init, which runs before this module creates the app.
+from clubManager.observability import instrument_discord_bot, set_service
+
+set_service("discord-bot")
 
 django.setup()
 
+import asyncio
+import io
+import logging
+import random
+import socket
+import subprocess
+from datetime import datetime
+from datetime import time as dttime
+from operator import itemgetter
+
+import uvicorn
 from django.core.mail import send_mail
+from django.utils import timezone
+from fastapi import FastAPI, Header, HTTPException
 
 from core.emails import send_templated_email
 
 from accounts.models import AccountLink
-from core.models import ServerSettings, User, UserProfile
 from common.asyncutils import *
 from common.utils import is_valid_net_id, normalize_username
-from django.utils import timezone
+from core.models import ServerSettings, User, UserProfile
 from events.models import Attendance
 from payments.models import Term
-from datetime import datetime, time as dttime
-import io
-import subprocess
-import socket
-import random
-from operator import itemgetter
-import asyncio
-
-from fastapi import FastAPI, HTTPException, Header
-import uvicorn
-
-import logging
 
 logger = logging.getLogger("discord")
 logger.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
@@ -81,6 +88,7 @@ intents.presences = True
 intents.message_content = True
 
 bot = discord.Bot(intents=intents)
+instrument_discord_bot(bot)
 
 app = FastAPI()
 
@@ -176,16 +184,16 @@ async def respond_user_attendances(interaction: discord.Interaction, user_profil
     await paginator.respond(interaction, ephemeral=True)
 
 
-async def get_current_member_discord_ids():
+async def get_active_member_discord_ids():
     def run() -> list[int]:
-        current_term = Term.get_current_term()
-        profiles = UserProfile.objects.exclude(discord_id__isnull=True)
-        valid_ids: list[int] = []
-        for profile in profiles:
-            if profile.is_member(current_term)[1]:
-                if profile.discord_id is not None:
-                    valid_ids.append(int(profile.discord_id))
-        return valid_ids
+        discord_ids = (
+            UserProfile.get_active_members()
+            .exclude(userprofile__discord_id__isnull=True)
+            .values_list("userprofile__discord_id", flat=True)
+            .distinct()
+        )
+
+        return [int(discord_id) for discord_id in discord_ids if discord_id is not None]
 
     return await sync_to_async(run)()
 
@@ -370,27 +378,50 @@ async def profile(ctx: discord.ApplicationContext, net_id: str | None, discord_u
 
         # Membership Status
         def get_membership_status(user_profile: UserProfile):
-            current_term, current_payment = user_profile.is_member()
+            today = timezone.localdate()
+
+            def term_names(names: set[str]):
+                return ", ".join(sorted(names))
+
+            # Names get sorted alphabetically for display below, so term ordering does not matter
+            # here and there is no need to sort the active terms first.
+            active_terms_as_member = [term for term, _ in user_profile.get_active_membership_terms()]
+
+            active_term_names = {term.name for term in active_terms_as_member}
             body = "**Current Membership:** " + (
-                "Not a member" if not current_payment else f"Active for {current_term.name}"
+                "Not a member" if not active_term_names else f"Active for {term_names(active_term_names)}"
             )
 
-            past_terms = Term.objects.filter(end_date__lte=timezone.now())
-            future_terms = Term.objects.filter(start_date__gte=timezone.now()).exclude(pk=current_term.pk)
+            renewal_term = Term.get_active_term_with_latest_end_date()
+            has_paid_renewal_term = bool(renewal_term in active_terms_as_member) if renewal_term else False
+            if renewal_term and not has_paid_renewal_term:
+                due_status_label = "Renewal needed" if active_terms_as_member else "Dues needed"
+                body += f"\n**{due_status_label}:** Pay dues for {renewal_term.name}"
 
-            paid_future_terms = [term for term in future_terms if user_profile.is_member(term)[1]]
-            if len(paid_future_terms) > 0:
-                body += f"\n**Dues paid for future term(s)**: {', '.join([t.name for t in paid_future_terms])}"
+            past_terms = Term.objects.filter(end_date__lt=today).order_by("-end_date", "-start_date", "name")
+            future_terms = Term.objects.filter(start_date__gt=today).order_by("start_date", "end_date", "name")
 
-            paid_past_terms = [term.name for term in past_terms if user_profile.is_member(term)[1]]
-            past_terms_info = ", ".join(paid_past_terms) if len(paid_past_terms) > 0 else "No past memberships"
+            paid_future_term_names = {term.name for term, _ in user_profile.is_member_for_terms(future_terms)}
+            if len(paid_future_term_names) > 0:
+                body += f"\n**Dues paid for future term(s)**: {term_names(paid_future_term_names)}"
+
+            paid_past_term_names = {term.name for term, _ in user_profile.is_member_for_terms(past_terms)}
+            past_terms_info = (
+                term_names(paid_past_term_names) if len(paid_past_term_names) > 0 else "No past memberships"
+            )
 
             body += f"\n**Past Memberships:** {past_terms_info}"
 
+            due_paying_url = (
+                f"{settings.PUBLIC_URL}/payments/{renewal_term.product.id}/pay"
+                if renewal_term and not has_paid_renewal_term
+                else None
+            )
+
             return (
                 body,
-                f"{settings.PUBLIC_URL}/payments/{current_term.product.id}/pay" if not current_payment else None,
-                current_term.name,
+                due_paying_url,
+                renewal_term.name if renewal_term else "dues",
             )
 
         membership_status, due_paying_url, term_name = await sync_to_async(get_membership_status)(user_profile)
@@ -498,17 +529,11 @@ class ProfileEditView(discord.ui.Modal):
         # self.add_item(self.last_name)
 
     async def callback(self, interaction: discord.Interaction):
-        making_new_profile = self.user_profile is None
-
         def run():
-            if making_new_profile:
-                user, created_user = User.objects.get_or_create(username=normalize_username(self.net_id.value))
-                self.user_profile = UserProfile.objects.create(user=user)
-
-            if self.user_profile:
-                self.user_profile.user.first_name = self.first_name.value or ""
-                self.user_profile.user.last_name = self.last_name.value or ""
-                self.user_profile.user.save()
+            assert self.user_profile is not None
+            self.user_profile.user.first_name = self.first_name.value or ""
+            self.user_profile.user.last_name = self.last_name.value or ""
+            self.user_profile.user.save()
 
         await interaction.response.defer(ephemeral=True)
         await sync_to_async(run)()
@@ -560,15 +585,18 @@ async def pay(ctx: discord.ApplicationContext):
             user = UserProfile.objects.get(discord_id=str(ctx.author.id))
         except:
             return None
-        active_terms = Term.objects.filter(end_date__gte=timezone.now())
+        active_terms = list(Term.get_active_terms())
         if not active_terms:
             # ctx.respond("No active terms available for payment.",  ephemeral=True)  # TODO: move to separate func to await
             pass
 
+        # One membership lookup for all terms rather than one per term.
+        paid_terms = {term for term, _ in user.get_active_membership_terms()}
+
         payment_links = [
             (
                 f"[Pay for {term.name}]({settings.PUBLIC_URL}/payments/{term.product.id}/pay/)"
-                + (" (you've already paid this term's dues)" if user.is_member(term)[1] else "")
+                + (" (you've already paid this term's dues)" if term in paid_terms else "")
             )
             for term in active_terms
         ]
@@ -626,7 +654,7 @@ async def give_member_role(data: dict, authorization: str = Header(None)):
 async def on_member_join(member: discord.Member):
     def is_profile_valid():
         profile = UserProfile.objects.filter(discord_id=str(member.id)).first()
-        return profile and profile.is_member()[1]
+        return profile and profile.is_active_member()
 
     profile_valid = await sync_to_async(is_profile_valid)()
     if profile_valid:
@@ -644,7 +672,7 @@ async def givememberroles(ctx: discord.ApplicationContext):
 
     message = await ctx.respond("Processing...")
     logger.debug("Starting the role addition...")
-    ids_to_add = await get_current_member_discord_ids()
+    ids_to_add = await get_active_member_discord_ids()
 
     start_time = time.time()
 
@@ -689,7 +717,7 @@ async def purgememberroles(ctx: discord.ApplicationContext):
 
     removed_count = 0
     discord_members = guild.members
-    valid_members = await get_current_member_discord_ids()
+    valid_members = await get_active_member_discord_ids()
 
     start_time = time.time()
     members_to_remove = [member for member in discord_members if member.id not in valid_members]
@@ -735,7 +763,7 @@ async def camera(ctx: discord.ApplicationContext):
     message = await ctx.respond("Processing...", ephemeral=True)
     assert isinstance(message, discord.Interaction)
 
-    valid_members = await get_current_member_discord_ids()
+    valid_members = await get_active_member_discord_ids()
     if ctx.author.id not in valid_members:
         await message.edit_original_response(content=f"You are not registered as a member of {ORG_NAME}!")
     else:
