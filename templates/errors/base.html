@@ -1,0 +1,35 @@
+{% extends "publicBase.html" %}
+
+{% comment %}
+Base for the HTTP error pages.
+
+Extends the public base template, which the anonymous payment and link pages already
+use. It needs the organization's name and accent colour, and the error handlers supply
+those from a transient, unsaved ServerSettings -- so a page renders even when the
+database is exactly what is broken.
+
+Everything here is self-contained on purpose: no context processors, no database, no
+static files, no request. The only thing the page needs beyond this is the Sentry
+event ID, and it omits the reference block entirely when Sentry is off.
+{% endcomment %}
+
+{% block content %}
+    <div class="flex min-h-screen w-screen flex-col items-center justify-center bg-textDark p-12 text-center text-white">
+        <div class="flex w-full max-w-3xl flex-col items-center justify-center gap-4 bg-primary p-12">
+            <p class="font-mashine text-lg text-white">Error {% block status_code %}{% endblock %}</p>
+            <h1 class="font-unbounded text-3xl text-white">{% block heading %}Something went wrong{% endblock %}</h1>
+
+            {% block body %}{% endblock %}
+
+            {% if sentry_event_id %}
+                <div class="mt-6 flex w-full flex-col items-center justify-center gap-2 border-t border-white/25 pt-6">
+                    <p class="text-sm text-white">
+                        Include this reference code if you report the problem &mdash; it lets a
+                        developer pull up exactly what happened.
+                    </p>
+                    <code class="rounded bg-black/25 px-3 py-1 font-mono">{{ sentry_event_id }}</code>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

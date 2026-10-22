@@ -1,0 +1,12 @@
+{% extends "errors/base.html" %}
+
+{% block title %}Server error{% endblock %}
+{% block status_code %}500{% endblock %}
+{% block heading %}Something broke on our end{% endblock %}
+
+{% block body %}
+    <p>
+        This isn't something you did wrong. The team has been notified automatically.
+        You can try again in a few minutes, or <a href="/">go back to the portal home page</a>.
+    </p>
+{% endblock %}
