@@ -88,5 +88,3 @@ class LinkSuccessView(View):
     def get(self, request):
         layout_data = get_layout_data(request)
         return render(request, self.template_name, {**layout_data})
-
-
