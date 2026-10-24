@@ -224,7 +224,11 @@ class AccountCreationView(discord.ui.View):
         self.discord_user_id = str(discord_user_id)
         self.replace_pending = replace_pending
         if replace_pending:
-            self.confirm_account_creation.label = f"Yes, use {net_id} instead"
+            # `confirm_account_creation` is the callback, not the Button; the label lives on the
+            # item the view built from it.
+            button = discord.utils.get(self.children, label="Yes, create my account")
+            if isinstance(button, discord.ui.Button):
+                button.label = f"Yes, use {net_id} instead"
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user is not None and str(interaction.user.id) == self.discord_user_id:
