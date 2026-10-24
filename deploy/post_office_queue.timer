@@ -1,0 +1,11 @@
+[Unit]
+Description=Deliver queued Club Manager email every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+# Don't fire a catch-up run for every interval the machine was asleep or down for.
+Persistent=false
+
+[Install]
+WantedBy=timers.target

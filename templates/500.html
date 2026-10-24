@@ -1,0 +1,12 @@
+{% extends "errors/base.html" %}
+
+{% block title %}Server error{% endblock %}
+{% block status_code %}500{% endblock %}
+{% block heading %}Something broke on our end{% endblock %}
+
+{% block body %}
+    <p>
+        This isn't something you did wrong.
+        You can try again in a few minutes, or go back to the home page.
+    </p>
+{% endblock %}

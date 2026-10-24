@@ -79,10 +79,11 @@ per-file-ignores = """
     """
     
 [tool.mypy]
-plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+plugins = ["mypy_django_plugin.main"]
 mypy_path = "./clubManager"
 ignore_missing_imports=true
 
 [tool.django-stubs]
 django_settings_module = "clubManager.settings"
 ignore_missing_model_attributes = true
+

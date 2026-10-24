@@ -1,5 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
+from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.forms import AuthenticationForm
+from django.urls import reverse
 
 from accounts.discord import get_discord_user
 from .models import AccountLink
@@ -8,6 +11,31 @@ from clubManager import settings
 from core.utilities import get_layout_data
 import requests
 from typing import TypedDict
+
+
+class CustomLoginView(LoginView):
+    template_name = "registration/login.html"
+    authentication_form = AuthenticationForm
+    redirect_authenticated_user = True
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        layout_data = get_layout_data(self.request)
+        context.update(layout_data)
+        return context
+
+
+class ClubLogoutView(LogoutView):
+    """
+    Log the user out and send them back to the sign in page with a notice.
+
+    The notice rides along as a query parameter rather than as a message
+    framework message, because logging out flushes the session and would take
+    any queued message with it.
+    """
+
+    def get_success_url(self):
+        return f"{reverse('login')}?logged_out=1"
 
 
 class LinkSocialView(View):

@@ -11,11 +11,17 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import datetime
 import os
 import tempfile
+from collections.abc import Callable
 from dotenv import load_dotenv
 from platformdirs import PlatformDirs
+from typing import TypeVar
 from urllib.parse import urlparse
+
+from clubManager.observability import init_sentry
+from clubManager.utils import parse_bool
 
 
 dirs = PlatformDirs(appauthor="Comet Robotics", appname="Club Manager", ensure_exists=True)
@@ -36,6 +42,49 @@ SECRET_KEY = str(os.getenv("SECRET_KEY"))
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(int(os.getenv("DEBUG", "0")))
+
+T = TypeVar("T")
+
+
+def _env_value(name: str, default: T, converter: Callable[[str], T], value_type: str) -> T:
+    """Read and convert an environment variable, falling back to ``default`` on errors."""
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        return converter(raw)
+    except ValueError:
+        print(f"Warning: {name} is set to {raw!r}, which isn't a {value_type}. Using default {default}.")
+        return default
+
+
+# Comet Robotics' hosted Sentry project. Every instance reports here by default so that a
+# breakage on any deployment is debuggable from one place; events are tagged with a tenant
+# to tell those deployments apart. An instance that wants its own project can set SENTRY_DSN,
+# or opt out entirely with SENTRY_ENABLED=0.
+DEFAULT_SENTRY_DSN = "https://474f3f624969b1b7f16b6243ed154185@o4512098201698304.ingest.us.sentry.io/4512098322743296"
+SENTRY_ENABLED = _env_value("SENTRY_ENABLED", True, parse_bool, "truth value")
+SENTRY_DSN = os.getenv("SENTRY_DSN", DEFAULT_SENTRY_DSN).strip()
+SENTRY_TENANT = os.getenv("SENTRY_TENANT", "").strip()
+SENTRY_ENVIRONMENT = os.getenv("SENTRY_ENVIRONMENT", "production")
+SENTRY_RELEASE = os.getenv("SENTRY_RELEASE") or None
+SENTRY_TRACES_SAMPLE_RATE = _env_value("SENTRY_TRACES_SAMPLE_RATE", 0.2, float, "number")
+SENTRY_PROFILE_SESSION_SAMPLE_RATE = _env_value("SENTRY_PROFILE_SESSION_SAMPLE_RATE", 0.5, float, "number")
+SENTRY_DEBUG_ENDPOINT = os.getenv("SENTRY_DEBUG_ENDPOINT")
+
+# Has to happen before Django loads any application code so the SDK can patch framework
+# internals. No-ops in local development and on instances that have opted out.
+SENTRY_INITIALIZED = init_sentry(
+    debug=DEBUG,
+    public_url=PUBLIC_URL,
+    sentry_enabled=SENTRY_ENABLED,
+    dsn=SENTRY_DSN,
+    environment=SENTRY_ENVIRONMENT,
+    release=SENTRY_RELEASE,
+    traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
+    profile_session_sample_rate=SENTRY_PROFILE_SESSION_SAMPLE_RATE,
+    configured_tenant=SENTRY_TENANT,
+)
 
 CSRF_COOKIE_SAMESITE = "Strict"
 SESSION_COOKIE_SAMESITE = "Strict"
@@ -58,12 +107,12 @@ else:
 
 INSTALLED_APPS = [
     "core.apps.CoreConfig",
-    "posters.apps.PostersConfig",
     "events.apps.EventsConfig",
     "payments.apps.PaymentsConfig",
     "accounts.apps.AccountsConfig",
     "projects.apps.ProjectsConfig",
-    "django.contrib.admin",
+    # Subclasses django.contrib.admin so it can adjust third-party admin registrations.
+    "clubManager.admin.ClubManagerAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -74,28 +123,15 @@ INSTALLED_APPS = [
     "django_extensions",
     "computedfields",
     "more_admin_filters",
-    "rest_framework",
-    "drf_spectacular",
     "multiselectfield",
     "colorfield",
     "naomi",
+    "post_office",
 ]
 
 if DEBUG:
     INSTALLED_APPS.append("debug_toolbar")
 
-
-REST_FRAMEWORK = {
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-}
-
-SPECTACULAR_SETTINGS = {
-    "TITLE": "Comet Robotics Club Manager API",
-    "DESCRIPTION": "Link shortener, attendance tracking, Discord bot, and other utilities for managing club operations",
-    "VERSION": "0.1.0",
-    "SERVE_INCLUDE_SCHEMA": True,
-    # OTHER SETTINGS
-}
 
 DISABLE_CSRF = False
 
@@ -149,6 +185,41 @@ DATABASES = {
         "PORT": str(os.getenv("DB_PORT")),  # default PostgreSQL port
     }
 }
+_dev_pgdata = os.getenv("DEV_PGDATA")
+if _dev_pgdata:
+    try:
+        import pgserver
+    except (ImportError, AttributeError):
+        # AttributeError: the fork imports fine but finds no Postgres binaries.
+        raise RuntimeError(
+            "DEV_PGDATA is set but pgserver is not usable "
+            "(not installed, or its PostgreSQL binaries are missing). "
+            "Run: mise run new-developer-setup. If that fails, fall back to "
+            "system Postgres: comment out DEV_PGDATA and set DB_* in .env."
+        )
+
+    _dev_pgdata_path = Path(_dev_pgdata).expanduser()
+    if not _dev_pgdata_path.is_absolute():
+        _dev_pgdata_path = (BASE_DIR / _dev_pgdata_path).resolve()
+    _dev_pgdata_path.parent.mkdir(parents=True, exist_ok=True)
+
+    _dev_server = pgserver.get_server(_dev_pgdata_path)
+    _dev_info = _dev_server.get_postmaster_info()
+    if _dev_info.socket_dir is not None:
+        _dev_host, _dev_port = str(_dev_info.socket_dir), ""
+    else:
+        _dev_host, _dev_port = str(_dev_info.hostname), str(_dev_info.port or "")
+
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "postgres",
+        "USER": "postgres",
+        "PASSWORD": "",
+        "HOST": _dev_host,
+        "PORT": _dev_port,
+    }
+    print(f"Using dev pgserver database at {_dev_pgdata_path} (host={_dev_host}).")
+    print(f"Database Connection String/URL: postgresql://postgres@/postgres?host={_dev_host}")
 
 
 # Cache
@@ -176,6 +247,9 @@ CACHES = {
         "LOCATION": "django_cache",
     }
 }
+
+
+AUTHENTICATION_BACKENDS = ["common.auth.CaseInsensitiveModelBackend"]
 
 
 # Password validation
@@ -251,11 +325,53 @@ unset_email_config = [
 if len(unset_email_config) > 0:
     print("Defaulting to local only email backend because not all required environment variables are set correctly.")
     print(f"These email environment variables are not currently set correctly: {unset_email_config}")
-    EMAIL_BACKEND = "naomi.mail.backends.naomi.NaomiBackend"
+    _email_delivery_backend = "naomi.mail.backends.naomi.NaomiBackend"
     EMAIL_FILE_PATH = Path(tempfile.mkdtemp(prefix="comet-robotics-club-manager-dev-emails"))
 else:
     print("Using SMTP email sending backend - config looks correct.")
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    _email_delivery_backend = "django.core.mail.backends.smtp.EmailBackend"
+
+# Every outgoing message goes through django-post_office rather than straight to the delivery
+# backend. `post_office.EmailBackend` writes the message to the database first, then hands it to
+# the backend chosen above, which is what gives us a copy of everything we have ever sent, a log
+# row per delivery attempt, and a "Post Office" section in the admin where an officer can read a
+# message a member says they never received and resend it.
+#
+# Anything that calls `django.core.mail` - `send_mail`, `EmailMultiAlternatives.send()`,
+# `core.emails.send_templated_email` - is covered by this, so no call site has to know about it.
+EMAIL_BACKEND = "post_office.EmailBackend"
+
+POST_OFFICE = {
+    # The backend post_office actually delivers through, once the message is persisted.
+    "BACKENDS": {"default": _email_delivery_backend},
+    # Deliver in the same request or command that created the message, the way a bare
+    # `send_mail()` does, instead of leaving it in the queue for `send_queued_mail` to pick up.
+    # Queued delivery would mean a member waits on the mail timer for their account link email,
+    # and it would silently drop mail on any host where the timer is not installed. The queue is
+    # still there for scheduled mail, retries, and the admin's "requeue" action - the
+    # post_office_queue systemd timer (see deploy/) drains it.
+    "DEFAULT_PRIORITY": "now",
+    # 2 = write a Log row for every delivery attempt, successful or failed. The whole point of
+    # routing through post_office here is having that history, so never drop the successes.
+    "LOG_LEVEL": 2,
+    # Generate and store a Message-ID for every message, so the ID we keep in the database is the
+    # same one the recipient's mail server and our SMTP provider's logs report. Without this,
+    # post_office stores nothing and each message gets whatever Message-ID the SMTP library
+    # invents at send time, which we would have no record of.
+    "MESSAGE_ID_ENABLED": True,
+    # A retry budget for queued mail. Mail sent with priority "now" is not retried - the
+    # exception surfaces to the caller instead - but anything requeued from the admin gets a few
+    # spaced-out attempts before it is left as failed.
+    "MAX_RETRIES": 3,
+    "RETRY_INTERVAL": datetime.timedelta(minutes=15),
+}
+
+# post_office defaults the Message-ID domain to socket.getfqdn(), which on a container or VPS is
+# usually "localhost" or some internal hostname. A Message-ID that does not match the sending
+# domain is a well-known spam signal, so derive it from PUBLIC_URL when we have one.
+_message_id_domain = urlparse(PUBLIC_URL).hostname if PUBLIC_URL else None
+if _message_id_domain:
+    POST_OFFICE["MESSAGE_ID_FQDN"] = _message_id_domain
 
 API_SECRET = str(os.getenv("API_SECRET"))
 DISCORD_API_PORT = int(os.getenv("DISCORD_API_PORT", 2468))
@@ -271,22 +387,6 @@ DISCORD_TEAM_LEAD_ROLE_ID = int(os.getenv("DISCORD_TEAM_LEAD_ROLE_ID", 0))
 DISCORD_MEMBER_ROLE_ID = int(os.getenv("DISCORD_MEMBER_ROLE_ID", 0))
 
 ENABLE_SQUARE_PAYMENTS = bool(int(os.getenv("ENABLE_SQUARE_PAYMENTS", 0)))
-LOGOUT_REDIRECT_URL = "login"
-
-
-def strtobool(val):
-    """Convert a string representation of truth to true (1) or false (0).
-    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
-    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
-    'val' is anything else.
-    """
-    val = val.lower()
-    if val in ("y", "yes", "t", "true", "on", "1"):
-        return True
-    elif val in ("n", "no", "f", "false", "off", "0"):
-        return False
-    else:
-        raise ValueError("invalid truth value %r" % (val,))
 
 
 def resolve_feature_flags(
@@ -311,7 +411,7 @@ def resolve_feature_flags(
         try:
             if value_from_env is None:
                 raise ValueError(f"Value for {env_var_name} is None")
-            value_as_bool = strtobool(value_from_env)
+            value_as_bool = parse_bool(value_from_env)
         except ValueError:
             flags_using_defaults.add(flag)
             value_as_bool = default_value
@@ -333,7 +433,7 @@ def resolve_feature_flags(
 
 
 """
-Club Manager uses a trunk-based development workflow, meaning that all new functionality from feature branches gets merged straight into our main branch but gated behind a default-off feature flag until they are ready to be switched to default-on for the main release. 
+Club Manager uses a trunk-based development workflow, meaning that all new functionality from feature branches gets merged straight into our main branch but gated behind a default-off feature flag until they are ready to be switched to default-on for the main release.
 
 To configure feature flags at deploy time via environment variables, take the name of the flag and prepend "FLAG_" to it, and set it to a truthy or falsy string value. for example, the flag "AUTO_SERVER_SETTINGS_INIT" would be enabled with the environment variable "FLAG_AUTO_SERVER_SETTINGS_INIT" set to "true".
 """

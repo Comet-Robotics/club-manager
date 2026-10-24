@@ -1,0 +1,12 @@
+{% extends "errors/base.html" %}
+
+{% block title %}Forbidden{% endblock %}
+{% block status_code %}403{% endblock %}
+{% block heading %}You don't have permission to do that{% endblock %}
+
+{% block body %}
+    <p>
+        You're signed in, but this action isn't allowed for your account. If you think
+        this is a mistake, reach out to a club officer on Discord.
+    </p>
+{% endblock %}

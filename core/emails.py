@@ -5,8 +5,7 @@ Rendering and sending for transactional email.
 import re
 import textwrap
 from dataclasses import dataclass
-from email.utils import formataddr, make_msgid, parseaddr
-from urllib.parse import urlparse
+from email.utils import formataddr, parseaddr
 
 import css_inline
 from bs4 import BeautifulSoup
@@ -25,6 +24,10 @@ _TEXT_LAYOUT_CONFIG = ParserConfig(display_images=True, deduplicate_captions=Tru
 # Marks the hidden inbox-preview line in base.html. A data attribute rather than a class so that
 # it survives whatever the CSS inliner decides to do with the classes it has consumed.
 PREHEADER_ATTRIBUTE = "data-preheader"
+
+
+class EmailDeliveryError(Exception):
+    """Raised when a message was rendered and stored but the delivery backend would not take it."""
 
 
 @dataclass(frozen=True)
@@ -134,19 +137,15 @@ def _from_address(org_name: str) -> str:
 
 def _transactional_headers() -> dict[str, str]:
     # Headers that tell mailboxes not to reply to this message and stops out-of-office replies from Exchange and Microsoft 365
-    headers = {
+    #
+    # Message-ID is deliberately not set here. django-post_office assigns one when it persists
+    # the message (POST_OFFICE["MESSAGE_ID_ENABLED"], with the domain taken from PUBLIC_URL) and
+    # overwrites whatever is in these headers with the value it stored, so that the ID in the
+    # database is the one that actually goes out on the wire.
+    return {
         "Auto-Submitted": "auto-generated",
         "X-Auto-Response-Suppress": "OOF, AutoReply",
     }
-
-    # Django defaults the Message-ID domain to socket.getfqdn(), which on a container or VPS is
-    # usually something like "localhost" or an internal hostname. A Message-ID that doesn't match
-    # the sending domain is a well-known spam signal, so derive it from PUBLIC_URL instead.
-    message_id_domain = urlparse(settings.PUBLIC_URL).hostname if settings.PUBLIC_URL else None
-    if message_id_domain:
-        headers["Message-ID"] = make_msgid(domain=message_id_domain)
-
-    return headers
 
 
 def build_email(message_template: str, context: dict, to: list[str]) -> EmailMultiAlternatives:
@@ -170,7 +169,19 @@ def send_templated_email(message_template: str, context: dict, to: list[str]) ->
     """
     Render and send a transactional email. Returns the number of messages sent.
 
-    Raises on failure, in the same way as ``send_mail(fail_silently=False)``. Callers that need to
-    reuse a connection or add attachments should use :func:`build_email` and send it themselves.
+    Sending goes through django-post_office, so the message is written to the database and shows
+    up under Post Office in the admin whether or not delivery works. Raises on failure, in the
+    same way as ``send_mail(fail_silently=False)``. Callers that need to reuse a connection or add
+    attachments should use :func:`build_email` and send it themselves.
     """
-    return build_email(message_template, context, to).send()
+    sent = build_email(message_template, context, to).send()
+
+    # post_office catches delivery exceptions so that it can record the failure against the
+    # stored message, and reports it by returning a send count of 0 instead of re-raising. Turn
+    # that back into an exception: every caller here treats a transactional email as something
+    # that has to either go out or be complained about loudly, and the record of the failure is
+    # already in the database by this point.
+    if not sent:
+        raise EmailDeliveryError(f"Failed to deliver {message_template} to {', '.join(to)} - see the Post Office admin")
+
+    return sent

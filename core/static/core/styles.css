@@ -14,6 +14,12 @@
     --gray-700: #374151;
     --gray-800: #1f2937;
     --gray-900: #111827;
+    /* Error colors are deliberately not tied to --primary: the accent color is a
+       branding choice, and using it for error text makes a blue or green accent
+       look like a link rather than a failure. */
+    --red-50: #fbeaea;
+    --red-200: #fecaca;
+    --red-700: #b91c1c;
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -963,4 +969,224 @@ td a:not(.button):focus {
 .attendance-time {
     color: var(--gray-500);
     font-size: 0.875rem;
+}
+
+/* Auth pages (sign in, signed out) */
+.auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background-color: var(--white);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 384px;
+    background-color: var(--white);
+}
+
+.auth-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding-bottom: 40px;
+}
+
+.auth-brand-mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    background-color: var(--primary);
+}
+
+/* The logo sits inside the accent well with 8px of padding on every side, so
+   a logo of any shape stays optically the same size as the mark it replaces. */
+.auth-brand-logo {
+    max-width: 28px;
+    max-height: 28px;
+    object-fit: contain;
+}
+
+.auth-brand-name {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 600;
+    color: var(--gray-900);
+}
+
+.auth-heading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    padding-bottom: 32px;
+}
+
+.auth-title {
+    font-size: 32px;
+    line-height: 40px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--gray-900);
+    margin: 0;
+}
+
+.auth-subtitle {
+    font-size: 14px;
+    line-height: 21px;
+    color: var(--gray-500);
+    margin: 0;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.auth-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.auth-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.auth-label {
+    font-size: 14px;
+    line-height: 21px;
+    font-weight: 500;
+    color: var(--gray-700);
+    margin: 0;
+}
+
+.auth-link {
+    font-size: 13px;
+    line-height: 20px;
+    color: var(--primary);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.auth-link:hover {
+    text-decoration: underline;
+}
+
+/* The input is the bordered box itself, so the text inside always lines up with
+   the box. The global input rule adds a bottom margin and its own padding,
+   which both have to be reset here. */
+.auth-field input {
+    width: 100%;
+    height: 44px;
+    margin: 0;
+    padding: 0 14px;
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    background-color: var(--white);
+    color: var(--gray-900);
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.auth-field input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.auth-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--red-200);
+    border-radius: 6px;
+    background-color: var(--red-50);
+    color: var(--red-700);
+    font-size: 13px;
+    line-height: 20px;
+    text-align: center;
+}
+
+.auth-error-text {
+    margin: 0;
+    color: var(--red-700);
+    font-size: 12px;
+    line-height: 18px;
+}
+
+/* Informational notice, e.g. the "you have been logged out" note. Neutral on
+   purpose: it is neither an error nor something to click. */
+.auth-notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 0 24px;
+    padding: 10px 12px;
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    background-color: var(--gray-50);
+    color: var(--gray-700);
+    font-size: 13px;
+    line-height: 20px;
+    text-align: center;
+}
+
+.auth-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 44px;
+    margin: 0;
+    border: none;
+    border-radius: 6px;
+    background-color: var(--primary);
+    color: var(--white);
+    font-size: 14px;
+    line-height: 21px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.auth-submit:hover {
+    background-color: var(--primary-dark);
+}
+
+.auth-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-top: 28px;
+}
+
+.auth-divider {
+    height: 1px;
+    background-color: var(--gray-200);
+}
+
+.auth-note {
+    margin: 0;
+    font-size: 13px;
+    line-height: 20px;
+    text-align: center;
+    color: var(--gray-500);
 }

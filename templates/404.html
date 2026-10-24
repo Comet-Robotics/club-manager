@@ -1,0 +1,12 @@
+{% extends "errors/base.html" %}
+
+{% block title %}Not found{% endblock %}
+{% block status_code %}404{% endblock %}
+{% block heading %}We couldn't find that page{% endblock %}
+
+{% block body %}
+    <p>
+        The link you followed may be outdated, or the page may have been moved. Try
+        starting from the home page.
+    </p>
+{% endblock %}
