@@ -11,10 +11,13 @@ from .models import (
     AccountAlreadyExistsError,
     AccountLink,
     DiscordAccountAlreadyLinkedError,
+    RegistrationAlreadySentError,
+    RegistrationEmailError,
     UserStub,
 )
 from .discord import describe_discord_user, get_discord_user
-from .forms import RegistrationCompletionForm
+from .forms import RegistrationCompletionForm, RegistrationRequestForm
+from common.throttle import registration_throttled
 from core.models import ServerSettings, UserProfile
 from clubManager import settings
 from core.utilities import get_layout_data
@@ -175,3 +178,46 @@ class RegistrationSubmittedView(View):
 
     def get(self, request):
         return render(request, self.template_name, {"settings": ServerSettings.objects.first()})
+
+
+class RegistrationRequestView(View):
+    template_name = "registration_request.html"
+    confirmation_message = (
+        "If you are eligible to register, check your UTD email for a link to finish creating your account."
+    )
+    throttled_message = (
+        "We've had a lot of registration requests recently. Please try again later, or ask an officer "
+        "to set up your account."
+    )
+
+    def render_form(self, request, form, **context):
+        return render(
+            request, self.template_name, {"form": form, "settings": ServerSettings.objects.first(), **context}
+        )
+
+    def get(self, request):
+        return self.render_form(request, RegistrationRequestForm())
+
+    def post(self, request):
+        form = RegistrationRequestForm(request.POST)
+        if not form.is_valid():
+            return self.render_form(request, form)
+        net_id = form.cleaned_data["net_id"]
+        try:
+            user_stub = UserStub.create(net_id, None)
+        except (RegistrationAlreadySentError, AccountAlreadyExistsError):
+            # Nothing to send, so nothing to meter.
+            return self.render_form(request, RegistrationRequestForm(), success=self.confirmation_message)
+        # Metered only now that an email is about to go out. Being over the limit has to
+        # leave no stub behind, or the Net ID would stay reserved with no email to show for it.
+        if registration_throttled(request):
+            user_stub.delete()
+            return self.render_form(request, form, error=self.throttled_message)
+        try:
+            UserStub.notify(user_stub)
+        except RegistrationEmailError:
+            user_stub.delete()
+            return self.render_form(
+                request, form, error="We could not send your registration email. Please try again later."
+            )
+        return self.render_form(request, RegistrationRequestForm(), success=self.confirmation_message)

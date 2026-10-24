@@ -127,6 +127,7 @@ INSTALLED_APPS = [
     "colorfield",
     "naomi",
     "post_office",
+    "django_ratelimit",
 ]
 
 if DEBUG:
@@ -247,6 +248,15 @@ CACHES = {
         "LOCATION": "django_cache",
     }
 }
+
+# `django_ratelimit.W001` is "cache backend <path> is not officially supported": the
+# check only recognizes memcached and django-redis by name, so any other path warns.
+# What the check is really a proxy for is whether `incr` is atomic - that is the test it
+# applies to the backends it *does* know about, and the reason it hard-errors on
+# `DatabaseCache` (`E003`). `AtomicDatabaseCache` makes `incr` atomic with a Postgres row
+# lock, and the cache is shared and real, so the property the warning stands for holds
+# and the warning itself does not tell us anything. Revisit if the backend changes.
+SILENCED_SYSTEM_CHECKS = ["django_ratelimit.W001"]
 
 
 AUTHENTICATION_BACKENDS = ["common.auth.CaseInsensitiveModelBackend"]
@@ -372,6 +382,24 @@ POST_OFFICE = {
 _message_id_domain = urlparse(PUBLIC_URL).hostname if PUBLIC_URL else None
 if _message_id_domain:
     POST_OFFICE["MESSAGE_ID_FQDN"] = _message_id_domain
+
+# Registration email volume limits. Both unauthenticated web entry points into
+# registration mail an address derived from a typed-in Net ID, so they are metered per
+# client and in total - see common/throttle.py. Rates use django-ratelimit's
+# "<count>/<period>" syntax, where the period is one of s, m, h, d.
+#
+# The per-client rate is deliberately loose. UT Dallas campus wifi NATs a great many
+# students behind a handful of addresses, and a recruiting table signs up a queue of new
+# members from one laptop, so a tight per-IP number locks out exactly the people this
+# flow exists for. Sending volume is held down by the global cap and by the existing
+# one-pending-registration-per-Net-ID rule instead.
+#
+# The global cap is set just above a busy recruiting day (150-200 registrations) so real
+# members never hit it. The per-Discord-account rate leaves room for a first attempt plus a
+# couple of typo corrections through `/link`.
+REGISTRATION_EMAIL_RATE_PER_IP = os.getenv("REGISTRATION_EMAIL_RATE_PER_IP", "20/h")
+REGISTRATION_EMAIL_RATE_PER_DISCORD_USER = os.getenv("REGISTRATION_EMAIL_RATE_PER_DISCORD_USER", "3/d")
+REGISTRATION_EMAIL_RATE_GLOBAL = os.getenv("REGISTRATION_EMAIL_RATE_GLOBAL", "250/d")
 
 API_SECRET = str(os.getenv("API_SECRET"))
 DISCORD_API_PORT = int(os.getenv("DISCORD_API_PORT", 2468))

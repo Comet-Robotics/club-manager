@@ -6,6 +6,7 @@ from accounts.models import (
     RegistrationEmailError,
     UserStub,
 )
+from common.throttle import registration_throttled
 from core.models import UserProfile
 from .forms import PaymentSignInForm
 import configparser
@@ -84,6 +85,10 @@ class ChooseUserView(View):
     registration_email_failed_message = (
         "We couldn't send the registration email. Please try again in a few minutes or ask an officer."
     )
+    registration_throttled_message = (
+        "We've had a lot of registration requests recently. Please try again later, or ask an officer "
+        "to set up your account."
+    )
 
     def start_registration(self, request, net_id):
         """
@@ -104,6 +109,15 @@ class ChooseUserView(View):
             # The account appeared between typing the Net ID and confirming it. Nothing
             # to register - fall through to the normal payment path.
             return None
+
+        # The registration branch is the only part of this page that sends mail, and the
+        # only part that is metered - and only once an email is actually about to go out.
+        # Everything else here is how officers take cash at a recruiting table (many
+        # payments for known members from one laptop), and throttling the whole view would
+        # stop that dead.
+        if registration_throttled(request):
+            user_stub.delete()
+            return self.registration_throttled_message
 
         try:
             UserStub.notify(user_stub)
