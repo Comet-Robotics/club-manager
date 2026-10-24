@@ -25,8 +25,8 @@ class RegistrationCompletionForm(forms.ModelForm):
         fields = ["first_name", "last_name"]
         labels = {"first_name": "First name", "last_name": "Last name"}
 
-    def __init__(self, user, *args, has_pending_discord_id: bool = False, **kwargs):
-        super().__init__(*args, instance=user, **kwargs)
+    def __init__(self, user, data=None, files=None, *, has_pending_discord_id: bool = False, **kwargs):
+        super().__init__(data=data, files=files, instance=user, **kwargs)
         for field in self.fields.values():
             field.required = True
 
