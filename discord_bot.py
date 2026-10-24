@@ -29,6 +29,7 @@ import subprocess
 from datetime import datetime
 from datetime import time as dttime
 from operator import itemgetter
+from typing import cast
 
 import uvicorn
 from django.core.mail import send_mail
@@ -224,7 +225,9 @@ class AccountCreationView(discord.ui.View):
         self.discord_user_id = str(discord_user_id)
         self.replace_pending = replace_pending
         if replace_pending:
-            self.confirm_account_creation.label = f"Yes, use {net_id} instead"
+            # The class attribute is the Button the view built from the callback, but
+            # discord.py's stubs type it as the callback, so the label needs a cast.
+            cast(discord.ui.Button, self.confirm_account_creation).label = f"Yes, use {net_id} instead"
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user is not None and str(interaction.user.id) == self.discord_user_id:
