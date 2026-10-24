@@ -41,15 +41,6 @@ class RegistrationEmailError(RegistrationError):
 def describe_pending_discord_link(discord_id: str) -> str:
     """
     The line a registration email has to carry when the registration came from Discord.
-
-    `/link` accepts any Net ID, so the person opening this email may never have touched
-    Discord: without this line they get a plain "create your account" mail, finish the
-    form, and silently hand the stranger who typed their Net ID a Discord account on
-    theirs - and with it the member role. Naming the account and saying it can be refused
-    is what makes that visible to the one person able to stop it.
-
-    The Discord lookup is decoration. When it fails the ID alone still identifies the
-    account well enough for an officer to act on.
     """
     discord_user: DiscordUser | None = describe_discord_user(discord_id)
     who = f"@{discord_user['username']} (ID {discord_id})" if discord_user else f"the account with ID {discord_id}"
