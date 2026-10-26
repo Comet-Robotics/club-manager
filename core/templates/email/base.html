@@ -102,7 +102,7 @@ Conventions here are dictated by email clients rather than taste:
                 <p class="contact">
                   <strong>{{ org.name }}</strong>{% if org.mailing_address %}<br />{{ org.mailing_address|linebreaksbr }}{% endif %}
                   {% if org.contact_email %}<br /><a href="mailto:{{ org.contact_email }}">{{ org.contact_email }}</a>{% endif %}
-                  {% if org.website_url %}<br /><a href="{{ org.website_url }}">{{ org.website_url }}</a>{% endif %}
+                  {% if org.website_url %}<br /><a href="{{ org.website_url }}" data-mt-no-track>{{ org.website_url }}</a>{% endif %}
                 </p>
               </td>
             </tr>

@@ -469,8 +469,10 @@ FEATURE_FLAGS = resolve_feature_flags(
     flags_with_defaults={
         # enabled: transactional emails are rendered from the templates in core/templates/email/
         # disabled: transactional emails use HTML strings that are inlined in sending code
-        # - @jasonappah, 09/10/2026 - default off
-        "NEW_TRANSACTIONAL_EMAIL_TEMPLATES": False,
+        # - @jasonappah, 09/10/2026 - default on: the templated path produces well-formed HTML with
+        #   a derived plain-text part and the Auto-Submitted header, which the legacy inline path
+        #   does not; the legacy path is retained for the A/B tests in accounts/tests.py.
+        "NEW_TRANSACTIONAL_EMAIL_TEMPLATES": True,
         # enabled: /link can initiate account registration for an unknown Net ID
         # disabled: /link asks the user to contact an officer, preserving its original behavior
         # - @jasonappah, 09/05/2026 - default off until the Discord registration flow is tested on Comet Robotics prod + ready for wider deployment
