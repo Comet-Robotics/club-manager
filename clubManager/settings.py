@@ -475,6 +475,13 @@ FEATURE_FLAGS = resolve_feature_flags(
         # disabled: /link asks the user to contact an officer, preserving its original behavior
         # - @jasonappah, 09/05/2026 - default off until the Discord registration flow is tested on Comet Robotics prod + ready for wider deployment
         "DISCORD_ACCOUNT_REGISTRATION": False,
+        # enabled: the web registration pages can be reached, and the payment page can start a
+        #          registration for an unknown Net ID
+        # disabled: /accounts/register, /accounts/register/done and the emailed
+        #           /accounts/register/continue/... link all 404, and the payment page reports the
+        #           Net ID as not found instead of offering to register it
+        # - @jasonappah, 10/26/2026 - default off until the web registration flow is tested on Comet Robotics prod + ready for wider deployment
+        "WEB_ACCOUNT_REGISTRATION": False,
     },
     deprecated_flags=[
         # ServerSettings are always auto-created when needed; setup prompts always shown to superusers

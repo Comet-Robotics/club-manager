@@ -100,7 +100,23 @@ class LinkSuccessView(View):
         return render(request, self.template_name, {**layout_data})
 
 
-class RegistrationCompleteView(View):
+class WebRegistrationView(View):
+    """
+    Base for the web registration pages, which do not exist while `WEB_ACCOUNT_REGISTRATION`
+    is off.
+
+    The URLs stay registered so `reverse()` keeps working for anything that links to them;
+    the pages themselves 404, which is what "this does not exist yet" looks like to a
+    visitor.
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        if not settings.FEATURE_FLAGS["WEB_ACCOUNT_REGISTRATION"]:
+            raise Http404()
+        return super().dispatch(request, *args, **kwargs)
+
+
+class RegistrationCompleteView(WebRegistrationView):
     template_name = "registration_complete.html"
 
     @staticmethod
@@ -173,7 +189,7 @@ class RegistrationCompleteView(View):
         return redirect(redirect_destination or "registration_submitted")
 
 
-class RegistrationSubmittedView(View):
+class RegistrationSubmittedView(WebRegistrationView):
     """Where a finished registration lands when it has nowhere else to go."""
 
     template_name = "registration_submitted.html"
@@ -182,7 +198,7 @@ class RegistrationSubmittedView(View):
         return render(request, self.template_name, {"settings": ServerSettings.objects.first()})
 
 
-class RegistrationRequestView(View):
+class RegistrationRequestView(WebRegistrationView):
     template_name = "registration_request.html"
     confirmation_message = (
         "If you are eligible to register, check your UTD email for a link to finish creating your account."

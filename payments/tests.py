@@ -181,6 +181,12 @@ class PaymentRegistrationTestCase(TestCase):
 
         ServerSettings.objects.get_or_create(defaults={"organization_name": "Comet Robotics"})
 
+        # The payment page only offers to register an unknown Net ID while the web
+        # registration feature is on; these tests are about that path.
+        flag_patcher = patch.dict("clubManager.settings.FEATURE_FLAGS", {"WEB_ACCOUNT_REGISTRATION": True})
+        flag_patcher.start()
+        self.addCleanup(flag_patcher.stop)
+
         self.product = Product.objects.create(name="Dues", amount_cents=2000, max_purchases_per_user=-1)
         self.pay_url = reverse("choose_user", args=[self.product.id])
 
@@ -308,6 +314,27 @@ class UnknownNetIDConfirmationTests(PaymentRegistrationTestCase):
 
         payment = Payment.objects.get(user=user)
         self.assertRedirects(response, reverse("payment_success", args=[payment.id]), fetch_redirect_response=False)
+        self.assertFalse(UserStub.objects.exists())
+        self.assertEqual(mail.outbox, [])
+
+
+class PaymentRegistrationFlagOffTests(PaymentRegistrationTestCase):
+    """With `WEB_ACCOUNT_REGISTRATION` off, an unknown Net ID is just unknown."""
+
+    def test_unknown_net_id_is_reported_as_not_found(self):
+        with patch.dict("clubManager.settings.FEATURE_FLAGS", {"WEB_ACCOUNT_REGISTRATION": False}):
+            response = self.pay_as("abc123456")
+
+        self.assertContains(response, "User not found")
+        self.assertFalse(UserStub.objects.exists())
+        self.assertEqual(mail.outbox, [])
+
+    def test_confirming_an_unknown_net_id_does_not_register_it(self):
+        """The confirmation branch is behind the same flag, so a replayed POST does nothing."""
+        with patch.dict("clubManager.settings.FEATURE_FLAGS", {"WEB_ACCOUNT_REGISTRATION": False}):
+            response = self.confirm_registration_for("abc123456")
+
+        self.assertContains(response, "User not found")
         self.assertFalse(UserStub.objects.exists())
         self.assertEqual(mail.outbox, [])
 
