@@ -106,11 +106,6 @@ class ChooseUserView(View):
     def start_registration(self, request, net_id):
         """
         Email a registration link for a Net ID with no account, and say how it went.
-
-        Only ever called once the visitor has confirmed the Net ID is theirs: the address
-        is derived from what they typed, so a typo mails a stranger. Returns the message
-        to show, or None if an account turned up in the meantime and the payment can just
-        carry on.
         """
         try:
             user_stub = UserStub.create(net_id=net_id, after_registration_redirect_destination=request.get_full_path())
@@ -148,8 +143,6 @@ class ChooseUserView(View):
             try:
                 user = User.objects.get(username=username)
             except User.DoesNotExist:
-                # Registering mails whatever Net ID was typed, so confirm it first
-                # instead of sending a stranger a link on the strength of a typo.
                 if request.POST.get("confirm_registration") != "1":
                     return render(
                         request,
