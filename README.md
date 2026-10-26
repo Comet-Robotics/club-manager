@@ -49,8 +49,8 @@ Everything below should run from inside this `club-manager` folder.
 
 To work on Club Manager, you'll need to install some more software. We'll walk you through installing everything in the next section. 
 
-- **PostgreSQL 14**: database engine that stores all Club Manager data
-- **Python 3.11.13**: programming language that Club Manager's backend is written in. you **must have this specific version installed** - newer versions have bugs with the Django version we're using, and older ones aren't compatible with some Python language features we use.
+- **PostgreSQL 15**: database engine that stores all Club Manager data. Django 6.1 refuses to connect to anything older.
+- **Python 3.12.16**: programming language that Club Manager's backend is written in. you **must have this specific version installed** - Django 6.1 needs 3.12 or newer, and we stay on the 3.12 line because py-cord 2.6 imports `audioop`, which 3.13 removed. patch releases within 3.12 are security fixes, so keep this at the newest one.
 - **Pipenv**: this is our **package manager** and **virtual environment manager**
   - **package manager**: a tool that takes a list of all the external Python libraries that our code depends on ([here's the list if you're curious](./Pipfile)), and downloads them for us. 
   - **virtual environment manager**: pipenv automatically creates virtual environments - which are a mechanism to make sure that every project has its own folder for storing its external libraries, isolated from any other projects. this is important because without virtual environments, when you run `pip install django==5.1` you install django 5.1 **globally** - for every program or project on your computer that uses python. this can cause issues if, for example, one project on your computer needs django 5.1, but another needs django 6. 
