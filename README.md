@@ -102,6 +102,15 @@ These are some additional tools you may want to install as well, but these are o
 - **TablePlus**: tool to visually interact with data in database engines, execute SQL queries, etc. [Download here.](https://tableplus.com)
 - **Visual Studio Code**: simple code editor that most people use. Here's [a link to download it](https://code.visualstudio.com), but feel free to use the editor of your choice if you have a different one you prefer.
 
+### You're set up - now find something to work on
+
+That's the annoying part out of the way. Pick an issue and go:
+
+- **[Good First Issues](https://github.com/Comet-Robotics/club-manager/issues/views/MDQ6VmlldzI1NTkz)** - a filtered list of issues that should be relatively easy to get done if you're new to the codebase. Start here.
+- **[All open issues](https://github.com/Comet-Robotics/club-manager/issues)** - the full list, once you've got your bearings.
+
+Comment on whichever one you pick so nobody else starts on the same thing, and ask questions on the issue itself - nobody expects you to know the codebase on day one.
+
 ----
 
 ## Production Deployment Setup
