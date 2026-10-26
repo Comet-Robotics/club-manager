@@ -62,6 +62,12 @@ class RegistrationTestCase(TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
+        # The web registration pages are flagged off by default; these tests are about
+        # what happens when the feature is on.
+        flag_patcher = patch.dict("clubManager.settings.FEATURE_FLAGS", {"WEB_ACCOUNT_REGISTRATION": True})
+        flag_patcher.start()
+        self.addCleanup(flag_patcher.stop)
+
     def create_user(self, username):
         return User.objects.create(username=username)
 
@@ -465,6 +471,11 @@ class DiscordPendingRegistrationTests(RegistrationTestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
+        # `/link` only offers registration while the Discord feature is on.
+        flag_patcher = patch.dict("clubManager.settings.FEATURE_FLAGS", {"DISCORD_ACCOUNT_REGISTRATION": True})
+        flag_patcher.start()
+        self.addCleanup(flag_patcher.stop)
+
     @staticmethod
     def interaction():
         interaction = MagicMock()
@@ -496,6 +507,18 @@ class DiscordPendingRegistrationTests(RegistrationTestCase):
         stub = await sync_to_async(UserStub.objects.get)(net_id="abc123456")
         self.assertEqual(stub.pending_discord_id, "123456789012345678")
         self.assertEqual([message.to for message in mail.outbox], [["abc123456@utdallas.edu"]])
+
+    async def test_the_button_refuses_when_the_flag_is_off(self):
+        """A confirmation message can outlive the flag, so the button checks for itself."""
+        interaction = self.interaction()
+
+        with patch.dict("clubManager.settings.FEATURE_FLAGS", {"DISCORD_ACCOUNT_REGISTRATION": False}):
+            await self.bot.AccountCreationView("abc123456", 123456789012345678).confirm_account_creation.callback(
+                interaction
+            )
+
+        self.assertIn("isn't available right now", interaction.response.edit_message.await_args.kwargs["content"])
+        self.assertFalse(await sync_to_async(UserStub.objects.exists)())
 
 
 class RegistrationCompletionViewTests(RegistrationTestCase):
@@ -720,6 +743,31 @@ class RegistrationRequestViewTests(RegistrationTestCase):
 
         self.assertContains(response, "could not send")
         self.assertFalse(UserStub.objects.exists())
+
+
+class WebRegistrationFlagTests(RegistrationTestCase):
+    """With `WEB_ACCOUNT_REGISTRATION` off, the pages behave as if they were never built."""
+
+    def test_every_registration_page_is_a_404(self):
+        user_stub = UserStub.create("abc123456", None)
+
+        with patch.dict("clubManager.settings.FEATURE_FLAGS", {"WEB_ACCOUNT_REGISTRATION": False}):
+            for url in (
+                reverse("registration_request"),
+                reverse("registration_submitted"),
+                reverse("registration_complete", args=[user_stub.user_registration_key]),
+            ):
+                with self.subTest(url=url):
+                    self.assertEqual(self.client.get(url).status_code, 404)
+
+    @patch("accounts.views.UserStub.notify")
+    def test_a_request_is_a_404_and_sends_nothing(self, notify):
+        with patch.dict("clubManager.settings.FEATURE_FLAGS", {"WEB_ACCOUNT_REGISTRATION": False}):
+            response = self.client.post(reverse("registration_request"), {"net_id": "abc123456"})
+
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(UserStub.objects.exists())
+        notify.assert_not_called()
 
 
 class ClientIPTests(SimpleTestCase):

@@ -157,6 +157,20 @@ class ChooseUserView(View):
             try:
                 user = User.objects.get(username=username)
             except User.DoesNotExist:
+                # With web registration off there is nothing to offer but the old answer,
+                # and no Net ID should be confirmed or emailed.
+                if not settings.FEATURE_FLAGS["WEB_ACCOUNT_REGISTRATION"]:
+                    return render(
+                        request,
+                        self.template_name,
+                        {
+                            **layout_data,
+                            "form": form,
+                            "message": "User not found",
+                            "product_name": product.name,
+                        },
+                    )
+
                 if request.POST.get("confirm_registration") != "1":
                     return render(
                         request,

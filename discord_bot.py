@@ -234,6 +234,15 @@ class AccountCreationView(discord.ui.View):
 
     @discord.ui.button(label="Yes, create my account", style=discord.ButtonStyle.primary)
     async def confirm_account_creation(self, button, interaction: discord.Interaction):
+        # A message can outlive the flag being switched off, so the button has to check
+        # for itself rather than relying on /link having checked when it sent the view.
+        if not settings.FEATURE_FLAGS["DISCORD_ACCOUNT_REGISTRATION"]:
+            await interaction.response.edit_message(
+                content="Account registration isn't available right now. Contact an officer to get an account set up.",
+                view=None,
+            )
+            return
+
         await interaction.response.edit_message(
             content="Creating your account and sending the registration email...", view=None
         )
