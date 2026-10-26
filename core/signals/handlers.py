@@ -3,7 +3,6 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from clubManager import settings
 
-from common.major import get_major_from_netid
 from common.utils import normalize_username
 from core.models import UserProfile
 from payments.models import PurchasedProduct
@@ -66,13 +65,3 @@ def update_user_signal(sender, instance, created, **kwargs):
     if created or not hasattr(instance, "userprofile"):
         UserProfile.objects.create(user=instance)
     instance.userprofile.save()
-
-
-# Auto-fill major when UserProfile is created or when major is None for users with a valid NetID
-@receiver(post_save, sender=UserProfile)
-def update_profile_signal(sender, instance, created, **kwargs):
-    if not instance.is_utd_affiliate:
-        return
-    if created or instance.major is None:
-        instance.major = get_major_from_netid(instance.user.username) or "unknown"
-        instance.save()

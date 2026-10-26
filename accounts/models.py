@@ -206,13 +206,16 @@ class UserStub(models.Model):
         user.set_unusable_password()
         return user
 
-    def activate(self, user: User, *, link_discord: bool = True) -> str | None:
+    def activate(self, user: User, *, link_discord: bool = True, major: str | None = None) -> str | None:
         """
         Turn this registration into a real account and return where to send the user next.
 
         `user` is the instance from `build_user` with names already set. Creating the
         `User` and dropping this stub happen in one transaction, so a Net ID is never held
         by both a stub and an account.
+
+        `major` is what the member chose on the form. It belongs to the `UserProfile`, not
+        the `User`, so it is written here rather than by the form's `save`.
 
         `link_discord=False` is how the member declines the Discord account this
         registration was started from. Anyone can run `/link` against someone else's Net
@@ -232,6 +235,11 @@ class UserStub(models.Model):
                 # Someone else claimed this Net ID while the form was open - the real
                 # account wins, and this registration is now moot.
                 raise AccountAlreadyExistsError from error
+
+            if major is not None:
+                profile, _ = UserProfile.objects.get_or_create(user=user)
+                profile.major = major
+                profile.save()
 
             if link_discord and self.pending_discord_id is not None:
                 profile, _ = UserProfile.objects.get_or_create(user=user)
