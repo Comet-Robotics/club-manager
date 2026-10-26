@@ -2,7 +2,7 @@ import zoneinfo
 from datetime import datetime, timedelta
 from datetime import timezone as dt_timezone
 from unittest import mock
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 from django.contrib.auth.models import User
 from django.core import mail
@@ -158,11 +158,10 @@ class PaymentRegistrationTestCase(TestCase):
     """
     Base for the payment-page registration tests.
 
-    Creating a `User` kicks off a NetID -> major directory lookup, and saving a
-    `UserProfile` fires the member-role signal, which needs a current `Term` to
-    resolve membership and would otherwise call out to the bot API. Give it a real
+    Saving a `UserProfile` fires the member-role signal, which needs a current `Term`
+    to resolve membership and would otherwise call out to the bot API. Give it a real
     Term - on its own product, so the product under test stays an ordinary one - and
-    stub the outbound calls. `UserStub.notify` reads the organization name off
+    stub the outbound call. `UserStub.notify` reads the organization name off
     `ServerSettings`, so there has to be a row for it.
     """
 
@@ -175,13 +174,9 @@ class PaymentRegistrationTestCase(TestCase):
             end_date=today + timedelta(days=30),
             product=Product.objects.create(name="Membership Dues", amount_cents=2000, max_purchases_per_user=1),
         )
-        for target, replacement in (
-            ("core.signals.handlers.add_member_role", AsyncMock(return_value=True)),
-            ("core.signals.handlers.get_major_from_netid", MagicMock(return_value=None)),
-        ):
-            patcher = patch(target, new=replacement)
-            patcher.start()
-            self.addCleanup(patcher.stop)
+        patcher = patch("core.signals.handlers.add_member_role", new=AsyncMock(return_value=True))
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
         ServerSettings.objects.get_or_create(defaults={"organization_name": "Comet Robotics"})
 
@@ -212,7 +207,7 @@ class PaymentAfterRegistrationTests(PaymentRegistrationTestCase):
         # 3. Finish registration. No login happens.
         response = self.client.post(
             reverse("registration_complete", args=[stub.user_registration_key]),
-            {"first_name": "Ada", "last_name": "Lovelace"},
+            {"first_name": "Ada", "last_name": "Lovelace", "major": "CS"},
         )
         self.assertRedirects(response, self.pay_url, fetch_redirect_response=False)
         self.assertNotIn("_auth_user_id", self.client.session)

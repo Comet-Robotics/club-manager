@@ -39,8 +39,7 @@ class RegistrationTestCase(TestCase):
     Saving a `UserProfile` that has a `discord_id` fires the member-role signal, which
     needs a current `Term` to resolve membership and would otherwise call out to the bot
     API. Give it a real Term and stub the outbound call so these tests exercise the
-    actual signal path. Creating a `User` also kicks off a NetID -> major directory
-    lookup, which has no business making a real request here.
+    actual signal path.
     """
 
     def setUp(self):
@@ -53,13 +52,9 @@ class RegistrationTestCase(TestCase):
             end_date=today + timedelta(days=30),
             product=product,
         )
-        for target, replacement in (
-            ("core.signals.handlers.add_member_role", AsyncMock(return_value=True)),
-            ("core.signals.handlers.get_major_from_netid", MagicMock(return_value=None)),
-        ):
-            patcher = patch(target, new=replacement)
-            patcher.start()
-            self.addCleanup(patcher.stop)
+        patcher = patch("core.signals.handlers.add_member_role", new=AsyncMock(return_value=True))
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def create_user(self, username):
         return User.objects.create(username=username)
@@ -222,6 +217,30 @@ class UserStubActivateTests(RegistrationTestCase):
         user = User.objects.get(username="abc123456")
         user.userprofile.refresh_from_db()
         self.assertEqual(user.userprofile.discord_id, "123456789012345678")
+
+    def test_activate_writes_the_major_the_member_chose(self):
+        user_stub = UserStub.create("abc123456", None)
+        user = user_stub.build_user()
+        user.first_name = "Comet"
+        user.last_name = "Robotics"
+
+        user_stub.activate(user, major="INTS")
+
+        created = User.objects.get(username="abc123456")
+        created.userprofile.refresh_from_db()
+        self.assertEqual(created.userprofile.major, "INTS")
+
+    def test_activate_without_a_major_leaves_the_profile_untouched(self):
+        user_stub = UserStub.create("abc123456", None)
+        user = user_stub.build_user()
+        user.first_name = "Comet"
+        user.last_name = "Robotics"
+
+        user_stub.activate(user)
+
+        created = User.objects.get(username="abc123456")
+        created.userprofile.refresh_from_db()
+        self.assertIsNone(created.userprofile.major)
 
     def test_activate_can_decline_the_pending_discord_id(self):
         """Declining still finishes the registration - the link is what was refused."""
@@ -475,7 +494,7 @@ class DiscordPendingRegistrationTests(RegistrationTestCase):
 
 class RegistrationCompletionViewTests(RegistrationTestCase):
     def complete(self, user_stub, **overrides):
-        payload = {"first_name": "Ada", "last_name": "Lovelace"}
+        payload = {"first_name": "Ada", "last_name": "Lovelace", "major": "CS"}
         payload.update(overrides)
         return self.client.post(reverse("registration_complete", args=[user_stub.user_registration_key]), payload)
 
@@ -507,6 +526,35 @@ class RegistrationCompletionViewTests(RegistrationTestCase):
 
         self.assertContains(response, 'name="first_name"')
         self.assertNotContains(response, 'type="password"')
+
+    def test_valid_registration_saves_the_major_the_member_chose(self):
+        user_stub = UserStub.create("maj123456", "")
+
+        self.complete(user_stub, major="MECH")
+
+        user = User.objects.get(username="maj123456")
+        user.userprofile.refresh_from_db()
+        self.assertEqual(user.userprofile.major, "MECH")
+
+    def test_registration_asks_for_a_major_and_offers_the_common_ones_first(self):
+        user_stub = UserStub.create("maj123456", "")
+
+        response = self.client.get(reverse("registration_complete", args=[user_stub.user_registration_key]))
+
+        self.assertContains(response, 'name="major"')
+        content = response.content.decode()
+        self.assertIn("Common majors", content)
+        self.assertLess(content.index("Common majors"), content.index("All majors"))
+
+    def test_missing_major_keeps_the_stub_and_creates_no_account(self):
+        user_stub = UserStub.create("maj123456", "")
+
+        response = self.complete(user_stub, major="")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Choose your major.")
+        self.assertFalse(User.objects.filter(username="maj123456").exists())
+        self.assertTrue(UserStub.objects.filter(pk=user_stub.pk).exists())
 
     def test_missing_name_keeps_the_stub_and_creates_no_account(self):
         user_stub = UserStub.create("mis123456", "")
@@ -561,7 +609,7 @@ class RegistrationCompletionDiscordConsentTests(RegistrationTestCase):
             return self.client.get(reverse("registration_complete", args=[user_stub.user_registration_key]))
 
     def complete(self, user_stub, **overrides):
-        payload = {"first_name": "Ada", "last_name": "Lovelace"}
+        payload = {"first_name": "Ada", "last_name": "Lovelace", "major": "CS"}
         payload.update(overrides)
         with patch("accounts.views.describe_discord_user", return_value=FAKE_DISCORD_USER):
             return self.client.post(reverse("registration_complete", args=[user_stub.user_registration_key]), payload)

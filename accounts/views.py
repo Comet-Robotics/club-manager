@@ -151,7 +151,9 @@ class RegistrationCompleteView(View):
                 user = form.save(commit=False)
                 try:
                     redirect_destination = user_stub.activate(
-                        user, link_discord=form.cleaned_data.get("link_discord", True)
+                        user,
+                        link_discord=form.cleaned_data.get("link_discord", True),
+                        major=form.cleaned_data["major"],
                     )
                     activated = True
                 except AccountAlreadyExistsError:

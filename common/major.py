@@ -1,12 +1,17 @@
-import bs4
 import functools
-import requests
 import json
 from pathlib import Path
 
-__all__ = ["get_majors", "get_major_from_netid"]
+__all__ = ["get_majors", "get_major_choices"]
 
+# The major filter UTD's directory page used to offer, plus the programs it was missing.
+# UTD retired the filter in January 2026, so additions are by hand; the codes are still
+# published at https://ospa.utdallas.edu/definitions-for-codes-used-on-this-site/
 MAJORS_JSON_PATH = Path(__file__).parent / "majors.json"
+
+# Majors members pick most often, in the order they are offered. Hand-picked rather than
+# derived, so the list stays short and nothing surprising lands at the top of the dropdown.
+COMMON_MAJOR_CODES = ("MECH", "BMEN", "EE", "SE", "CE", "CS", "INTS")
 
 
 @functools.lru_cache()
@@ -21,29 +26,17 @@ def get_majors() -> dict[str, str]:
         return json.load(f)
 
 
-def get_major_from_netid(netid: str) -> str | None:
-    """Gets the major short code from the directory for a particular NetID.
-
-    Args:
-        netid (str): The NetID to look up.
-
-    Returns:
-        str | None: The major short code if successful, otherwise None.
+def get_major_choices() -> list[tuple[str, list[tuple[str, str]]]]:
     """
-    try:
-        r = requests.get(
-            f"https://websvcs.utdallas.edu/directory/includes/directories.class.php?dirType=displayname&dirSearch={netid}&dirAffil=All&dirDept=All&dirMajor=All&dirSchool=All",
-            headers={
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
-            },
-        )
-    except Exception as e:
-        print(f"WARNING: major_from_netid request failed: ", e)
-        return None
-    soup = bs4.BeautifulSoup(r.text, "html.parser")
-    for p in soup.find_all("p"):
-        if p.contents[0].string == "Major":
-            major = p.contents[1].string.replace(": ", "")
-            matching_short_codes = [o[0] for o in get_majors().items() if o[1] == major]
-            return matching_short_codes[0] if len(matching_short_codes) > 0 else None
-    return None
+    The majors as Django choice groups, with the ones members pick most often first.
+
+    `UserProfile.major` stores the short code, so these come from the same list as the
+    model's choices and cannot drift from it.
+    """
+    majors = get_majors()
+    common = [(code, majors[code]) for code in COMMON_MAJOR_CODES if code in majors]
+    remaining = sorted(
+        ((code, name) for code, name in majors.items() if code not in COMMON_MAJOR_CODES),
+        key=lambda major: major[1],
+    )
+    return [("Common majors", common), ("All majors", remaining)]
