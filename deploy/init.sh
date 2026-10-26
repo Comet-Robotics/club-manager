@@ -3,6 +3,8 @@
 set -e
 
 BASE_PATH="$(cd "$(dirname "${BASH_SOURCE:-$0}")" && pwd)"
+# shellcheck source=deploy/lib.sh
+source "$BASE_PATH/lib.sh"
 # shellcheck source=deploy/mise.sh
 source "$BASE_PATH/mise.sh"
 cd "$BASE_PATH/.."
@@ -22,6 +24,12 @@ ensure_mise
 install_toolchain
 
 link_system_mise
+
+# Installs sentry-cli, but only on an instance that has a Sentry auth token (or has set
+# SENTRY_CLI_INSTALL). Skipping is the normal outcome for a club running its own copy.
+# run.sh calls this too, so an instance that gets a token later picks the CLI up on its
+# next deploy without re-running this script.
+ensure_sentry_cli || true
 
 for unit in gunicorn.service gunicorn.socket discord_bot.service \
             post_office_queue.service post_office_queue.timer \
