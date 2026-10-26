@@ -9,10 +9,6 @@ class RegistrationCompletionForm(forms.ModelForm):
     Collects the details a registration needs onto the unsaved `User` from
     `UserStub.build_user`. No password: registration does not create a login.
 
-    `major` is the member's own answer, because the directory lookup that used to guess it
-    no longer works. It lives on the profile rather than the `User`, so it is read off
-    `cleaned_data` and written by `UserStub.activate`.
-
     `link_discord` only exists when the registration was started from Discord, because it
     asks about a specific account the person can see on the page. Offering it otherwise
     would be asking about nothing. It is answered by which button submits the form rather
