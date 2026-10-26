@@ -12,7 +12,7 @@ It's also used by RoboSub who hosts their own instance of Club Manager.
 
 ## Technical Details
 
-This app is written in Python using the Django web framework. [This page](https://www.djangoproject.com/start/) has a decent overview of what Django offers which you should read over - its a less than 5 min read. We use PostgreSQL as the database.
+This app is written in Python using the Django web framework. [This page](https://www.djangoproject.com/start/) and [this page](https://docs.djangoproject.com/en/6.1/intro/overview/) have a decent overview of what Django offers which you should read over - They are both less than 5 min read. We use PostgreSQL as the database.
 
 For Comet Robotics, the app is deployed in a virtual machine on a server at our booth in the Makerspace. More details on the deployment and infrastructure stuff is on the CROUTON Committee ClickUp - to be added, ask an officer in Discord.
 
