@@ -214,9 +214,6 @@ class UserStub(models.Model):
         `User` and dropping this stub happen in one transaction, so a Net ID is never held
         by both a stub and an account.
 
-        `major` is what the member chose on the form. It belongs to the `UserProfile`, not
-        the `User`, so it is written here rather than by the form's `save`.
-
         `link_discord=False` is how the member declines the Discord account this
         registration was started from. Anyone can run `/link` against someone else's Net
         ID, so the Discord ID riding along on the stub is a claim by a stranger until the
