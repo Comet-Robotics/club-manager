@@ -211,13 +211,7 @@ async def get_active_member_discord_ids():
 
 
 class AccountCreationView(discord.ui.View):
-    """
-    Confirms a Net ID before `/link` emails it a registration link.
-
-    With `replace_pending` set, confirming also drops the registration this Discord account
-    already has pending for another Net ID. That is the way out of a `/link` typo, so it is
-    only ever offered after naming the Net ID whose link will stop working.
-    """
+    """Confirms a Net ID before `/link` emails it a registration link."""
 
     def __init__(self, net_id: str, discord_user_id: int | str, *, replace_pending: bool = False) -> None:
         super().__init__(timeout=300)
@@ -225,8 +219,6 @@ class AccountCreationView(discord.ui.View):
         self.discord_user_id = str(discord_user_id)
         self.replace_pending = replace_pending
         if replace_pending:
-            # The class attribute is the Button the view built from the callback, but
-            # discord.py's stubs type it as the callback, so the label needs a cast.
             cast(discord.ui.Button, self.confirm_account_creation).label = f"Yes, use {net_id} instead"
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
