@@ -2,10 +2,10 @@
 <!-- TODO: make nav more responsive (on mobile, move nav into hamburger menu - nav will cover full screen when opened, like a modal) -->
  {% comment %} TODO: Support anonymous users {% endcomment %}
 
-{% load static %}
+{% load static static_files %}
 <html>
     <head>
-        <link rel="stylesheet" href="{% static 'core/styles.css' %}" type="text/css">
+        <link rel="stylesheet" href="{% static_file 'core/styles.css' %}" type="text/css">
         <title>{% block title %}Portal{% endblock %} | {{settings.organization_name}}</title>
         <style>
             :root {
@@ -16,7 +16,7 @@
         <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
         {% block head %}{% endblock %}
     </head>
-    <body>
+    <body class="portal-body">
       
         <header class="header">
             <div class="header-left">

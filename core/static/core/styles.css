@@ -44,15 +44,31 @@ img {
 }
 
 /* Layout */
-.app {
-    min-height: 100vh;
+/* The portal is a fixed-height shell: the header and sidebar are furniture and
+   only the main content column scrolls. Without the height cap the document
+   itself scrolls, which drags the header off the top of the screen. */
+.portal-body {
+    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+}
+
+.app {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
 }
 
 .main-container {
     display: flex;
     flex: 1;
+    /* Let the container shrink to the space left under the header so it can
+       become the scroll container instead of the whole document. */
+    min-height: 0;
+    overflow-y: auto;
     position: relative;
 }
 
@@ -67,6 +83,9 @@ img {
     box-shadow: var(--shadow);
     position: relative;
     z-index: 20;
+    /* The header is part of the fixed shell, so it must never be squeezed by
+       the scrolling area below it. */
+    flex-shrink: 0;
 }
 
 .header-left {
@@ -150,9 +169,13 @@ img {
     width: 16rem;
     background-color: var(--white);
     border-right: 1px solid var(--gray-200);
+    /* Sticks to the top of the scrolling main area, so the navigation stays
+       reachable no matter how far down the page you are. Its height matches the
+       visible area, which is why it needs its own scrollbar for long navs. */
     position: sticky;
     top: 0;
-    height: calc(100vh - 4rem);
+    flex: 0 0 16rem;
+    height: 100%;
     overflow-y: auto;
 }
 
@@ -458,6 +481,7 @@ select {
 @media (max-width: 1024px) {
     .sidebar {
         width: 14rem;
+        flex-basis: 14rem;
     }
 }
 
@@ -479,6 +503,11 @@ select {
         height: auto;
         border-right: none;
         border-bottom: 1px solid var(--gray-200);
+        /* Stacked layout: the nav is normal content again and scrolls away with
+           the page instead of sticking to the top of it. */
+        position: static;
+        flex: 0 0 auto;
+        overflow: visible;
     }
 
     .main-content {

@@ -1,8 +1,8 @@
 {% extends "newBase.html" %}
-{% load static %}
+{% load static static_files %}
 {% block title %}My Profile{% endblock %}
 {%block head%}
-<link rel="stylesheet" href="{% static 'core/profile.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static_file 'core/profile.css' %}" type="text/css">
 {%endblock%}
 {% block content %}
 

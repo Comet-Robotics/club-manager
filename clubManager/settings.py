@@ -148,6 +148,8 @@ MIDDLEWARE = [
 
 if DEBUG:
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
+    # Keep the browser from serving a stale page or stylesheet while developing.
+    MIDDLEWARE.append("common.middle.NoCacheMiddleware")
 
 INTERNAL_IPS = ["127.0.0.1"]
 
