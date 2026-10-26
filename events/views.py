@@ -13,7 +13,6 @@ from core.utilities import get_layout_data
 from .forms import EventForm, SignInForm, SelfSignInForm, UserSearchForm, RSVPForm
 from .models import Attendance, SignInMethod, Event, Reservation
 from core.models import UserProfile
-from payments.models import Term
 from django.contrib.auth.models import User
 from django.contrib.admin.views.decorators import staff_member_required
 from payments.models import Term
@@ -100,7 +99,13 @@ def self_sign_in(request, event_id):
     layout_data = get_layout_data(request)
     event = get_object_or_404(Event, pk=event_id)
 
-    context = {**layout_data, "event": event, "form": SelfSignInForm()}
+    initial = {"username": request.user.username} if request.user.is_authenticated else {}
+    context = {
+        **layout_data,
+        "event": event,
+        "form": SelfSignInForm(initial=initial),
+        "has_session": request.user.is_authenticated,
+    }
 
     if request.method == "POST":
         form = SelfSignInForm(request.POST)
@@ -111,24 +116,35 @@ def self_sign_in(request, event_id):
             user = User.objects.filter(username=username).select_related("userprofile").first()
 
             if user is None:
-                # No registration page exists yet, so point at the RSVP flow, which
-                # is the only public entry point that creates a user.
-                context["message"] = "not_found"
-                context["next_step_url"] = reverse("rsvp", kwargs={"event_id": event.pk})
-            else:
+                if settings.FEATURE_FLAGS["WEB_ACCOUNT_REGISTRATION"]:
+                    if request.POST.get("confirm_registration") != "1":
+                        context["confirm_net_id"] = username
+                    else:
+                        from payments.views import ChooseUserView
+
+                        registration = ChooseUserView()
+                        registration.registration_sent_message = "Check your UT Dallas email for a link to finish registering. It will bring you back here to sign in."
+                        context["registration_message"] = registration.start_registration(request, username)
+                        if context["registration_message"] is None:
+                            user = User.objects.filter(username=username).select_related("userprofile").first()
+                else:
+                    context["message"] = "not_found"
+            if user is not None:
                 _, meta = user.userprofile.sign_in_to_event(event, SignInMethod.SELF_QR)
                 context["user"] = user
                 context["status"] = meta.attendance
+                context["saved_net_id"] = user.username
+                context["not_linked"] = not user.userprofile.discord_id
+                if meta.is_not_member:
+                    context["next_step_url"] = self_sign_in_dues_url()
+                    context["dues_unpaid"] = True
 
                 if meta.already_signed_in:
                     context["message"] = "repeat"
                 elif meta.is_not_member:
                     context["message"] = "not_member"
-                    context["next_step_url"] = self_sign_in_dues_url()
                 else:
                     context["message"] = "success"
-                    if not user.userprofile.discord_id:
-                        context["not_linked"] = True
 
     return render(request, "self_sign_in.html", context)
 

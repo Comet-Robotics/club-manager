@@ -56,27 +56,27 @@
       <div role="alert" class="alert alert-info">
         <h3 class="font-unbounded text-lg">No Account Found</h3>
         <p>We couldn't find an account for that Net ID.</p>
-        <p>
-          Create an account for this event, then come back and sign in.
-        </p>
-        {% if next_step_url %}
-        <a href="{{ next_step_url }}" class="btn btn-neutral mt-2">
-          Create Account
-        </a>
-        {% endif %}
+        <p>Please ask an officer for help registering.</p>
       </div>
       {% elif message == "not_member" %}
       <div role="alert" class="alert alert-warning">
         <h3 class="font-unbounded text-lg">Dues Not Paid</h3>
         <p>
           {{ user.first_name }} {{ user.last_name }} ({{ user.username }}) isn't
-          paid up on dues for this term, so we didn't record a sign-in.
+          paid up on dues for this term. Your sign-in was recorded.
         </p>
         {% if next_step_url %}
         <a href="{{ next_step_url }}" class="btn btn-neutral mt-2">
           Pay Dues
         </a>
         {% endif %}
+      </div>
+      {% endif %}
+
+      {% if dues_unpaid and message == "repeat" %}
+      <div role="alert" class="alert alert-warning">
+        <p>Dues are not paid for this term.</p>
+        {% if next_step_url %}<a href="{{ next_step_url }}" class="btn btn-neutral">Pay Dues</a>{% endif %}
       </div>
       {% endif %}
 
@@ -90,6 +90,17 @@
       </div>
       {% endif %}
 
+      {% if registration_message %}<div role="alert" class="alert alert-info">{{ registration_message }}</div>{% endif %}
+      {% if confirm_net_id %}
+      <p>We couldn't find an account for <strong>{{ confirm_net_id }}</strong>. Is that your Net ID? We'll email {{ confirm_net_id }}@utdallas.edu a registration link and bring you back here to sign in.</p>
+      <form method="post" class="flex flex-col gap-2 items-center">
+        {% csrf_token %}
+        <input type="hidden" name="username" value="{{ confirm_net_id }}" />
+        <input type="hidden" name="confirm_registration" value="1" />
+        <button class="btn btn-neutral" type="submit">Yes, email me a registration link</button>
+      </form>
+      <a class="btn btn-ghost" href="{{ request.path }}">No, let me fix it</a>
+      {% else %}
       <form
         method="post"
         class="flex flex-col gap-2 items-center justify-center"
@@ -99,7 +110,19 @@
           Sign In
         </button>
       </form>
+      {% endif %}
     </div>
   </div>
 </body>
+{{ saved_net_id|json_script:"saved-net-id" }}
+<script>
+  try {
+    const savedNetId = JSON.parse(document.getElementById("saved-net-id").textContent);
+    if (savedNetId) localStorage.setItem("selfSignInNetId", savedNetId);
+    const input = document.getElementById("id_username");
+    if (input && !input.value && {% if has_session %}false{% else %}true{% endif %}) {
+      input.value = localStorage.getItem("selfSignInNetId") || "";
+    }
+  } catch (_) { /* Storage can be unavailable in private browsing. */ }
+</script>
 {% endblock %}

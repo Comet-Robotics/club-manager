@@ -285,13 +285,61 @@ class SelfSignInViewTest(TestCase):
         self.assertEqual(response.context["message"], "success")
         self.assertTrue(Attendance.objects.filter(event=self.event, user=user).exists())
 
+    @override_settings(
+        FEATURE_FLAGS={**settings.FEATURE_FLAGS, "SELF_CHECK_IN": True, "WEB_ACCOUNT_REGISTRATION": False}
+    )
     def test_unknown_net_id_offers_next_step_and_records_nothing(self):
         response = self._post("zzz999999")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["message"], "not_found")
-        self.assertTrue(response.context["next_step_url"])
+        self.assertNotIn("next_step_url", response.context)
         self.assertFalse(Attendance.objects.exists())
+
+    def test_session_prefills_net_id(self):
+        user = self._make_member()
+        self.client.force_login(user)
+        response = self.client.get(reverse("self_sign_in", args=[self.event.pk]))
+        self.assertEqual(response.context["form"].initial["username"], user.username)
+
+    @override_settings(
+        FEATURE_FLAGS={**settings.FEATURE_FLAGS, "SELF_CHECK_IN": True, "WEB_ACCOUNT_REGISTRATION": True}
+    )
+    def test_unknown_net_id_requires_confirmation_before_registration(self):
+        from unittest.mock import patch
+
+        with patch("payments.views.UserStub.create") as create:
+            response = self._post("zzz999999")
+            self.assertEqual(response.context["confirm_net_id"], "zzz999999")
+            create.assert_not_called()
+
+    @override_settings(
+        FEATURE_FLAGS={**settings.FEATURE_FLAGS, "SELF_CHECK_IN": True, "WEB_ACCOUNT_REGISTRATION": True}
+    )
+    def test_confirmed_registration_returns_to_event(self):
+        from unittest.mock import patch
+
+        with (
+            patch("payments.views.UserStub.create") as create,
+            patch("payments.views.UserStub.notify"),
+            patch("payments.views.registration_throttled", return_value=False),
+        ):
+            response = self.client.post(
+                reverse("self_sign_in", args=[self.event.pk]),
+                {"username": "zzz999999", "confirm_registration": "1"},
+            )
+        self.assertIn("registration_message", response.context)
+        self.assertEqual(
+            create.call_args.kwargs["after_registration_redirect_destination"],
+            reverse("self_sign_in", args=[self.event.pk]),
+        )
+
+    def test_repeat_non_member_still_sees_dues_and_linking_prompt(self):
+        User.objects.create_user(username="nop123456")
+        self._post("nop123456")
+        response = self._post("nop123456")
+        self.assertTrue(response.context["not_linked"])
+        self.assertEqual(response.context["next_step_url"], f"/payments/{self.product.pk}/pay/")
 
     def test_signing_in_twice_reports_repeat(self):
         self._make_member()
