@@ -38,7 +38,11 @@ def sign_in(request, event_id):
 
             active_membership_terms = [term for term, _ in user_profile.get_active_membership_terms()]
             renewal_term = Term.get_active_term_with_latest_end_date()
-            needs_renewal = bool(active_membership_terms) and renewal_term is not None and renewal_term not in active_membership_terms
+            needs_renewal = (
+                bool(active_membership_terms)
+                and renewal_term is not None
+                and renewal_term not in active_membership_terms
+            )
             if meta.is_not_member:
                 message = "nomember"
             elif needs_renewal:
