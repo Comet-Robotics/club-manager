@@ -561,10 +561,12 @@ class QrCodeSvgTest(TestCase):
 
     def test_viewbox_covers_the_whole_drawing_area(self):
         svg = qr_code_svg(self.URL)
-        width = int(re.search(r'<svg[^>]*\bwidth="(\d+)"', svg).group(1))
+        width_match = re.search(r'<svg[^>]*\bwidth="(\d+)"', svg)
+        assert width_match is not None
+        width = int(width_match.group(1))
         viewbox = re.search(r'viewBox="0 0 (\d+) (\d+)"', svg)
 
-        self.assertIsNotNone(viewbox)
+        assert viewbox is not None
         # segno draws the symbol plus a quiet zone, so the viewBox must be at
         # least as large as the reported extent -- using the matrix size instead
         # crops the code.
@@ -574,7 +576,9 @@ class QrCodeSvgTest(TestCase):
         import segno
 
         svg = qr_code_svg(self.URL)
-        viewbox = int(re.search(r'viewBox="0 0 (\d+)', svg).group(1))
+        match = re.search(r'viewBox="0 0 (\d+)', svg)
+        assert match is not None
+        viewbox = int(match.group(1))
 
         self.assertGreater(viewbox, len(segno.make(self.URL).matrix))
 
