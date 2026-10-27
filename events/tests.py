@@ -241,8 +241,8 @@ class SelfSignInViewTest(TestCase):
         )
         self.term = Term.objects.create(
             name="Fall 2026",
-            start_date=timezone.now().date() - timezone.timedelta(days=30),
-            end_date=timezone.now().date() + timezone.timedelta(days=30),
+            start_date=timezone.now().date() - timedelta(days=30),
+            end_date=timezone.now().date() + timedelta(days=30),
             product=self.product,
         )
 
