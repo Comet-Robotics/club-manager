@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from django.conf import settings
-from django.test import TestCase, Client, TransactionTestCase, override_settings, skipUnlessDBFeature
+from django.test import TestCase, Client, TransactionTestCase, override_settings
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.urls import reverse
@@ -408,7 +408,6 @@ class SelfCheckInFeatureFlagTest(TestCase):
 
 
 class ConcurrentSelfSignInTest(TransactionTestCase):
-    @skipUnlessDBFeature("has_select_for_update")
     def test_concurrent_sign_ins_record_one_attendance(self):
         from concurrent.futures import ThreadPoolExecutor
         from threading import Barrier, BrokenBarrierError
@@ -445,3 +444,54 @@ class ConcurrentSelfSignInTest(TransactionTestCase):
         with patch.object(QuerySet, "get", synchronized_get), ThreadPoolExecutor(max_workers=2) as pool:
             list(pool.map(lambda _: sign_in(), range(2)))
         self.assertEqual(Attendance.objects.filter(event=event, user=user).count(), 1)
+
+
+class AttendanceDeduplicationMigrationTest(TransactionTestCase):
+    def test_backup_deduplicate_and_enforce_unique_attendance(self):
+        from django.db import IntegrityError, connection, transaction
+        from django.db.migrations.executor import MigrationExecutor
+
+        executor = MigrationExecutor(connection)
+        executor.migrate([("events", "0029_alter_attendance_sign_in_method")])
+        old_apps = executor.loader.project_state([("events", "0029_alter_attendance_sign_in_method")]).apps
+        Event = old_apps.get_model("events", "Event")
+        Attendance = old_apps.get_model("events", "Attendance")
+        User = old_apps.get_model("auth", "User")
+        user = User.objects.create(username="dedup-test")
+        event = Event.objects.create(event_name="Deduplication test", event_date=timezone.now())
+        older = Attendance.objects.create(
+            event=event, user=user, timestamp=timezone.now() - timedelta(days=1), sign_in_method="self_qr"
+        )
+        newer = Attendance.objects.create(
+            event=event, user=user, timestamp=timezone.now(), sign_in_method="staff_initiated"
+        )
+        anonymous = Attendance.objects.create(event=event, user=None)
+        existing_tables = set(connection.introspection.table_names())
+        try:
+            executor = MigrationExecutor(connection)
+            executor.migrate([("events", "0030_unique_attendance")])
+            new_apps = executor.loader.project_state([("events", "0030_unique_attendance")]).apps
+            NewAttendance = new_apps.get_model("events", "Attendance")
+            self.assertTrue(NewAttendance.objects.filter(pk=older.pk, sign_in_method="self_qr").exists())
+            self.assertFalse(NewAttendance.objects.filter(pk=newer.pk).exists())
+            self.assertTrue(NewAttendance.objects.filter(pk=anonymous.pk).exists())
+            backups = [
+                name
+                for name in set(connection.introspection.table_names()) - existing_tables
+                if name.startswith("events_attendance_backup_")
+            ]
+            self.assertEqual(len(backups), 1)
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    f"SELECT id, sign_in_method FROM {connection.ops.quote_name(backups[0])} WHERE event_id = %s",
+                    [event.pk],
+                )
+                self.assertEqual(
+                    dict(cursor.fetchall()),
+                    {older.pk: "self_qr", newer.pk: "staff_initiated", anonymous.pk: "staff_initiated"},
+                )
+            with self.assertRaises(IntegrityError), transaction.atomic():
+                NewAttendance.objects.create(event_id=event.pk, user_id=user.pk)
+            NewAttendance.objects.create(event_id=event.pk, user_id=None)
+        finally:
+            MigrationExecutor(connection).migrate(MigrationExecutor(connection).loader.graph.leaf_nodes())
