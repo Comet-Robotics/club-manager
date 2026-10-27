@@ -1,7 +1,7 @@
 from typing import Any
 from django.contrib import admin
 from django.http import HttpRequest
-from .models import AccountLink
+from .models import AccountLink, UserStub
 
 
 class AccountLinkAdmin(admin.ModelAdmin):
@@ -17,3 +17,10 @@ class AccountLinkAdmin(admin.ModelAdmin):
 
 
 admin.site.register(AccountLink, AccountLinkAdmin)
+
+
+@admin.register(UserStub)
+class UserStubAdmin(admin.ModelAdmin):
+    list_display = ["net_id", "pending_discord_id", "expires_at"]
+    search_fields = ["net_id", "pending_discord_id"]
+    readonly_fields = ["user_registration_key"]
