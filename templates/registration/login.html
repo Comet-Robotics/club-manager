@@ -35,6 +35,13 @@
         <!-- Logged out notice -->
         {% if request.GET.logged_out %}
             <p class="auth-notice">You have been logged out.</p>
+            <script>
+                try {
+                    localStorage.removeItem("selfSignInNetId");
+                } catch (_) {
+                    // Storage may be unavailable in private browsing.
+                }
+            </script>
         {% endif %}
 
         <!-- Login Form -->

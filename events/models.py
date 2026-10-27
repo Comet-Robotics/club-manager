@@ -74,6 +74,9 @@ class Attendance(models.Model):
         default=SignInMethod.STAFF_INITIATED,
     )
 
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["event", "user"], name="unique_attendance_per_event_user")]
+
     def __str__(self):
         return str(self.user) + " - " + str(self.event) + " - " + str(self.timestamp)
 

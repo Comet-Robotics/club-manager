@@ -2,13 +2,15 @@ from django.forms.models import model_to_dict
 from django.utils import timezone
 from io import StringIO
 from csv import DictWriter
+from django.conf import settings
 from django.shortcuts import get_object_or_404, render, redirect
+from django.urls import reverse
 from django.http import Http404, HttpResponse
 from django.db.models import Q
 from platformdirs import user_runtime_dir
 
 from core.utilities import get_layout_data
-from .forms import EventForm, SignInForm, UserSearchForm, RSVPForm
+from .forms import EventForm, SignInForm, SelfSignInForm, UserSearchForm, RSVPForm
 from .models import Attendance, SignInMethod, Event, Reservation
 from core.models import UserProfile
 from django.contrib.auth.models import User
@@ -73,6 +75,89 @@ def sign_in(request, event_id):
     return render(
         request, "sign_in.html", {**layout_data, "form": form, "event_id": event_id, "event_name": event_name}
     )
+
+
+def self_check_in_enabled() -> bool:
+    return settings.FEATURE_FLAGS["SELF_CHECK_IN"]
+
+
+def self_sign_in_dues_url() -> str | None:
+    """Link to the payment page for the current term's dues, if a term is active."""
+    term = Term.get_active_term_with_latest_end_date()
+    return reverse("choose_user", kwargs={"product_id": term.product_id}) if term else None
+
+
+def self_sign_in(request, event_id):
+    """
+    Member-facing self sign-in. A member identifies themselves with their Net ID
+    instead of swiping a Comet Card. This is recorded as SignInMethod.SELF_QR
+    because members reach the page by scanning the event's QR code.
+    """
+    if not self_check_in_enabled():
+        raise Http404("Self sign-in is not enabled.")
+
+    layout_data = get_layout_data(request)
+    event = get_object_or_404(Event, pk=event_id)
+
+    initial = {"username": request.user.username} if request.user.is_authenticated else {}
+    context = {
+        **layout_data,
+        "event": event,
+        "form": SelfSignInForm(initial=initial),
+        "has_session": request.user.is_authenticated,
+    }
+
+    if request.method != "POST":
+        return render(request, "self_sign_in.html", context)
+
+    form = SelfSignInForm(request.POST)
+    context["form"] = form
+
+    if not form.is_valid():
+        return render(request, "self_sign_in.html", context)
+
+    username = form.cleaned_data["username"]
+    user = User.objects.filter(username=username).select_related("userprofile").first()
+
+    if user is None:
+        if not settings.FEATURE_FLAGS["WEB_ACCOUNT_REGISTRATION"]:
+            context["message"] = "not_found"
+            return render(request, "self_sign_in.html", context)
+
+        if request.POST.get("confirm_registration") != "1":
+            context["confirm_net_id"] = username
+            return render(request, "self_sign_in.html", context)
+
+        from payments.views import ChooseUserView
+
+        registration = ChooseUserView()
+        registration.registration_sent_message = (
+            "Check your UT Dallas email for a link to finish registering. It will bring you back here to sign in."
+        )
+        context["registration_message"] = registration.start_registration(request, username)
+        if context["registration_message"] is None:
+            user = User.objects.filter(username=username).select_related("userprofile").first()
+
+        if user is None:
+            return render(request, "self_sign_in.html", context)
+
+    _, meta = user.userprofile.sign_in_to_event(event, SignInMethod.SELF_QR)
+    context["user"] = user
+    context["status"] = meta.attendance
+    context["saved_net_id"] = user.username
+    context["not_linked"] = not user.userprofile.discord_id
+    if meta.is_not_member:
+        context["next_step_url"] = self_sign_in_dues_url()
+        context["dues_unpaid"] = True
+
+    if meta.already_signed_in:
+        context["message"] = "repeat"
+    elif meta.is_not_member:
+        context["message"] = "not_member"
+    else:
+        context["message"] = "success"
+
+    return render(request, "self_sign_in.html", context)
 
 
 @staff_member_required
