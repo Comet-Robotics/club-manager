@@ -13,6 +13,9 @@ def backup_and_deduplicate(apps, schema_editor):
     with connection.cursor() as cursor:
         # Hold the snapshot and cleanup together with the constraint on PostgreSQL.
         if connection.vendor == "postgresql":
+            # ACCESS EXCLUSIVE is held until this migration's transaction commits,
+            # which also covers the AddConstraint below (atomic=True), so the dedup
+            # and the unique constraint cannot race with concurrent writes.
             cursor.execute(f"LOCK TABLE {table} IN ACCESS EXCLUSIVE MODE")
         cursor.execute(f"CREATE TABLE {quote(backup_name)} AS SELECT * FROM {table}")
         print(f"Attendance backup created: {backup_name}")

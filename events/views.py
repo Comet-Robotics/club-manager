@@ -107,44 +107,53 @@ def self_sign_in(request, event_id):
         "has_session": request.user.is_authenticated,
     }
 
-    if request.method == "POST":
-        form = SelfSignInForm(request.POST)
-        context["form"] = form
+    if request.method != "POST":
+        return render(request, "self_sign_in.html", context)
 
-        if form.is_valid():
-            username = form.cleaned_data["username"]
+    form = SelfSignInForm(request.POST)
+    context["form"] = form
+
+    if not form.is_valid():
+        return render(request, "self_sign_in.html", context)
+
+    username = form.cleaned_data["username"]
+    user = User.objects.filter(username=username).select_related("userprofile").first()
+
+    if user is None:
+        if not settings.FEATURE_FLAGS["WEB_ACCOUNT_REGISTRATION"]:
+            context["message"] = "not_found"
+            return render(request, "self_sign_in.html", context)
+
+        if request.POST.get("confirm_registration") != "1":
+            context["confirm_net_id"] = username
+            return render(request, "self_sign_in.html", context)
+
+        from payments.views import ChooseUserView
+
+        registration = ChooseUserView()
+        registration.registration_sent_message = "Check your UT Dallas email for a link to finish registering. It will bring you back here to sign in."
+        context["registration_message"] = registration.start_registration(request, username)
+        if context["registration_message"] is None:
             user = User.objects.filter(username=username).select_related("userprofile").first()
 
-            if user is None:
-                if settings.FEATURE_FLAGS["WEB_ACCOUNT_REGISTRATION"]:
-                    if request.POST.get("confirm_registration") != "1":
-                        context["confirm_net_id"] = username
-                    else:
-                        from payments.views import ChooseUserView
+        if user is None:
+            return render(request, "self_sign_in.html", context)
 
-                        registration = ChooseUserView()
-                        registration.registration_sent_message = "Check your UT Dallas email for a link to finish registering. It will bring you back here to sign in."
-                        context["registration_message"] = registration.start_registration(request, username)
-                        if context["registration_message"] is None:
-                            user = User.objects.filter(username=username).select_related("userprofile").first()
-                else:
-                    context["message"] = "not_found"
-            if user is not None:
-                _, meta = user.userprofile.sign_in_to_event(event, SignInMethod.SELF_QR)
-                context["user"] = user
-                context["status"] = meta.attendance
-                context["saved_net_id"] = user.username
-                context["not_linked"] = not user.userprofile.discord_id
-                if meta.is_not_member:
-                    context["next_step_url"] = self_sign_in_dues_url()
-                    context["dues_unpaid"] = True
+    _, meta = user.userprofile.sign_in_to_event(event, SignInMethod.SELF_QR)
+    context["user"] = user
+    context["status"] = meta.attendance
+    context["saved_net_id"] = user.username
+    context["not_linked"] = not user.userprofile.discord_id
+    if meta.is_not_member:
+        context["next_step_url"] = self_sign_in_dues_url()
+        context["dues_unpaid"] = True
 
-                if meta.already_signed_in:
-                    context["message"] = "repeat"
-                elif meta.is_not_member:
-                    context["message"] = "not_member"
-                else:
-                    context["message"] = "success"
+    if meta.already_signed_in:
+        context["message"] = "repeat"
+    elif meta.is_not_member:
+        context["message"] = "not_member"
+    else:
+        context["message"] = "success"
 
     return render(request, "self_sign_in.html", context)
 
