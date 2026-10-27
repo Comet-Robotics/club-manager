@@ -131,7 +131,9 @@ def self_sign_in(request, event_id):
         from payments.views import ChooseUserView
 
         registration = ChooseUserView()
-        registration.registration_sent_message = "Check your UT Dallas email for a link to finish registering. It will bring you back here to sign in."
+        registration.registration_sent_message = (
+            "Check your UT Dallas email for a link to finish registering. It will bring you back here to sign in."
+        )
         context["registration_message"] = registration.start_registration(request, username)
         if context["registration_message"] is None:
             user = User.objects.filter(username=username).select_related("userprofile").first()
