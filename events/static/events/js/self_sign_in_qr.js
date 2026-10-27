@@ -91,7 +91,6 @@
     copy.addEventListener('click', async () => {
         try {
             if (!navigator.clipboard?.write || !window.ClipboardItem) throw new Error('Image clipboard unavailable');
-            // Construct the ClipboardItem during the click so browsers retain user activation.
             await navigator.clipboard.write([new ClipboardItem({'image/png': pngBlob()})]);
             showStatus('Image copied. Paste it into your slide.');
         } catch (_) {

@@ -9,7 +9,6 @@ from django.urls import reverse
 from django.http import Http404, HttpResponse
 from django.db.models import Q
 from platformdirs import user_runtime_dir
-import re
 import segno
 
 from core.utilities import get_layout_data
@@ -175,17 +174,22 @@ def qr_code_svg(data: str) -> str:
     its quiet zone -- larger than the matrix. Sizing it from the matrix instead
     crops the code and it stops scanning, so take the extent segno reports.
     """
+    import xml.etree.ElementTree as ET
+
     svg = segno.make(data).svg_inline(scale=1)
-    width = re.search(r'<svg[^>]*\bwidth="(\d+)"', svg)
-    height = re.search(r'<svg[^>]*\bheight="(\d+)"', svg)
+    try:
+        root = ET.fromstring(svg)
+    except ET.ParseError as exc:
+        raise ValueError("Could not parse the generated QR code.") from exc
+
+    width = root.get("width")
+    height = root.get("height")
     if not width or not height:
         raise ValueError("Could not determine the dimensions of the generated QR code.")
 
-    return svg.replace(
-        "<svg ",
-        f'<svg viewBox="0 0 {width.group(1)} {height.group(1)}" preserveAspectRatio="xMidYMid meet" ',
-        1,
-    )
+    root.set("viewBox", f"0 0 {width} {height}")
+    root.set("preserveAspectRatio", "xMidYMid meet")
+    return ET.tostring(root, encoding="unicode")
 
 
 @staff_member_required
@@ -201,8 +205,6 @@ def self_sign_in_qr(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
 
     path = reverse("self_sign_in", kwargs={"event_id": event.pk})
-    # Prefer PUBLIC_URL so the QR points at the canonical domain rather than
-    # whatever host the staff member happens to be browsing from.
     base = settings.PUBLIC_URL.rstrip("/") if settings.PUBLIC_URL else ""
     sign_in_url = f"{base}{path}" if base else request.build_absolute_uri(path)
 
@@ -213,7 +215,6 @@ def self_sign_in_qr(request, event_id):
             **layout_data,
             "event": event,
             "sign_in_url": sign_in_url,
-            # segno only emits path data and numbers, so there is nothing to escape.
             "qr_svg": mark_safe(qr_code_svg(sign_in_url)),
         },
     )

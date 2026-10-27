@@ -23,7 +23,5 @@ def get_layout_data(request: HttpRequest) -> LayoutData:
         user=user,
         settings=ServerSettings.objects.get_or_create()[0],
         accessible_projects=accessible_projects,
-        # Read through the settings object rather than importing the value, so
-        # that overriding FEATURE_FLAGS actually reaches templates.
         FEATURE_FLAGS=settings.FEATURE_FLAGS,
     )
