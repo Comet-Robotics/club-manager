@@ -10,13 +10,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
+        migrations.RenameField(
             model_name='attendance',
-            name='checkin_method',
+            old_name='checkin_method',
+            new_name='sign_in_method',
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='attendance',
             name='sign_in_method',
-            field=models.CharField(choices=[('self_qr', 'Self Sign-In via QR Code'), ('staff_initiated', 'Staff Initiated Sign-In')], db_column='checkin_method', default='staff_initiated', max_length=20),
+            field=models.CharField(choices=[('self_qr', 'Self Sign-In via QR Code'), ('staff_initiated', 'Staff Initiated Sign-In')], default='staff_initiated', max_length=20),
         ),
     ]

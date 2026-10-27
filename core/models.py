@@ -106,8 +106,7 @@ class UserProfile(models.Model):
           SignInMetadata: messages which explain the decision / can optionally be surfaced as warnings to the user
 
         """
-        _, purchased_product = self.is_member()
-        is_member = bool(purchased_product)
+        is_member = bool(self.get_active_membership_terms())
 
         attendance, is_first_sign_in = Attendance.objects.get_or_create(
             event=event, user=self.user, defaults={"sign_in_method": sign_in_method}

@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.test import TestCase, Client
+from django.test import TestCase, Client, TransactionTestCase
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.urls import reverse
@@ -199,3 +199,26 @@ class SignInMembershipRenewalTest(TestCase):
         self.assertEqual(response.context["message"], "nomember")
         self.assertIsNone(response.context["renewal_term"])
         self.assertNotContains(response, "Membership Renewal Needed")
+
+
+class SignInMethodMigrationTest(TransactionTestCase):
+    def test_existing_checkin_method_survives_rename(self):
+        from django.db import connection
+        from django.db.migrations.executor import MigrationExecutor
+
+        executor = MigrationExecutor(connection)
+        executor.migrate([("events", "0027_add_checkin_method_to_attendance")])
+        old_apps = executor.loader.project_state([("events", "0027_add_checkin_method_to_attendance")]).apps
+        Event = old_apps.get_model("events", "Event")
+        Attendance = old_apps.get_model("events", "Attendance")
+        event = Event.objects.create(event_name="Migration test", event_date=timezone.now())
+        attendance = Attendance.objects.create(event=event, checkin_method="self_qr")
+        try:
+            executor = MigrationExecutor(connection)
+            executor.migrate([("events", "0029_alter_attendance_sign_in_method")])
+            new_apps = executor.loader.project_state([("events", "0029_alter_attendance_sign_in_method")]).apps
+            self.assertEqual(
+                new_apps.get_model("events", "Attendance").objects.get(pk=attendance.pk).sign_in_method, "self_qr"
+            )
+        finally:
+            MigrationExecutor(connection).migrate(MigrationExecutor(connection).loader.graph.leaf_nodes())
