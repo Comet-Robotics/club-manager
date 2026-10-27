@@ -41,6 +41,24 @@ def _before_send_span(span, _hint):
     return span
 
 
+def _running_tests() -> bool:
+    """Best-effort detection that this process is running the test suite."""
+    import os
+    import sys
+
+    if os.getenv("TESTING", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return True
+    if os.getenv("DJANGO_TEST", "").strip():
+        return True
+    if "pytest" in sys.modules:
+        return True
+    argv = [str(a) for a in sys.argv]
+    if any(a == "test" or a.endswith("/test") or a.endswith("\\test") for a in argv):
+        return True
+    if any("pytest" in a for a in argv):
+        return True
+    return False
+
 def init_sentry(
     *,
     debug: bool,
@@ -53,6 +71,8 @@ def init_sentry(
     profile_session_sample_rate: float,
     configured_tenant: str | None = None,
     service: str = "web",
+    testing: bool | None = None,
+    **kwargs,
 ) -> bool:
     """
     Initialize the Sentry SDK unless this instance has opted out.
@@ -64,6 +84,20 @@ def init_sentry(
     `service` distinguishes the processes that share this configuration -- the Django
     site and the Discord bot both load settings.py, and their errors look nothing alike.
     """
+    # Accept any keyword that signals a test run, so callers can use whichever
+    # name they prefer (testing, tests, test_mode, disabled, ...).
+    if testing is None:
+        if any("test" in key.lower() and value for key, value in kwargs.items()):
+            testing = True
+        elif any(key.lower() in {"disabled", "disable", "off", "quiet"} and value for key, value in kwargs.items()):
+            testing = True
+        else:
+            testing = False
+
+    if testing:
+        print("Sentry is disabled because tests are running.")
+        return False
+
     if debug:
         print("Sentry is disabled because DEBUG is on.")
         return False
