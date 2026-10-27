@@ -42,6 +42,7 @@ sentry-sdk = {extras = ["django"], version = ">=2.62,<3"}
 # GHSA-xmj3-9gf7-h52w: setuptools <84.1.0 can write outside the install directory
 # when unpacking a crafted wheel's namespace_packages.txt.
 setuptools = "*"
+segno = "*"
 
 [dev-packages]
 types-beautifulsoup4 = "*"

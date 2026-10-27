@@ -1,4 +1,4 @@
-from clubManager.settings import FEATURE_FLAGS
+from django.conf import settings
 from core.models import ServerSettings, User
 from django.http import HttpRequest
 from django.contrib.auth.models import AnonymousUser
@@ -23,5 +23,5 @@ def get_layout_data(request: HttpRequest) -> LayoutData:
         user=user,
         settings=ServerSettings.objects.get_or_create()[0],
         accessible_projects=accessible_projects,
-        FEATURE_FLAGS=FEATURE_FLAGS,
+        FEATURE_FLAGS=settings.FEATURE_FLAGS,
     )

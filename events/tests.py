@@ -1,4 +1,5 @@
 from datetime import timedelta
+import re
 
 from django.conf import settings
 from django.test import TestCase, Client, TransactionTestCase, override_settings
@@ -20,7 +21,7 @@ def make_term(name, start_date, end_date):
 
 
 from events.models import Attendance, Event, SignInMethod
-from events.views import LOOKUP_USER_LIMIT
+from events.views import LOOKUP_USER_LIMIT, qr_code_svg
 from payments.models import Payment, Product, PurchasedProduct, Term
 
 
@@ -495,3 +496,91 @@ class AttendanceDeduplicationMigrationTest(TransactionTestCase):
             NewAttendance.objects.create(event_id=event.pk, user_id=None)
         finally:
             MigrationExecutor(connection).migrate(MigrationExecutor(connection).loader.graph.leaf_nodes())
+
+
+@override_settings(FEATURE_FLAGS={**settings.FEATURE_FLAGS, "SELF_CHECK_IN": True})
+class SelfSignInQrViewTest(TestCase):
+    """The staff-facing page pairing the self sign-in link with its QR code."""
+
+    def setUp(self):
+        self.event = Event.objects.create(event_name="Test Event", event_date=timezone.now())
+
+    def test_requires_staff(self):
+        response = self.client.get(f"/events/{self.event.pk}/self-sign-in-qr/")
+        self.assertEqual(response.status_code, 302)
+
+    def test_staff_sees_link_and_qr(self):
+        staff = User.objects.create_user(username="staff", password="pass", is_staff=True)
+        self.client.login(username="staff", password="pass")
+
+        with self.settings(PUBLIC_URL="https://clubmanager.example"):
+            response = self.client.get(f"/events/{self.event.pk}/self-sign-in-qr/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["sign_in_url"],
+            f"https://clubmanager.example/events/{self.event.pk}/self-sign-in/",
+        )
+        self.assertIn("<svg", response.context["qr_svg"])
+
+    def test_qr_page_embeds_the_link_in_the_page(self):
+        staff = User.objects.create_user(username="staff", password="pass", is_staff=True)
+        self.client.login(username="staff", password="pass")
+
+        with self.settings(PUBLIC_URL="https://clubmanager.example"):
+            response = self.client.get(f"/events/{self.event.pk}/self-sign-in-qr/")
+
+        self.assertContains(response, "https://clubmanager.example/events/")
+        self.assertContains(response, "<svg")
+
+    def test_link_on_event_card_points_at_the_qr_page(self):
+        response = self.client.get(f"/events/{self.event.pk}/overview")
+        self.assertContains(response, f"/events/{self.event.pk}/self-sign-in-qr/")
+
+    @override_settings(FEATURE_FLAGS={**settings.FEATURE_FLAGS, "SELF_CHECK_IN": False})
+    def test_disabled_flag_hides_the_qr_page(self):
+        staff = User.objects.create_user(username="staff", password="pass", is_staff=True)
+        self.client.login(username="staff", password="pass")
+
+        response = self.client.get(f"/events/{self.event.pk}/self-sign-in-qr/")
+        self.assertEqual(response.status_code, 404)
+
+    @override_settings(FEATURE_FLAGS={**settings.FEATURE_FLAGS, "SELF_CHECK_IN": False})
+    def test_disabled_flag_hides_the_event_card_button(self):
+        response = self.client.get(f"/events/{self.event.pk}/overview")
+        self.assertNotContains(response, "Self Sign-In QR")
+
+
+class QrCodeSvgTest(TestCase):
+    """
+    The inline QR SVG is scaled by CSS, so a wrong viewBox silently crops the code
+    and stops it scanning while still looking like a QR code on screen.
+    """
+
+    URL = "https://clubmanager.example/events/1/self-sign-in/"
+
+    def test_viewbox_covers_the_whole_drawing_area(self):
+        svg = qr_code_svg(self.URL)
+        width_match = re.search(r'<svg[^>]*\bwidth="(\d+)"', svg)
+        assert width_match is not None
+        width = int(width_match.group(1))
+        viewbox = re.search(r'viewBox="0 0 (\d+) (\d+)"', svg)
+
+        assert viewbox is not None
+        # segno draws the symbol plus a quiet zone, so the viewBox must be at
+        # least as large as the reported extent -- using the matrix size instead
+        # crops the code.
+        self.assertEqual(viewbox.groups(), (str(width), str(width)))
+
+    def test_viewbox_is_larger_than_the_symbol_matrix(self):
+        import segno
+
+        svg = qr_code_svg(self.URL)
+        match = re.search(r'viewBox="0 0 (\d+)', svg)
+        assert match is not None
+        viewbox = int(match.group(1))
+
+        self.assertGreater(viewbox, len(segno.make(self.URL).matrix))
+
+    def test_svg_scales_without_distortion(self):
+        self.assertIn('preserveAspectRatio="xMidYMid meet"', qr_code_svg(self.URL))
