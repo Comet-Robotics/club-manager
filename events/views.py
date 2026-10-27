@@ -83,7 +83,7 @@ def self_check_in_enabled() -> bool:
 
 def self_sign_in_dues_url() -> str | None:
     """Link to the payment page for the current term's dues, if a term is active."""
-    term = Term.get_current_term()
+    term = Term.get_active_term_with_latest_end_date()
     return reverse("choose_user", kwargs={"product_id": term.product_id}) if term else None
 
 
@@ -153,7 +153,7 @@ def self_sign_in(request, event_id):
 def pass_sign_in(request, event_id, user_id):
     current_event = Event.objects.get(pk=event_id)
     user = User.objects.get(pk=user_id)
-    status, created = Attendance.objects.get_or_create(event=current_event, user=user)
+    status, created = Attendance.record_sign_in(current_event, user)
     if created:
         print("success")
         message = "success"
@@ -168,7 +168,7 @@ def pass_link(request, event_id, user_id, student_id):
     current_event = Event.objects.get(pk=event_id)
     user_profile = UserProfile.link_user(user_id, student_id)
     user = User.objects.get(pk=user_id)
-    status, created = Attendance.objects.get_or_create(event=current_event, user=user)
+    status, created = Attendance.record_sign_in(current_event, user)
     print(user_profile)
     if created:
         print("success")

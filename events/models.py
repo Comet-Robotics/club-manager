@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -73,6 +73,13 @@ class Attendance(models.Model):
         choices=SignInMethod.choices,
         default=SignInMethod.STAFF_INITIATED,
     )
+
+    @classmethod
+    def record_sign_in(cls, event, user, sign_in_method=SignInMethod.STAFF_INITIATED):
+        # Serialize all app sign-in paths for this user before checking attendance.
+        with transaction.atomic():
+            User.objects.select_for_update().get(pk=user.pk)
+            return cls.objects.get_or_create(event=event, user=user, defaults={"sign_in_method": sign_in_method})
 
     def __str__(self):
         return str(self.user) + " - " + str(self.event) + " - " + str(self.timestamp)

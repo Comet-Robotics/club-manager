@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from django.conf import settings
-from django.test import TestCase, Client, TransactionTestCase, override_settings
+from django.test import TestCase, Client, TransactionTestCase, override_settings, skipUnlessDBFeature
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.urls import reverse
@@ -360,6 +360,14 @@ class SelfSignInViewTest(TestCase):
         # Attendance is still recorded; only the warning differs.
         self.assertTrue(Attendance.objects.filter(event=self.event, user=user).exists())
 
+    def test_dues_link_targets_longest_active_term_during_overlap(self):
+        User.objects.create_user(username="nop123456")
+        later_term = make_term(
+            "Later", timezone.localdate() - timedelta(days=1), timezone.localdate() + timedelta(days=90)
+        )
+        response = self._post("nop123456")
+        self.assertEqual(response.context["next_step_url"], reverse("choose_user", args=[later_term.product_id]))
+
     def test_unlinked_member_is_told_how_to_link_discord(self):
         self._make_member(discord_id=None)
 
@@ -397,3 +405,43 @@ class SelfCheckInFeatureFlagTest(TestCase):
     def test_disabled_flag_creates_no_attendance(self):
         self.client.post(f"/events/{self.event.pk}/self-sign-in/", {"username": "abc123456"})
         self.assertFalse(Attendance.objects.exists())
+
+
+class ConcurrentSelfSignInTest(TransactionTestCase):
+    @skipUnlessDBFeature("has_select_for_update")
+    def test_concurrent_sign_ins_record_one_attendance(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Barrier, BrokenBarrierError
+        from unittest.mock import patch
+
+        from django.db import close_old_connections
+        from django.db.models.query import QuerySet
+
+        user = User.objects.create_user(username="abc123456")
+        event = Event.objects.create(event_name="Concurrent sign-in", event_date=timezone.now())
+        start = Barrier(2)
+        both_missed = Barrier(2)
+        original_get = QuerySet.get
+
+        def synchronized_get(queryset, *args, **kwargs):
+            try:
+                return original_get(queryset, *args, **kwargs)
+            except Attendance.DoesNotExist:
+                if queryset.model is Attendance:
+                    try:
+                        both_missed.wait(timeout=1)
+                    except BrokenBarrierError:
+                        pass
+                raise
+
+        def sign_in():
+            close_old_connections()
+            try:
+                start.wait(timeout=5)
+                user.userprofile.sign_in_to_event(event, SignInMethod.SELF_QR)
+            finally:
+                close_old_connections()
+
+        with patch.object(QuerySet, "get", synchronized_get), ThreadPoolExecutor(max_workers=2) as pool:
+            list(pool.map(lambda _: sign_in(), range(2)))
+        self.assertEqual(Attendance.objects.filter(event=event, user=user).count(), 1)

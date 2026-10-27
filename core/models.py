@@ -108,9 +108,7 @@ class UserProfile(models.Model):
         """
         is_member = bool(self.get_active_membership_terms())
 
-        attendance, is_first_sign_in = Attendance.objects.get_or_create(
-            event=event, user=self.user, defaults={"sign_in_method": sign_in_method}
-        )
+        attendance, is_first_sign_in = Attendance.record_sign_in(event, self.user, sign_in_method)
 
         return True, SignInMetadata(
             already_signed_in=not is_first_sign_in, is_not_member=not is_member, attendance=attendance
