@@ -23,6 +23,9 @@
         }
 
         .self-signin-copy {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
             font-family: monospace;
             font-size: 13px;
             background: rgba(255, 255, 255, 0.55);
@@ -31,6 +34,9 @@
             border-radius: 4px;
             padding: 2px 6px;
             cursor: pointer;
+        }
+        .self-signin-copy svg {
+            flex-shrink: 0;
         }
         .self-signin-copy:focus-visible {
             outline: 2px solid currentColor;
@@ -60,6 +66,19 @@
            <a> elements, so drop the browser's default link underline. */
         .auth-card .alert .button {
             text-decoration: none;
+        }
+        .auth-card .alert .self-signin-dues {
+            align-self: flex-start;
+            color: #92400e;
+            background: #fff;
+            border: 1px solid #d97706;
+        }
+        .auth-card .alert .self-signin-dues:hover {
+            background: #fef3c7;
+        }
+        .auth-card .alert .self-signin-dues:focus-visible {
+            outline: 2px solid #92400e;
+            outline-offset: 2px;
         }
 
         /* The clear-an-unknown-Net-ID confirmation stays inside the card above
@@ -140,7 +159,7 @@
                 Your sign-in was recorded.
             </p>
             {% if next_step_url %}
-            <a href="{{ next_step_url }}" class="button button-primary">Pay Dues</a>
+            <a href="{{ next_step_url }}" class="button self-signin-dues">Pay Dues</a>
             {% endif %}
         </div>
         {% endif %}
@@ -148,7 +167,7 @@
         {% if dues_unpaid and message == "repeat" %}
         <div class="alert alert-warning self-signin-alert" role="alert">
             <p>Dues are not paid for this term.</p>
-            {% if next_step_url %}<a href="{{ next_step_url }}" class="button button-primary">Pay Dues</a>{% endif %}
+            {% if next_step_url %}<a href="{{ next_step_url }}" class="button self-signin-dues">Pay Dues</a>{% endif %}
         </div>
         {% endif %}
 
@@ -157,7 +176,8 @@
             <h3>Discord not linked</h3>
             <p>
                 You're signed in, but your Discord account isn't linked yet. Run
-                <button type="button" class="self-signin-copy" id="copy-discord-command" aria-label="Copy Discord link command"><code>/link {{ user.username }}</code></button> in Discord to link it.
+                <button type="button" class="self-signin-copy" id="copy-discord-command" aria-label="Copy Discord link command"><code>/link {{ user.username }}</code><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"></path></svg></button>
+                {% if settings.organization_name and settings.organization_name != "Your Organization" %}in the {{ settings.organization_name }} Discord server{% else %}in the organization's Discord server{% endif %} to link it.
             </p>
             <p class="self-signin-copy-status" id="copy-discord-status" role="status" aria-live="polite"></p>
         </div>

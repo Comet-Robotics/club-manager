@@ -370,13 +370,25 @@ class SelfSignInViewTest(TestCase):
         self.assertEqual(response.context["next_step_url"], reverse("choose_user", args=[later_term.product_id]))
 
     def test_unlinked_member_is_told_how_to_link_discord(self):
+        from core.models import ServerSettings
+
         self._make_member(discord_id=None)
+        ServerSettings.objects.create(organization_name="Comet Robotics")
 
         response = self._post("abc123456")
 
         self.assertEqual(response.context["message"], "success")
         self.assertTrue(response.context["not_linked"])
         self.assertContains(response, "/link abc123456")
+        self.assertContains(response, "in the Comet Robotics Discord server")
+        self.assertContains(response, 'aria-label="Copy Discord link command"')
+
+    def test_unlinked_member_sees_generic_server_when_organization_is_unset(self):
+        self._make_member(discord_id=None)
+
+        response = self._post("abc123456")
+
+        self.assertContains(response, "in the organization's Discord server", html=False)
 
     def test_malformed_net_id_is_rejected(self):
         response = self._post("not-a-net-id")
