@@ -1,128 +1,269 @@
-{% extends "publicBase.html" %}
-{% block title %}Sign In - {{ event.event_name }}{% endblock %}
-{% block content %}
-{% load static %}
+{% load static_files %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in - {{ event.event_name }} | {{ settings.organization_name }}</title>
+    <link rel="stylesheet" href="{% static_file 'core/styles.css' %}" type="text/css">
+    <script src="https://unpkg.com/lucide@0.475.0" defer></script>
+    <style>
+        :root {
+            --primary: {{ settings.accent_color_hex }};
+        }
+    </style>
+    <style>
+        /* Page-specific pieces on top of the design system: the event the member
+           is signing in to, and code spans like /link abc123456. */
+        .self-signin-event-name {
+            font-size: 18px;
+            line-height: 26px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin: 0;
+        }
 
-<body>
-  <style>
-    .errorlist:first-child {
-      margin-top: 0;
-    }
-    .errorlist {
-      margin-top: 1rem;
-    }
+        .self-signin-copy {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.55);
+            color: inherit;
+            border: 1px solid currentColor;
+            border-radius: 4px;
+            padding: 2px 6px;
+            cursor: pointer;
+        }
+        .self-signin-copy svg {
+            flex-shrink: 0;
+            width: 14px;
+            height: 14px;
+        }
+        .self-signin-copy:focus-visible {
+            outline: 2px solid currentColor;
+            outline-offset: 2px;
+        }
+        .self-signin-copy-status {
+            font-size: 13px;
+        }
 
-    /* Fix input text visibility - override inherited white text */
-    form input[type="text"] {
-      color: #1f2937;
-      background-color: #ffffff;
-    }
-  </style>
-  <div
-    class="flex min-h-screen bg-textDark w-screen text-white flex-col text-center"
-  >
-    <div
-      class="flex flex-col bg-primary w-full p-8 sm:p-12 gap-4 items-center justify-center"
-    >
-      {%if settings.logo%}
-      <img src="{{settings.logo.url}}" class="mb-6 w-32" alt="Logo" />
-      {%endif%}
-      <h1 class="font-mashine text-white text-lg">Event Sign-In</h1>
-      <h2 class="font-unbounded text-white text-3xl">
-        {{ event.event_name }}
-      </h2>
-      <p>Enter your Net ID to sign in for this event.</p>
-    </div>
-    <div
-      class="flex flex-col bg-textDark w-full p-12 gap-4 items-center justify-center"
-    >
-      {% if message == "success" %}
-      <div role="alert" class="alert alert-success">
-        <h3 class="font-unbounded text-lg">You're Signed In!</h3>
-        <p>
-          {{ user.first_name }} {{ user.last_name }} ({{ user.username }}) is
-          checked in for {{ event.event_name }}.
-        </p>
-      </div>
-      {% elif message == "repeat" %}
-      <div role="alert" class="alert alert-warning">
-        <h3 class="font-unbounded text-lg">Already Signed In</h3>
-        <p>
-          {{ user.first_name }} {{ user.last_name }} ({{ user.username }}) was
-          already signed in. Nothing to do.
-        </p>
-      </div>
-      {% elif message == "not_found" %}
-      <div role="alert" class="alert alert-info">
-        <h3 class="font-unbounded text-lg">No Account Found</h3>
-        <p>We couldn't find an account for that Net ID.</p>
-        <p>Please ask an officer for help registering.</p>
-      </div>
-      {% elif message == "not_member" %}
-      <div role="alert" class="alert alert-warning">
-        <h3 class="font-unbounded text-lg">Dues Not Paid</h3>
-        <p>
-          {{ user.first_name }} {{ user.last_name }} ({{ user.username }}) isn't
-          paid up on dues for this term. Your sign-in was recorded.
-        </p>
-        {% if next_step_url %}
-        <a href="{{ next_step_url }}" class="btn btn-neutral mt-2">
-          Pay Dues
-        </a>
+        /* The result boxes reuse the design system's alert tokens with lighter
+           padding so several stack comfortably inside the auth card. */
+        .auth-card .alert {
+            padding: 0.9rem 1rem;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .auth-card .alert h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .auth-card .alert p {
+            margin: 0;
+            line-height: 1.45;
+        }
+
+        /* .button is a reusable component with no text-decoration, but these are
+           <a> elements, so drop the browser's default link underline. */
+        .auth-card .alert .button {
+            text-decoration: none;
+        }
+        .auth-card .alert .self-signin-dues {
+            align-self: flex-start;
+            color: #92400e;
+            background: #fff;
+            border: 1px solid #d97706;
+        }
+        .auth-card .alert .self-signin-dues:hover {
+            background: #fef3c7;
+        }
+        .auth-card .alert .self-signin-dues:focus-visible {
+            outline: 2px solid #92400e;
+            outline-offset: 2px;
+        }
+
+        /* The clear-an-unknown-Net-ID confirmation stays inside the card above
+           its message, mirroring the look of the auth field group. */
+        .self-signin-confirm {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 16px;
+            border: 1px solid var(--gray-200);
+            border-radius: 6px;
+            background-color: var(--gray-50);
+            font-size: 14px;
+            line-height: 21px;
+            color: var(--gray-700);
+            text-align: center;
+        }
+        .self-signin-confirm p {
+            margin: 0;
+        }
+        .self-signin-confirm form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 0;
+        }
+        .self-signin-confirm .auth-submit {
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="auth-page">
+    <main class="auth-card">
+        {% comment %}
+        Member-facing self sign-in. Members reach this page by scanning the
+        QR code at /events/<id>/self-sign-in-qr/, so it must work signed out.
+        {% endcomment %}
+
+        <!-- Brand Lockup -->
+        <div class="auth-brand">
+            {% if settings.logo %}
+                <div class="auth-brand-mark">
+                    <img class="auth-brand-logo" src="{{ settings.logo.url }}" alt="{{ settings.organization_name }} logo">
+                </div>
+            {% endif %}
+            <span class="auth-brand-name">{{ settings.organization_name }}</span>
+        </div>
+
+        <!-- Heading Block -->
+        <div class="auth-heading">
+            <h1 class="auth-title">Event sign-in</h1>
+            <p class="self-signin-event-name">{{ event.event_name }}</p>
+            <p class="auth-subtitle">Enter your Net ID to sign in for this event.</p>
+        </div>
+
+        <!-- Result messages -->
+        {% if message == "success" %}
+        <div class="alert alert-success self-signin-alert" role="alert">
+            <h3>You're signed in!</h3>
+            <p>{{ user.first_name }} {{ user.last_name }} ({{ user.username }}) is signed in for {{ event.event_name }}.</p>
+        </div>
+        {% elif message == "repeat" %}
+        <div class="alert alert-warning self-signin-alert" role="alert">
+            <h3>Already signed in</h3>
+            <p>{{ user.first_name }} {{ user.last_name }} ({{ user.username }}) was already signed in. Nothing to do.</p>
+        </div>
+        {% elif message == "not_found" %}
+        <div class="alert alert-info self-signin-alert" role="alert">
+            <h3>No account found</h3>
+            <p>We couldn't find an account for that Net ID.</p>
+            <p>Please ask an officer for help registering.</p>
+        </div>
+        {% elif message == "not_member" %}
+        <div class="alert alert-warning self-signin-alert" role="alert">
+            <h3>Dues not paid</h3>
+            <p>
+                {{ user.first_name }} {{ user.last_name }} ({{ user.username }}) isn't paid up on dues for this term.
+                Your sign-in was recorded.
+            </p>
+            {% if next_step_url %}
+            <a href="{{ next_step_url }}" class="button self-signin-dues">Pay Dues</a>
+            {% endif %}
+        </div>
         {% endif %}
-      </div>
-      {% endif %}
 
-      {% if dues_unpaid and message == "repeat" %}
-      <div role="alert" class="alert alert-warning">
-        <p>Dues are not paid for this term.</p>
-        {% if next_step_url %}<a href="{{ next_step_url }}" class="btn btn-neutral">Pay Dues</a>{% endif %}
-      </div>
-      {% endif %}
+        {% if dues_unpaid and message == "repeat" %}
+        <div class="alert alert-warning self-signin-alert" role="alert">
+            <p>Dues are not paid for this term.</p>
+            {% if next_step_url %}<a href="{{ next_step_url }}" class="button self-signin-dues">Pay Dues</a>{% endif %}
+        </div>
+        {% endif %}
 
-      {% if not_linked %}
-      <div role="alert" class="alert alert-info">
-        <h3 class="font-unbounded text-lg">Discord Not Linked</h3>
-        <p>
-          You're signed in, but your Discord account isn't linked yet. Run
-          <code>/link {{ user.username }}</code> in Discord to link it.
-        </p>
-      </div>
-      {% endif %}
+        {% if not_linked %}
+        <div class="alert alert-info self-signin-alert" role="alert">
+            <h3>Discord not linked</h3>
+            <p>
+                You're signed in, but your Discord account isn't linked yet. Run
+                <button type="button" class="self-signin-copy" id="copy-discord-command" aria-label="Copy Discord link command"><code>/link {{ user.username }}</code><i data-lucide="copy" aria-hidden="true"></i></button>
+                {% if settings.organization_name and settings.organization_name != "Your Organization" %}in the {{ settings.organization_name }} Discord server{% else %}in the organization's Discord server{% endif %} to link it.
+            </p>
+            <p class="self-signin-copy-status" id="copy-discord-status" role="status" aria-live="polite"></p>
+        </div>
+        {% endif %}
 
-      {% if registration_message %}<div role="alert" class="alert alert-info">{{ registration_message }}</div>{% endif %}
-      {% if confirm_net_id %}
-      <p>We couldn't find an account for <strong>{{ confirm_net_id }}</strong>. Is that your Net ID? We'll email {{ confirm_net_id }}@utdallas.edu a registration link and bring you back here to sign in.</p>
-      <form method="post" class="flex flex-col gap-2 items-center">
-        {% csrf_token %}
-        <input type="hidden" name="username" value="{{ confirm_net_id }}" />
-        <input type="hidden" name="confirm_registration" value="1" />
-        <button class="btn btn-neutral" type="submit">Yes, email me a registration link</button>
-      </form>
-      <a class="btn btn-ghost" href="{{ request.path }}">No, let me fix it</a>
-      {% else %}
-      <form
-        method="post"
-        class="flex flex-col gap-2 items-center justify-center"
-      >
-        {% csrf_token %} {{ form.as_p }}
-        <button class="btn w-max btn-neutral" type="submit">
-          Sign In
-        </button>
-      </form>
-      {% endif %}
-    </div>
-  </div>
+        {% if registration_message %}<div class="alert alert-info self-signin-alert" role="alert">{{ registration_message }}</div>{% endif %}
+
+        <!-- Confirm an unknown Net ID before starting registration -->
+        {% if confirm_net_id %}
+        <div class="self-signin-confirm">
+            <p>
+                We couldn't find an account for <strong>{{ confirm_net_id }}</strong>. Is that your Net ID?
+                We'll email {{ confirm_net_id }}@utdallas.edu a registration link and bring you back here to sign in.
+            </p>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="username" value="{{ confirm_net_id }}" />
+                <input type="hidden" name="confirm_registration" value="1" />
+                <button class="auth-submit" type="submit">Yes, email me a registration link</button>
+            </form>
+            <a class="auth-link" href="{{ request.path }}">No, let me fix it</a>
+        </div>
+        {% else %}
+        <!-- Sign-in Form -->
+        <form method="post" class="auth-form" novalidate>
+            {% csrf_token %}
+            <div class="auth-field">
+                <label class="auth-label" for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <p class="auth-error-text">{{ form.username.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <button type="submit" class="auth-submit">Sign in</button>
+        </form>
+        {% endif %}
+
+        <!-- Panel Footer -->
+        <div class="auth-footer">
+            <div class="auth-divider"></div>
+            <p class="auth-note">Trouble signing in? Ask a club officer for help.</p>
+        </div>
+    </main>
+
+    {{ saved_net_id|json_script:"saved-net-id" }}
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            if (window.lucide) lucide.createIcons();
+        });
+        const copyCommand = document.getElementById("copy-discord-command");
+        if (copyCommand) {
+            copyCommand.addEventListener("click", async () => {
+                const command = copyCommand.querySelector("code").textContent;
+                const status = document.getElementById("copy-discord-status");
+                try {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(command);
+                    } else {
+                        const input = document.createElement("textarea");
+                        input.value = command;
+                        input.style.position = "fixed";
+                        input.style.opacity = "0";
+                        document.body.appendChild(input);
+                        input.select();
+                        const copied = document.execCommand("copy");
+                        input.remove();
+                        copyCommand.focus();
+                        if (!copied) throw new Error("Copy unavailable");
+                    }
+                    status.textContent = "Copied to clipboard.";
+                } catch (_) {
+                    status.textContent = "Couldn't copy. Please copy the command manually.";
+                }
+            });
+        }
+        try {
+            const savedNetId = JSON.parse(document.getElementById("saved-net-id").textContent);
+            if (savedNetId) localStorage.setItem("selfSignInNetId", savedNetId);
+            const input = document.getElementById("id_username");
+            if (input && !input.value && {% if has_session %}false{% else %}true{% endif %}) {
+                input.value = localStorage.getItem("selfSignInNetId") || "";
+            }
+        } catch (_) { /* Storage can be unavailable in private browsing. */ }
+    </script>
 </body>
-{{ saved_net_id|json_script:"saved-net-id" }}
-<script>
-  try {
-    const savedNetId = JSON.parse(document.getElementById("saved-net-id").textContent);
-    if (savedNetId) localStorage.setItem("selfSignInNetId", savedNetId);
-    const input = document.getElementById("id_username");
-    if (input && !input.value && {% if has_session %}false{% else %}true{% endif %}) {
-      input.value = localStorage.getItem("selfSignInNetId") || "";
-    }
-  } catch (_) { /* Storage can be unavailable in private browsing. */ }
-</script>
-{% endblock %}
+</html>

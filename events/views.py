@@ -144,6 +144,7 @@ def self_sign_in(request, event_id):
             return render(request, "self_sign_in.html", context)
 
     _, meta = user.userprofile.sign_in_to_event(event, SignInMethod.SELF_QR)
+    form.fields["username"].widget.attrs.pop("autofocus", None)
     context["user"] = user
     context["status"] = meta.attendance
     context["saved_net_id"] = user.username
