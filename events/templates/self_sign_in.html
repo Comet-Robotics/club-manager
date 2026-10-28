@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign in - {{ event.event_name }} | {{ settings.organization_name }}</title>
     <link rel="stylesheet" href="{% static_file 'core/styles.css' %}" type="text/css">
+    <script src="https://unpkg.com/lucide@0.475.0" defer></script>
     <style>
         :root {
             --primary: {{ settings.accent_color_hex }};
@@ -37,6 +38,8 @@
         }
         .self-signin-copy svg {
             flex-shrink: 0;
+            width: 14px;
+            height: 14px;
         }
         .self-signin-copy:focus-visible {
             outline: 2px solid currentColor;
@@ -176,7 +179,7 @@
             <h3>Discord not linked</h3>
             <p>
                 You're signed in, but your Discord account isn't linked yet. Run
-                <button type="button" class="self-signin-copy" id="copy-discord-command" aria-label="Copy Discord link command"><code>/link {{ user.username }}</code><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"></path></svg></button>
+                <button type="button" class="self-signin-copy" id="copy-discord-command" aria-label="Copy Discord link command"><code>/link {{ user.username }}</code><i data-lucide="copy" aria-hidden="true"></i></button>
                 {% if settings.organization_name and settings.organization_name != "Your Organization" %}in the {{ settings.organization_name }} Discord server{% else %}in the organization's Discord server{% endif %} to link it.
             </p>
             <p class="self-signin-copy-status" id="copy-discord-status" role="status" aria-live="polite"></p>
@@ -224,6 +227,9 @@
 
     {{ saved_net_id|json_script:"saved-net-id" }}
     <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            if (window.lucide) lucide.createIcons();
+        });
         const copyCommand = document.getElementById("copy-discord-command");
         if (copyCommand) {
             copyCommand.addEventListener("click", async () => {
