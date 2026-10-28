@@ -17,6 +17,7 @@ class NetIDFieldTests(SimpleTestCase):
         ):
             with self.subTest(form=form_class.__name__):
                 field = form_class().fields[name]
+                assert isinstance(field, NetIDField)
                 self.assertEqual(field.label, "Net ID")
                 self.assertEqual(field.max_length, 9)
                 self.assertTrue(field.required)
