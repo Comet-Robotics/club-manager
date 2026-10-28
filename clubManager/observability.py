@@ -59,6 +59,7 @@ def _running_tests() -> bool:
         return True
     return False
 
+
 def init_sentry(
     *,
     debug: bool,
