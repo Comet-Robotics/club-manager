@@ -384,6 +384,7 @@ class SelfSignInViewTest(TestCase):
         self.assertNotIn("autofocus", response.context["form"].fields["username"].widget.attrs)
         self.assertTrue(response.context["not_linked"])
         self.assertContains(response, "/link abc123456")
+        self.assertContains(response, 'data-copy-command="/link net_id:abc123456"')
         self.assertContains(response, "in the Comet Robotics Discord server")
         self.assertContains(response, 'aria-label="Copy Discord link command"')
 

@@ -179,7 +179,7 @@
             <h3>Discord not linked</h3>
             <p>
                 You're signed in, but your Discord account isn't linked yet. Run
-                <button type="button" class="self-signin-copy" id="copy-discord-command" aria-label="Copy Discord link command"><code>/link {{ user.username }}</code><i data-lucide="copy" aria-hidden="true"></i></button>
+                <button type="button" class="self-signin-copy" id="copy-discord-command" data-copy-command="/link net_id:{{ user.username }}" aria-label="Copy Discord link command"><code>/link {{ user.username }}</code><i data-lucide="copy" aria-hidden="true"></i></button>
                 {% if settings.organization_name and settings.organization_name != "Your Organization" %}in the {{ settings.organization_name }} Discord server{% else %}in the organization's Discord server{% endif %} to link it.
             </p>
             <p class="self-signin-copy-status" id="copy-discord-status" role="status" aria-live="polite"></p>
@@ -233,7 +233,7 @@
         const copyCommand = document.getElementById("copy-discord-command");
         if (copyCommand) {
             copyCommand.addEventListener("click", async () => {
-                const command = copyCommand.querySelector("code").textContent;
+                const command = copyCommand.dataset.copyCommand;
                 const status = document.getElementById("copy-discord-status");
                 try {
                     if (navigator.clipboard && window.isSecureContext) {
