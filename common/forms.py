@@ -10,6 +10,7 @@ class NetIDField(forms.CharField):
     DEFAULT_MAX_LENGTH = 9
 
     def __init__(self, *args, **kwargs):
+        kwargs.setdefault("label", "Net ID")
         kwargs.setdefault("max_length", self.DEFAULT_MAX_LENGTH)
         super().__init__(*args, **kwargs)
 
@@ -23,7 +24,7 @@ class NetIDField(forms.CharField):
             raise forms.ValidationError("Invalid Net ID!")
 
     def widget_attrs(self, widget):
-        return {
+        defaults = {
             **super().widget_attrs(widget),
             "autocapitalize": "none",
             "autocorrect": "off",
@@ -31,3 +32,4 @@ class NetIDField(forms.CharField):
             "spellcheck": "false",
             "inputmode": "text",
         }
+        return {key: value for key, value in defaults.items() if key not in widget.attrs}

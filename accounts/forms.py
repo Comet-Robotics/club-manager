@@ -5,7 +5,7 @@ from common.major import get_major_choices
 
 
 class RegistrationRequestForm(forms.Form):
-    net_id = NetIDField(label="Net ID", max_length=20, widget=forms.TextInput(attrs={"autofocus": True}))
+    net_id = NetIDField(widget=forms.TextInput(attrs={"autofocus": True}))
 
 
 class RegistrationCompletionForm(forms.ModelForm):

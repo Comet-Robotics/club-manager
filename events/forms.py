@@ -39,7 +39,7 @@ class UserSearchForm(forms.Form):
 class RSVPForm(forms.Form):
     first_name = forms.CharField(label="First Name", max_length=100)
     last_name = forms.CharField(label="Last Name", max_length=100)
-    net_id = NetIDField(label="Net ID")
+    net_id = NetIDField()
 
 
 class SelfSignInForm(forms.Form):
@@ -49,15 +49,10 @@ class SelfSignInForm(forms.Form):
     """
 
     username = NetIDField(
-        label="Net ID",
-        max_length=20,
         widget=forms.TextInput(
             attrs={
                 "autofocus": True,
                 "autocomplete": "username",
-                "autocapitalize": "none",
-                "autocorrect": "off",
-                "spellcheck": "false",
                 "placeholder": "abc123456",
             }
         ),

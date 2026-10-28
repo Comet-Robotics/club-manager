@@ -11,8 +11,6 @@ class PaymentSignInForm(forms.Form):
         payment_choices.append(("square_api", "Credit Card/Debit Card (Online)"))
 
     username = NetIDField(
-        label="Net ID",
-        required=True,
         widget=forms.TextInput(attrs={"autofocus": True}),
     )
     payment_method = forms.ChoiceField(
