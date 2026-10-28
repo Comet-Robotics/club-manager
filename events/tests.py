@@ -265,6 +265,7 @@ class SelfSignInViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("form", response.context)
         self.assertIsNone(response.context.get("message"))
+        self.assertTrue(response.context["form"].fields["username"].widget.attrs.get("autofocus"))
 
     def test_member_signs_in_and_is_recorded_as_self_qr(self):
         user = self._make_member()
@@ -349,6 +350,7 @@ class SelfSignInViewTest(TestCase):
         response = self._post("abc123456")
 
         self.assertEqual(response.context["message"], "repeat")
+        self.assertNotIn("autofocus", response.context["form"].fields["username"].widget.attrs)
         self.assertEqual(Attendance.objects.count(), 1)
 
     def test_non_member_is_shown_a_dues_link(self):
@@ -357,6 +359,7 @@ class SelfSignInViewTest(TestCase):
         response = self._post("nop123456")
 
         self.assertEqual(response.context["message"], "not_member")
+        self.assertNotIn("autofocus", response.context["form"].fields["username"].widget.attrs)
         self.assertEqual(response.context["next_step_url"], f"/payments/{self.product.pk}/pay/")
         # Attendance is still recorded; only the warning differs.
         self.assertTrue(Attendance.objects.filter(event=self.event, user=user).exists())
@@ -378,6 +381,7 @@ class SelfSignInViewTest(TestCase):
         response = self._post("abc123456")
 
         self.assertEqual(response.context["message"], "success")
+        self.assertNotIn("autofocus", response.context["form"].fields["username"].widget.attrs)
         self.assertTrue(response.context["not_linked"])
         self.assertContains(response, "/link abc123456")
         self.assertContains(response, "in the Comet Robotics Discord server")
