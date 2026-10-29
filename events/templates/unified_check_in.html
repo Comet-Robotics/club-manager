@@ -88,7 +88,7 @@
     #checkin-details:has(#checkin-results .search-list) #checkin-results{order:-1}
     #checkin-results:has(.search-list){height:0;overflow:visible}
     .search-list{position:relative;z-index:1;border-top:0;border-radius:0 0 .55rem .55rem;box-shadow:0 8px 14px rgba(0,0,0,.08);max-height:14rem;overflow-y:auto}
-    #checkin-results[data-list-continue] .search-list,#net-id-suggestions[data-list-continue] .net-id-list{transition:none}
+    #checkin-results[data-list-continue] .search-list,.person-suggestions[data-list-continue] .net-id-list{transition:none}
     .search-progress{display:flex;align-items:center;gap:.35rem;flex:none;color:var(--gray-600);font-size:.75rem;white-space:nowrap;padding:0 .4rem;opacity:0;visibility:hidden;transition:opacity 100ms cubic-bezier(.23,1,.32,1),visibility 0s linear 100ms}
     .search-progress.is-visible{opacity:1;visibility:visible;transition:opacity 100ms cubic-bezier(.23,1,.32,1),visibility 0s}
     .checkin-input-wrap .search-progress{color:var(--gray-600);font-size:.75rem;padding:0 .4rem}
@@ -363,15 +363,23 @@
         if (!form || form.dataset.initialized) return;
         form.dataset.initialized = 'true';
         const netId = form.elements.net_id;
-        const suggestions = form.querySelector('#net-id-suggestions');
         const selectedId = form.elements.user_id;
         const clear = form.querySelector('.clear-net-id');
         const submit = form.querySelector('button[name="action"][value="create"]');
+        const createLabel = submit.textContent;
         const fields = [form.elements.first_name, form.elements.last_name, form.elements.major];
+        const inputs = [netId, fields[0], fields[1]];
+        const combos = [];
+        function clearSuggestions() {
+            inputs.forEach(input => {
+                if (window.htmx) htmx.trigger(input, 'htmx:abort');
+                form.querySelector('#' + input.name + '-suggestions').replaceChildren();
+            });
+            combos.forEach(combo => combo.sync());
+        }
         let draft = null;
         const lock = function (option) {
-            if (window.htmx) htmx.trigger(netId, 'htmx:abort');
-            draft = fields.map(field => field.value);
+            draft = [netId, ...fields].map(field => field.value);
             selectedId.value = option.dataset.userId;
             netId.value = option.dataset.netId;
             netId.readOnly = true;
@@ -380,49 +388,57 @@
             fields[2].value = option.dataset.major;
             fields.forEach(field => { field.disabled = true; });
             submit.value = 'select';
-            submit.textContent = 'Sign in';
+            submit.textContent = form.hasAttribute('data-card-correction') ? 'Continue' : 'Sign in';
             clear.hidden = false;
-            suggestions.replaceChildren();
-            netCombo.sync();
+            clearSuggestions();
             clear.focus();
         };
         const unlock = function () {
             selectedId.value = '';
             netId.readOnly = false;
-            netId.value = '';
-            fields.forEach((field, index) => { field.disabled = false; field.value = draft ? draft[index] : ''; });
+            netId.value = draft ? draft[0] : '';
+            fields.forEach((field, index) => { field.disabled = false; field.value = draft ? draft[index + 1] : ''; });
             submit.value = 'create';
-            submit.textContent = 'Add person & sign in';
+            submit.textContent = createLabel;
             clear.hidden = true;
-            netCombo.sync();
+            clearSuggestions();
             netId.focus();
         };
         clear.addEventListener('click', unlock);
-        netId.addEventListener('htmx:beforeRequest', function (event) {
-            if (netId.readOnly || !netId.value.trim()) event.preventDefault();
-        });
-        netId.addEventListener('input', function () {
-            if (selectedId.value) return;
-            if (window.htmx) htmx.trigger(netId, 'htmx:abort');
-            netCombo.markTyping();
-        });
-        const netCombo = createCombobox({
-            input: netId,
-            getOptions: () => Array.from(suggestions.querySelectorAll('[role="option"]')),
-            getList: () => suggestions.querySelector('.net-id-list'),
-            enterSubmits: false,
-            tabSelects: true,
-            hasSelection: () => selectedId.value !== '',
-            onSelect: lock,
-            onClear: function () {
+        inputs.forEach(input => {
+            const suggestions = form.querySelector('#' + input.name + '-suggestions');
+            input.addEventListener('htmx:beforeRequest', function (event) {
+                if (input.readOnly || input.disabled || !input.value.trim() || document.activeElement !== input) event.preventDefault();
+            });
+            input.addEventListener('focus', clearSuggestions);
+            input.addEventListener('input', function () {
                 if (selectedId.value) return;
-                if (window.htmx) htmx.trigger(netId, 'htmx:abort');
-                netId.value = '';
-                suggestions.replaceChildren();
-            },
-            matches: (target) => target.id === 'net-id-suggestions',
+                inputs.forEach(other => {
+                    if (window.htmx) htmx.trigger(other, 'htmx:abort');
+                    if (other !== input || !input.value.trim()) {
+                        form.querySelector('#' + other.name + '-suggestions').replaceChildren();
+                    }
+                });
+                if (!input.value.trim()) combo.sync();
+                combo.markTyping();
+            });
+            const combo = createCombobox({
+                input: input,
+                getOptions: () => Array.from(suggestions.querySelectorAll('[role="option"]')),
+                getList: () => suggestions.querySelector('.net-id-list'),
+                enterSubmits: false,
+                tabSelects: true,
+                hasSelection: () => selectedId.value !== '',
+                onSelect: lock,
+                onClear: function () {
+                    if (window.htmx) htmx.trigger(input, 'htmx:abort');
+                    suggestions.replaceChildren();
+                },
+                matches: (target) => target === suggestions,
+            });
+            combos.push(combo);
+            combo.sync();
         });
-        netCombo.sync();
     }
     window.addEventListener('resize', updateInputFades);
     if (window.ResizeObserver) new ResizeObserver(updateInputFades).observe(entry);
@@ -462,8 +478,9 @@
     });
     document.body.addEventListener('htmx:beforeSwap', function (event) {
         if (event.detail.elt === entry && event.detail.requestConfig.parameters.entry !== entry.value) event.preventDefault();
-        const netId = document.querySelector('[data-netid-form] input[name="net_id"]');
-        if (netId && event.detail.elt === netId && (netId.readOnly || event.detail.requestConfig.parameters.net_id !== netId.value)) event.preventDefault();
+        const input = event.detail.elt;
+        if (input && input.matches && input.matches('[data-netid-form] input[role="combobox"]') &&
+            (input.readOnly || input.disabled || document.activeElement !== input || event.detail.requestConfig.parameters[input.name] !== input.value)) event.preventDefault();
     });
     function updateSignInTime() {
         const time = document.querySelector('.result-time');
@@ -482,7 +499,7 @@
         const inset = Math.max(0, 100 * (1 - loadingHeight / height));
         if (inset > 0) result.animate([{clipPath: `inset(${inset}% 0 0 round .7rem)`}, {clipPath: 'inset(0 0 0 round .7rem)'}], {duration: 140, easing: 'cubic-bezier(0.23, 1, 0.32, 1)'});
     });
-    // Result boards (#checkin-results, #net-id-suggestions) re-render their
+    // Result boards re-render their
     // list on every response. Only the first appearance of a list — a board
     // that was empty before the swap — gets the entrance animation; while
     // typing, swaps are silent so the popover doesn't blink away and back.
@@ -491,7 +508,7 @@
     // attributes, discarding any class added in afterSwap.
     document.body.addEventListener('htmx:beforeSwap', function (event) {
         const board = event.detail.target;
-        if (!board || (board.id !== 'checkin-results' && board.id !== 'net-id-suggestions')) return;
+        if (!board || (board.id !== 'checkin-results' && !board.classList.contains('person-suggestions'))) return;
         if (board.querySelector('.search-list, .net-id-list')) board.setAttribute('data-list-continue', '');
         else board.removeAttribute('data-list-continue');
     });

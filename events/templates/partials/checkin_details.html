@@ -28,12 +28,13 @@
         <form method="post">{% csrf_token %}<input type="hidden" name="confirmation" value="{{ pending.confirmation }}"><button class="primary-button" name="action" value="confirm" data-signin-action>Confirm &amp; sign in</button> <button class="secondary-button" name="action" value="cancel">Cancel</button></form>
     </section>
     {% elif new_form %}
-    <section class="checkin-panel"><h2>{% if use_netid_form %}This card isn’t linked yet{% else %}Add a person{% endif %}</h2>
-        {% if use_netid_form %}<p>Enter a Net ID or name to find an existing person, or fill in the rest to add someone new.</p>{% endif %}
-        <form method="post" class="checkin-new" {% if use_netid_form %}data-netid-form{% endif %}>{% csrf_token %}
+    <section class="checkin-panel"><h2>{% if owner and use_netid_form %}Who does this card belong to?{% elif use_netid_form %}This card isn’t linked yet{% else %}Add a person{% endif %}</h2>
+        {% if owner and use_netid_form %}<p>This card is linked to <strong>{{ owner.get_full_name|default:owner.username }}</strong> ({{ owner.username }}).</p>{% endif %}
+        {% if use_netid_form %}<p>Search using the Net ID or name fields, or fill them in to add someone new.</p>{% endif %}
+        <form method="post" class="checkin-new" {% if use_netid_form %}data-netid-form{% if owner %} data-card-correction{% endif %}{% endif %}>{% csrf_token %}
             {% if use_netid_form %}<input type="hidden" name="user_id" value=""><input type="hidden" name="from_netid_form" value="1">{% endif %}
             {% for error in new_form.non_field_errors %}<p class="field-error">{{ error }}</p>{% endfor %}
-            {% for field in new_form %}<div{% if use_netid_form and field.name == 'net_id' %} class="net-id-field"{% endif %}><label for="{{ field.id_for_label }}">{{ field.label }}{% if not field.field.required %} <span>(optional)</span>{% endif %}</label>{{ field }}{% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}{% if use_netid_form and field.name == 'net_id' %}<div id="net-id-suggestions" aria-live="polite"></div><button type="button" class="text-button clear-net-id" hidden>Clear selection</button>{% endif %}</div>{% endfor %}
+            {% for field in new_form %}<div{% if use_netid_form and field.name != 'major' %} class="net-id-field"{% endif %}><label for="{{ field.id_for_label }}">{{ field.label }}{% if not field.field.required %} <span>(optional)</span>{% endif %}</label>{{ field }}{% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}{% if use_netid_form and field.name != 'major' %}<div id="{{ field.name }}-suggestions" class="person-suggestions" aria-live="polite"></div>{% if field.name == 'net_id' %}<button type="button" class="text-button clear-net-id" hidden>Clear selection</button>{% endif %}{% endif %}</div>{% endfor %}
             <div class="form-actions"><button class="primary-button" name="action" value="create" {% if not owner %}data-signin-action{% endif %}>Add person{% if not owner %} &amp; sign in{% endif %}</button> <button class="secondary-button" name="action" value="{% if use_netid_form %}cancel{% else %}cancel_new{% endif %}" formnovalidate>Cancel</button></div>
         </form>
     </section>

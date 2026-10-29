@@ -107,9 +107,12 @@ def search_net_ids(request, event_id):
     get_object_or_404(Event, pk=event_id)
     state = request.session.get(f"unified_check_in_{event_id}", {})
     pending = state.get("pending")
-    if not pending or pending.get("owner_id") is not None:
+    if not pending:
         raise Http404
-    query = request.GET.get("net_id", "").strip()[:100]
+    field = request.GET.get("search_field", "net_id")
+    if field not in {"net_id", "first_name", "last_name"}:
+        raise Http404
+    query = request.GET.get(field, "").strip()[:100]
     users = User.objects.none()
     if query and ";" not in query:
         users = (
@@ -119,7 +122,7 @@ def search_net_ids(request, event_id):
             .order_by("first_name", "last_name", "username")[:10]
         )
     template = "partials/net_id_suggestions.html"
-    return render(request, template, {"users": users, "query": query})
+    return render(request, template, {"users": users, "query": query, "search_field": field})
 
 
 def unified_check_in(request, event_id):
@@ -187,12 +190,9 @@ def unified_check_in(request, event_id):
             if state.get("pending"):
                 pending = state["pending"]
                 from_netid_form = request.POST.get("from_netid_form") == "1"
-                if from_netid_form and (
-                    pending.get("owner_id") is not None
-                    or request.POST.get("net_id", "").strip().lower() != user.username.lower()
-                ):
+                if from_netid_form and request.POST.get("net_id", "").strip().lower() != user.username.lower():
                     error = "The selected person changed. Please search for them again."
-                elif from_netid_form:
+                elif from_netid_form and pending.get("owner_id") is None:
                     try:
                         with transaction.atomic():
                             profile = UserProfile.objects.select_for_update().get(pk=user.pk)
@@ -316,23 +316,25 @@ def unified_check_in(request, event_id):
     pending = state.get("pending")
     target = User.objects.select_related("userprofile").filter(pk=pending.get("target_id")).first() if pending else None
     owner = User.objects.filter(pk=pending.get("owner_id")).first() if pending and pending.get("owner_id") else None
-    use_netid_form = bool(pending and pending.get("owner_id") is None and not target)
+    use_netid_form = bool(pending and not target)
     if use_netid_form:
         if new_form is None:
             new_form = NewAttendeeForm()
         new_form.fields["first_name"].widget.attrs.pop("autofocus", None)
-        new_form.fields["net_id"].widget.attrs.update(
-            {
-                "autofocus": True,
-                "hx-get": reverse("unified_check_in_net_ids", args=[event_id]),
-                "hx-trigger": "input changed delay:150ms",
-                "hx-target": "#net-id-suggestions",
-                "hx-swap": "innerHTML",
-                "hx-sync": "this:replace",
-                "aria-autocomplete": "list",
-                "role": "combobox",
-            }
-        )
+        new_form.fields["net_id"].widget.attrs["autofocus"] = True
+        for name in ("net_id", "first_name", "last_name"):
+            new_form.fields[name].widget.attrs.update(
+                {
+                    "hx-get": reverse("unified_check_in_net_ids", args=[event_id]),
+                    "hx-trigger": "input changed delay:150ms",
+                    "hx-target": f"#{name}-suggestions",
+                    "hx-vals": f'{{"search_field":"{name}"}}',
+                    "hx-swap": "innerHTML",
+                    "hx-sync": "this:replace",
+                    "aria-autocomplete": "list",
+                    "role": "combobox",
+                }
+            )
     if new_form is not None and not new_form.is_bound:
         prefill = query or state.get("search_context", "")
         initial = _attendee_initials_for_query(prefill)

@@ -144,6 +144,25 @@ class UnifiedCheckInTests(TestCase):
         self.assertContains(by_name, "axr240001")
         self.assertFalse(Attendance.objects.filter(event=self.event, user=self.alex).exists())
 
+    def test_creation_name_fields_search_without_net_id_length_limit(self):
+        self.swipe("9999999999999999")
+        self.jordan.first_name = "Alexandria"
+        self.jordan.last_name = "Montgomery"
+        self.jordan.save(update_fields=["first_name", "last_name"])
+        for field, value in (("first_name", "Alexandria"), ("last_name", "Montgomery")):
+            response = self.client.get(self.netids_url, {"search_field": field, field: value})
+            self.assertContains(response, "jxl240002")
+            self.assertContains(response, f'id="{field}-listbox"')
+        page = self.client.get(self.url, HTTP_HX_REQUEST="true")
+        self.assertContains(page, 'id="first_name-suggestions"')
+        self.assertContains(page, 'id="last_name-suggestions"')
+        self.assertContains(page, 'maxlength="9"')
+        self.assertFalse(Attendance.objects.filter(event=self.event, user=self.jordan).exists())
+
+    def test_creation_search_rejects_unknown_search_field(self):
+        self.swipe("9999999999999999")
+        self.assertEqual(self.client.get(self.netids_url, {"search_field": "email", "email": "test"}).status_code, 404)
+
     def test_net_id_suggestions_are_empty_without_swiped_card(self):
         self.assertEqual(self.client.get(self.netids_url, {"net_id": "axr24"}).status_code, 404)
 
@@ -340,8 +359,15 @@ class UnifiedCheckInTests(TestCase):
         self.assertNotContains(correction, "CORRECT A CARD LINK")
         self.assertContains(correction, 'value="1234567890123456" disabled')
         self.assertContains(correction, 'placeholder="Search by name or Net ID..."')
-        confirmation = self.post(action="select", user_id=self.jordan.pk)
+        self.assertContains(correction, "data-netid-form data-card-correction")
+        suggestions = self.client.get(self.netids_url, {"search_field": "first_name", "first_name": "Jordan"})
+        self.assertContains(suggestions, "jxl240002")
+        confirmation = self.post(action="select", user_id=self.jordan.pk, from_netid_form="1", net_id="jxl240002")
         self.assertContains(confirmation, 'value="1234567890123456" disabled')
+        self.assertContains(confirmation, "Link card to Jordan Lee?")
+        self.jordan.userprofile.refresh_from_db()
+        self.assertIsNone(self.jordan.userprofile.comet_card_serial_number)
+        self.assertFalse(Attendance.objects.filter(event=self.event, user=self.jordan).exists())
         self.follow_checkin_redirect(self.confirm())
         self.alex.userprofile.refresh_from_db()
         self.jordan.userprofile.refresh_from_db()
@@ -349,6 +375,30 @@ class UnifiedCheckInTests(TestCase):
         self.assertEqual(self.jordan.userprofile.comet_card_serial_number, "1234567890123456")
         self.assertFalse(Attendance.objects.filter(event=self.event, user=self.alex).exists())
         self.assertTrue(Attendance.objects.filter(event=self.event, user=self.jordan).exists())
+
+    def test_correction_form_rejects_a_mismatched_selection(self):
+        self.swipe()
+        self.post(action="correct")
+        response = self.post(action="select", user_id=self.jordan.pk, from_netid_form="1", net_id="axr240001")
+        self.assertContains(response, "The selected person changed")
+        self.assertContains(response, "Who does this card belong to?")
+        self.jordan.userprofile.refresh_from_db()
+        self.assertIsNone(self.jordan.userprofile.comet_card_serial_number)
+
+    def test_correction_new_person_requires_confirmation_before_card_moves(self):
+        self.swipe()
+        self.post(action="correct")
+        response = self.post(action="create", first_name="Sam", last_name="Smith", net_id="sam240001", major="")
+        self.assertContains(response, "Link card to Sam Smith?")
+        person = User.objects.get(username="sam240001")
+        self.assertIsNone(person.userprofile.comet_card_serial_number)
+        self.assertFalse(Attendance.objects.filter(event=self.event, user=person).exists())
+        self.alex.userprofile.refresh_from_db()
+        self.assertEqual(self.alex.userprofile.comet_card_serial_number, "1234567890123456")
+        self.follow_checkin_redirect(self.confirm())
+        person.userprofile.refresh_from_db()
+        self.assertEqual(person.userprofile.comet_card_serial_number, "1234567890123456")
+        self.assertTrue(Attendance.objects.filter(event=self.event, user=person).exists())
 
     def test_correction_preserves_preexisting_attendance(self):
         attendance = Attendance.objects.create(event=self.event, user=self.alex)
