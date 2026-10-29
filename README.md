@@ -12,11 +12,6 @@ It's also used by RoboSub who hosts their own instance of Club Manager.
 
 ## Technical Details
 
-The redesigned staff event check-in experience is default-off. Set
-`FLAG_UNIFIED_EVENT_CHECK_IN=true` and restart the application to try it. The
-new experience becomes the default event sign-in, with a link to the original;
-unset the flag or set it to `false` to use the original by default.
-
 This app is written in Python using the Django web framework. [This page](https://www.djangoproject.com/start/) and [this page](https://docs.djangoproject.com/en/6.1/intro/overview/) have a decent overview of what Django offers which you should read over - They are both less than 5 min read. We use PostgreSQL as the database.
 
 For Comet Robotics, the app is deployed in a virtual machine on a server at our booth in the Makerspace. More details on the deployment and infrastructure stuff is on the CROUTON Committee ClickUp - to be added, ask an officer in Discord.
