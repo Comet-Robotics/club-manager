@@ -91,15 +91,15 @@ def search_attendees(request, event_id):
 
     if not settings.FEATURE_FLAGS["UNIFIED_EVENT_CHECK_IN"]:
         raise Http404
-    get_object_or_404(Event, pk=event_id)
+    event = get_object_or_404(Event, pk=event_id)
     query = request.GET.get("entry", "").strip()[:100]
     pending = request.session.get(f"unified_check_in_{event_id}", {}).get("pending")
     if not query or ";" in query:
-        return render(request, "partials/unified_check_in_search.html", {"pending": pending})
+        return render(request, "partials/unified_check_in_search.html", {"event": event, "pending": pending})
     return render(
         request,
         "partials/unified_check_in_search.html",
-        {"query": query, "users": _search_users(query), "pending": pending},
+        {"event": event, "query": query, "users": _search_users(query), "pending": pending},
     )
 
 
@@ -312,6 +312,9 @@ def unified_check_in(request, event_id):
                 except (IntegrityError, ValueError) as exc:
                     error = str(exc) if isinstance(exc, ValueError) else "The card changed. Please swipe it again."
                     state.pop("pending", None)
+
+    if error or (new_form is not None and new_form.is_bound and new_form.errors):
+        state.pop("result", None)
 
     if query:
         users = _search_users(query)

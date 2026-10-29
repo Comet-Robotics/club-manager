@@ -1,6 +1,6 @@
 {% if query %}
 <section class="search-list" role="listbox" id="search-listbox" aria-label="People matching {{ query }}">
-    <form method="post">{% csrf_token %}
+    <form method="post" data-search-results-form hx-post="{% url 'unified_check_in' event.pk %}" hx-target="#checkin-details" hx-swap="outerHTML" hx-sync="this:drop">{% csrf_token %}
     <input type="hidden" name="action" value="select">
     <input type="hidden" name="search_query" value="{{ query }}">
     {% for person in users %}

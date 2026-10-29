@@ -305,7 +305,8 @@ class UnifiedCheckInTests(TestCase):
 
     def test_search_results_share_one_form_and_preserve_both_actions(self):
         response = self.client.get(self.search_url, {"entry": "Alex"})
-        self.assertContains(response, '<form method="post">', count=1)
+        self.assertContains(response, '<form method="post" data-search-results-form', count=1)
+        self.assertContains(response, f'hx-post="{self.url}"')
         self.assertContains(response, 'name="user_id" value="%s"' % self.alex.pk)
         self.assertContains(response, 'name="action" value="select"')
         self.assertContains(response, 'name="action" value="new"')
@@ -315,6 +316,18 @@ class UnifiedCheckInTests(TestCase):
         )
         self.assertContains(response, "Add a person")
         self.assertEqual(response.context["state"]["search_context"], "Alex")
+
+    def test_htmx_search_selection_returns_sign_in_fragments(self):
+        response = self.client.post(self.url, {"action": "select", "user_id": self.jordan.pk}, HTTP_HX_REQUEST="true")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Jordan Lee")
+        self.assertContains(response, 'id="checkin-status" hx-swap-oob="true"')
+        self.assertNotContains(response, '<main class="checkin">')
+        self.assertTrue(Attendance.objects.filter(event=self.event, user=self.jordan).exists())
+
+    def test_search_selection_without_htmx_still_redirects(self):
+        response = self.post(action="select", user_id=self.jordan.pk)
+        self.assertContains(self.follow_checkin_redirect(response), "Jordan Lee")
 
     def test_htmx_invalid_swipe_returns_error_fragment(self):
         response = self.client.post(self.url, {"action": "submit", "entry": ";bad"}, HTTP_HX_REQUEST="true")
@@ -450,6 +463,16 @@ class UnifiedCheckInTests(TestCase):
         response = self.post(action="submit", entry=";123=oops")
         self.assertContains(response, "Card data was incomplete or invalid")
         self.assertFalse(Attendance.objects.filter(event=self.event).exists())
+
+    def test_invalid_swipe_clears_previous_sign_in_result(self):
+        self.client.post(
+            self.url, {"action": "submit", "entry": ";1234567890123456=0000000000000000?"}, HTTP_HX_REQUEST="true"
+        )
+        response = self.client.post(self.url, {"action": "submit", "entry": ";123=oops"}, HTTP_HX_REQUEST="true")
+        self.assertContains(response, "Card data was incomplete or invalid")
+        self.assertNotContains(response, "Alex Rivera")
+        self.assertNotIn("result", self.client.session[f"unified_check_in_{self.event.pk}"])
+        self.assertTrue(Attendance.objects.filter(event=self.event, user=self.alex).exists())
 
     def test_requires_staff(self):
         self.client.logout()
