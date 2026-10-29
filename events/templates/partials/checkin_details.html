@@ -1,5 +1,5 @@
 <div id="checkin-details" data-pending="{% if pending %}true{% else %}false{% endif %}">
-    {% if error %}<div class="checkin-alert" role="alert"><strong>Couldn’t complete that action</strong><p>{{ error }}</p></div>{% endif %}
+    {% if error %}<div class="alert alert-error checkin-alert" role="alert"><strong>Couldn’t complete that action</strong><p>{{ error }}</p></div>{% endif %}
     {% if pending and not use_netid_form %}
     <section class="checkin-panel checkin-pending" aria-live="polite">
         {% if owner %}
@@ -11,8 +11,8 @@
         {% endif %}
         {% if not target and not new_form %}
         <form method="post" class="pending-actions">{% csrf_token %}
-            <button class="secondary-button" name="action" value="new">Add a new person</button>
-            <button class="secondary-button" name="action" value="cancel">Cancel</button>
+            <button class="button button-secondary" name="action" value="new">Add a new person</button>
+            <button class="button button-secondary" name="action" value="cancel">Cancel</button>
         </form>
         {% endif %}
     </section>
@@ -25,7 +25,7 @@
         {% if owner and owner.pk != target.pk %}<p>The card will be moved from <strong>{{ owner.get_full_name|default:owner.username }}</strong>. {% if pending.attendance_id %}The attendance created by the incorrect swipe will be removed.{% else %}Their existing attendance will remain unchanged.{% endif %}</p>{% endif %}
         {% if target.userprofile.comet_card_serial_number and target.userprofile.comet_card_serial_number != pending.card %}<p>This replaces the person’s previously linked card.</p>{% endif %}
         <p>Attendance for {{ target.first_name|default:target.username }} will be recorded automatically.</p>
-        <form method="post">{% csrf_token %}<input type="hidden" name="confirmation" value="{{ pending.confirmation }}"><button class="primary-button" name="action" value="confirm" data-signin-action>Confirm &amp; sign in</button> <button class="secondary-button" name="action" value="cancel">Cancel</button></form>
+        <form method="post">{% csrf_token %}<input type="hidden" name="confirmation" value="{{ pending.confirmation }}"><button class="button button-primary" name="action" value="confirm" data-signin-action>Confirm &amp; sign in</button> <button class="button button-secondary" name="action" value="cancel">Cancel</button></form>
     </section>
     {% elif new_form %}
     <section class="checkin-panel"><h2>{% if owner and use_netid_form %}Who does this card belong to?{% elif use_netid_form %}This card isn’t linked yet{% else %}Add a person{% endif %}</h2>
@@ -35,7 +35,7 @@
             {% if use_netid_form %}<input type="hidden" name="user_id" value=""><input type="hidden" name="from_netid_form" value="1">{% endif %}
             {% for error in new_form.non_field_errors %}<p class="field-error">{{ error }}</p>{% endfor %}
             {% for field in new_form %}<div{% if use_netid_form and field.name != 'major' %} class="net-id-field"{% endif %}><label for="{{ field.id_for_label }}">{{ field.label }}{% if not field.field.required %} <span>(optional)</span>{% endif %}</label>{{ field }}{% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}{% if use_netid_form and field.name != 'major' %}<div id="{{ field.name }}-suggestions" class="person-suggestions" aria-live="polite"></div>{% if field.name == 'net_id' %}<button type="button" class="text-button clear-net-id" hidden>Clear selection</button>{% endif %}{% endif %}</div>{% endfor %}
-            <div class="form-actions"><button class="primary-button" name="action" value="create" {% if not owner %}data-signin-action{% endif %}>Add person{% if not owner %} &amp; sign in{% endif %}</button> <button class="secondary-button" name="action" value="{% if use_netid_form %}cancel{% else %}cancel_new{% endif %}" formnovalidate>Cancel</button></div>
+            <div class="form-actions"><button class="button button-primary" name="action" value="create" {% if not owner %}data-signin-action{% endif %}>Add person{% if not owner %} &amp; sign in{% endif %}</button> <button class="button button-secondary" name="action" value="{% if use_netid_form %}cancel{% else %}cancel_new{% endif %}" formnovalidate>Cancel</button></div>
         </form>
     </section>
     {% else %}

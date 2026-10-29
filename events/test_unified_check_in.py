@@ -73,6 +73,7 @@ class UnifiedCheckInTests(TestCase):
         result = self.follow_checkin_redirect(response)
         self.assertTrue(Attendance.objects.filter(event=self.event, user=self.alex).exists())
         self.assertContains(result, "Alex Rivera")
+        self.assertContains(result, 'class="alert alert-success checkin-result"')
 
     def test_fresh_navigation_clears_display_but_not_attendance(self):
         response = self.follow_checkin_redirect(self.swipe())
@@ -98,6 +99,7 @@ class UnifiedCheckInTests(TestCase):
     def test_incomplete_swipe_after_text_is_not_treated_as_search(self):
         response = self.post(action="submit", entry="Alex;123=")
         self.assertContains(response, "Card data was incomplete or invalid")
+        self.assertContains(response, 'class="alert alert-error checkin-alert"')
         self.assertNotContains(response, "No matches")
 
     def test_unknown_swipe_redirects_so_refresh_does_not_repeat_the_action(self):

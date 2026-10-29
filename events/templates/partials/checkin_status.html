@@ -1,11 +1,11 @@
 <div id="checkin-status" {% if oob %}hx-swap-oob="true"{% endif %}>
     {% if not pending and state.result %}
-    <section class="checkin-panel checkin-result" aria-live="polite">
+    <section class="alert alert-success checkin-result" aria-live="polite">
         <div class="result-top">
             <div class="result-person"><span class="check-icon" aria-hidden="true">✓</span><div><strong>{{ state.result.name }}</strong><span>{{ state.result.net_id }} · {% if state.result.already_signed_in %}Already signed in{% else %}Signed in{% endif %}</span></div></div>
             <time class="result-age result-time" datetime="{{ state.result.time }}">{{ state.result.time_display }}</time>
         </div>
-        {% if state.result.unpaid %}<p class="result-warning">Dues have not been paid.</p>{% elif state.result.renewal %}<p class="result-warning">Membership renewal needed for {{ state.result.renewal }}.</p>{% endif %}
+        {% if state.result.unpaid %}<p class="alert alert-warning result-warning">Dues have not been paid.</p>{% elif state.result.renewal %}<p class="alert alert-warning result-warning">Membership renewal needed for {{ state.result.renewal }}.</p>{% endif %}
         {% if state.result.card %}<form method="post">{% csrf_token %}<button class="text-button" name="action" value="correct">Wrong person? Correct card link</button></form>{% endif %}
     </section>
     {% endif %}
