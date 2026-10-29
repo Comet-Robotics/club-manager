@@ -2,6 +2,8 @@
 
 import re
 import secrets
+from collections.abc import Sequence
+from typing import cast
 
 from django import forms
 from django.contrib.auth.models import User
@@ -23,7 +25,9 @@ from payments.models import Term
 class NewAttendeeForm(forms.Form):
     net_id = NetIDField()
     major = forms.ChoiceField(
-        choices=[("", "Select a major (optional)")] + list(UserProfile._meta.get_field("major").choices), required=False
+        choices=[("", "Select a major (optional)")]
+        + list(cast(Sequence[tuple[str, str]], UserProfile._meta.get_field("major").choices)),
+        required=False,
     )
     first_name = forms.CharField(max_length=100, label="First name", widget=forms.TextInput(attrs={"autofocus": True}))
     last_name = forms.CharField(max_length=100, label="Last name")
@@ -260,12 +264,13 @@ def unified_check_in(request, event_id):
                         else:
                             state["result"] = _record_check_in(event, user)
                             redirect_to_check_in = True
-                    new_form = None
                 except IntegrityError:
                     if User.objects.filter(username__iexact=new_form.cleaned_data["net_id"]).exists():
                         new_form.add_error("net_id", "This Net ID already exists. Search for the person instead.")
                     else:
                         new_form.add_error(None, "The card changed while saving. Please swipe it again.")
+                else:
+                    new_form = None
         elif action == "confirm":
             pending = state.get("pending")
             if (
@@ -278,26 +283,28 @@ def unified_check_in(request, event_id):
             else:
                 try:
                     with transaction.atomic():
-                        target = get_object_or_404(UserProfile.objects.select_for_update(), pk=pending["target_id"])
-                        owner = (
+                        target_profile = get_object_or_404(
+                            UserProfile.objects.select_for_update(), pk=pending["target_id"]
+                        )
+                        owner_profile = (
                             UserProfile.objects.select_for_update()
                             .filter(comet_card_serial_number=pending["card"])
                             .first()
                         )
-                        if (owner.pk if owner else None) != pending["owner_id"]:
+                        if (owner_profile.pk if owner_profile else None) != pending["owner_id"]:
                             raise ValueError("The card association changed. Swipe again to review it.")
-                        if target.comet_card_serial_number != pending.get("target_card"):
+                        if target_profile.comet_card_serial_number != pending.get("target_card"):
                             raise ValueError("This person’s card changed. Swipe again to review it.")
-                        if owner and owner.pk != target.pk:
-                            owner.comet_card_serial_number = None
-                            owner.save(update_fields=["comet_card_serial_number"])
+                        if owner_profile and owner_profile.pk != target_profile.pk:
+                            owner_profile.comet_card_serial_number = None
+                            owner_profile.save(update_fields=["comet_card_serial_number"])
                             if pending.get("attendance_id"):
                                 Attendance.objects.filter(
-                                    pk=pending["attendance_id"], event=event, user_id=owner.pk
+                                    pk=pending["attendance_id"], event=event, user_id=owner_profile.pk
                                 ).delete()
-                        target.comet_card_serial_number = pending["card"]
-                        target.save(update_fields=["comet_card_serial_number"])
-                        result = _record_check_in(event, target.user)
+                        target_profile.comet_card_serial_number = pending["card"]
+                        target_profile.save(update_fields=["comet_card_serial_number"])
+                        result = _record_check_in(event, target_profile.user)
                         result["card"] = pending["card"]
                         state["result"] = result
                     state.pop("pending", None)
