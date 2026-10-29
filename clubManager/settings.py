@@ -502,6 +502,9 @@ FEATURE_FLAGS = resolve_feature_flags(
         # disabled: the self sign-in page 404s and the self sign-in QR button is hidden; staff sign-in by Comet Card is unaffected
         # - @jasonappah, 10/03/2026 - default off
         "SELF_CHECK_IN": False,
+        # enabled: use the unified staff sign-in by default, with the original available as a fallback
+        # disabled: use the original sign-in; the unified sign-in and its search endpoint return 404
+        "UNIFIED_EVENT_CHECK_IN": False,
     },
     deprecated_flags=[
         # ServerSettings are always auto-created when needed; setup prompts always shown to superusers

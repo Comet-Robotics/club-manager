@@ -1,0 +1,15 @@
+{% if query %}
+<section class="search-list" role="listbox" id="search-listbox" aria-label="People matching {{ query }}">
+    <form method="post">{% csrf_token %}
+    <input type="hidden" name="action" value="select">
+    <input type="hidden" name="search_query" value="{{ query }}">
+    {% for person in users %}
+        <button type="submit" name="user_id" value="{{ person.pk }}" class="search-person-button" role="option" tabindex="-1" id="person-option-{{ person.pk }}" {% if not pending %}data-signin-action{% endif %}>
+            <span class="search-person-identity"><strong>{{ person.get_full_name|default:person.username }}</strong><span>{{ person.username }}{% if pending %} · {% if person.userprofile.comet_card_serial_number %}Card linked{% else %}No card linked{% endif %}{% endif %}</span></span>
+            <span class="search-person-action">{% if pending %}Select{% else %}Sign in{% endif %} <span aria-hidden="true">→</span></span>
+        </button>
+    {% empty %}<p class="search-empty">No matches for “{{ query }}”.</p>{% endfor %}
+    {% if not pending %}<div class="search-add-person"><button class="text-button" name="action" value="new" role="option" tabindex="-1" id="person-option-new">+ Add a new person</button></div>{% endif %}
+    </form>
+</section>
+{% endif %}
