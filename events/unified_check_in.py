@@ -2,9 +2,8 @@
 
 import re
 import secrets
-from collections.abc import Sequence
-from typing import cast
-
+from collections.abc import Iterable
+from typing import Any, cast
 from django import forms
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
@@ -15,6 +14,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
+from accounts.forms import RegistrationCompletionForm
 from common.forms import NetIDField
 from core.models import UserProfile
 from core.utilities import get_layout_data
@@ -22,15 +22,21 @@ from events.models import Attendance, Event, SignInMethod
 from payments.models import Term
 
 
-class NewAttendeeForm(forms.Form):
+class NewAttendeeForm(RegistrationCompletionForm):
     net_id = NetIDField()
-    major = forms.ChoiceField(
-        choices=[("", "Select a major (optional)")]
-        + list(cast(Sequence[tuple[str, str]], UserProfile._meta.get_field("major").choices)),
-        required=False,
-    )
-    first_name = forms.CharField(max_length=100, label="First name", widget=forms.TextInput(attrs={"autofocus": True}))
-    last_name = forms.CharField(max_length=100, label="Last name")
+    field_order = ["net_id", "major", "first_name", "last_name"]
+
+    def __init__(self, data=None, **kwargs):
+        super().__init__(User(), data=data, **kwargs)
+        self.initial = {name: value for name, value in self.initial.items() if value != ""}
+        major = cast(forms.ChoiceField, self.fields["major"])
+        major.required = False
+        major.choices = [
+            ("", "Select a major (optional)"),
+            *cast(Iterable[tuple[Any, Any]], major.choices),
+            ("unknown", "Unknown"),
+        ]
+        self.fields["first_name"].widget.attrs["autofocus"] = True
 
     def clean_net_id(self):
         net_id = self.cleaned_data["net_id"]

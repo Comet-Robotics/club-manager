@@ -4,7 +4,9 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+from accounts.forms import RegistrationCompletionForm
 from events.models import Attendance, Event
+from events.unified_check_in import NewAttendeeForm
 
 
 @override_settings(FEATURE_FLAGS={**settings.FEATURE_FLAGS, "UNIFIED_EVENT_CHECK_IN": True})
@@ -434,6 +436,20 @@ class UnifiedCheckInTests(TestCase):
         user = User.objects.get(username="sam240001")
         self.assertTrue(Attendance.objects.filter(event=self.event, user=user).exists())
         self.assertEqual(user.userprofile.comet_card_serial_number, "9999999999999999")
+
+    def test_staff_form_reuses_registration_fields_with_optional_major(self):
+        staff_form = NewAttendeeForm({"net_id": "sam240001", "first_name": "Sam", "last_name": "Smith", "major": ""})
+        self.assertIsInstance(staff_form, RegistrationCompletionForm)
+        self.assertTrue(staff_form.is_valid(), staff_form.errors)
+        self.assertEqual(list(staff_form.fields), ["net_id", "major", "first_name", "last_name"])
+        self.assertNotIn("link_discord", staff_form.fields)
+        registration_form = RegistrationCompletionForm(User(), {"first_name": "Sam", "last_name": "Smith", "major": ""})
+        self.assertFalse(registration_form.is_valid())
+        self.assertIn("major", registration_form.errors)
+
+    def test_staff_form_still_accepts_unknown_major(self):
+        form = NewAttendeeForm({"net_id": "sam240001", "first_name": "Sam", "last_name": "Smith", "major": "unknown"})
+        self.assertTrue(form.is_valid(), form.errors)
 
     def test_stale_confirmation_cannot_move_card(self):
         self.swipe("9999999999999999")
