@@ -1,5 +1,8 @@
+from unittest.mock import patch
+
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.db import IntegrityError
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -424,6 +427,20 @@ class UnifiedCheckInTests(TestCase):
         self.post(action="select", user_id=self.jordan.pk)
         self.confirm()
         self.assertTrue(Attendance.objects.filter(pk=attendance.pk).exists())
+
+    def test_failed_confirmation_rolls_back_card_and_attendance_changes(self):
+        self.swipe()
+        self.post(action="correct")
+        self.post(action="select", user_id=self.jordan.pk)
+        with patch("events.unified_check_in._record_check_in", side_effect=IntegrityError):
+            response = self.confirm()
+        self.assertContains(response, "The card changed. Please swipe it again.")
+        self.alex.userprofile.refresh_from_db()
+        self.jordan.userprofile.refresh_from_db()
+        self.assertEqual(self.alex.userprofile.comet_card_serial_number, "1234567890123456")
+        self.assertIsNone(self.jordan.userprofile.comet_card_serial_number)
+        self.assertTrue(Attendance.objects.filter(event=self.event, user=self.alex).exists())
+        self.assertFalse(Attendance.objects.filter(event=self.event, user=self.jordan).exists())
 
     def test_create_requires_net_id_and_prevents_duplicates(self):
         self.swipe("9999999999999999")
