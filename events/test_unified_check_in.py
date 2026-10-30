@@ -175,6 +175,7 @@ class UnifiedCheckInTests(TestCase):
 
     def test_combobox_markup_follows_the_headless_input_pattern(self):
         response = self.follow_checkin_redirect(self.swipe("9999999999999999"))
+        self.assertContains(response, "events/js/combobox.js")
         self.assertContains(response, 'role="combobox"')
         self.assertContains(response, 'aria-autocomplete="list"')
         self.assertContains(response, 'aria-expanded="false"')
