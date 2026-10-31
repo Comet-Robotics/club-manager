@@ -1,0 +1,13 @@
+{% if query %}
+{% if users %}
+<div class="net-id-list" role="listbox" id="{% if search_field == 'net_id' or not search_field %}net-id{% else %}{{ search_field }}{% endif %}-listbox" aria-label="Matching people">
+    {% for person in users %}
+    <button type="button" class="net-id-option" role="option" tabindex="-1" id="netid-option-{{ person.pk }}" data-user-id="{{ person.pk }}" data-net-id="{{ person.username }}" data-first-name="{{ person.first_name }}" data-last-name="{{ person.last_name }}" data-major="{{ person.userprofile.major|default:'' }}">
+        <strong>{{ person.username }}</strong><span>{{ person.get_full_name|default:person.username }}{% if person.userprofile.comet_card_serial_number %} · Card linked{% endif %}</span>
+    </button>
+    {% endfor %}
+</div>
+{% else %}
+<p class="net-id-empty">No matches in the directory yet.</p>
+{% endif %}
+{% endif %}
