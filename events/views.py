@@ -24,7 +24,39 @@ from core.utilities import get_layout_data
 
 
 @staff_member_required
+def unified_check_in_search(request, event_id):
+    from .unified_check_in import search_attendees
+
+    return search_attendees(request, event_id)
+
+
+@staff_member_required
+def unified_check_in_net_ids(request, event_id):
+    from .unified_check_in import search_net_ids
+
+    return search_net_ids(request, event_id)
+
+
+@staff_member_required
+def unified_check_in_view(request, event_id):
+    if not settings.FEATURE_FLAGS["UNIFIED_EVENT_CHECK_IN"]:
+        raise Http404
+    from .unified_check_in import unified_check_in
+
+    return unified_check_in(request, event_id)
+
+
+@staff_member_required
 def sign_in(request, event_id):
+    if settings.FEATURE_FLAGS["UNIFIED_EVENT_CHECK_IN"]:
+        from .unified_check_in import unified_check_in
+
+        return unified_check_in(request, event_id)
+    return original_sign_in(request, event_id)
+
+
+@staff_member_required
+def original_sign_in(request, event_id):
     layout_data = get_layout_data(request)
     current_event = Event.objects.get(pk=event_id)
     event_name = current_event.event_name
@@ -232,7 +264,9 @@ def pass_sign_in(request, event_id, user_id):
     else:
         print("repeat")
         message = "repeat"
-    return redirect("sign_in", event_id=event_id)
+    return redirect(
+        "original_sign_in" if settings.FEATURE_FLAGS["UNIFIED_EVENT_CHECK_IN"] else "sign_in", event_id=event_id
+    )
 
 
 @staff_member_required
@@ -248,7 +282,9 @@ def pass_link(request, event_id, user_id, student_id):
     else:
         print("repeat")
         message = "repeat"
-    return redirect("sign_in", event_id=event_id)
+    return redirect(
+        "original_sign_in" if settings.FEATURE_FLAGS["UNIFIED_EVENT_CHECK_IN"] else "sign_in", event_id=event_id
+    )
 
 
 LOOKUP_USER_LIMIT = 25

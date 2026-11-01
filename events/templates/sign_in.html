@@ -37,6 +37,9 @@
                         <i data-lucide="search"></i>
                         Lookup User
                     </a>
+                    {% if FEATURE_FLAGS.UNIFIED_EVENT_CHECK_IN %}
+                    <a href="{% url 'unified_check_in' event_id %}" class="action-button">Try new sign-in</a>
+                    {% endif %}
                 </div>
             </div>
             
@@ -58,7 +61,7 @@
                         <i data-lucide="alert-triangle"></i>
                     </div>
                     <div class="result-content">
-                        <h3>Member has not paid dues yet! Checked in:</h3>
+                        <h3>Member has not paid dues yet! Signed in:</h3>
                         <div class="user-info">
                             <p class="user-name">{{ user.first_name }} {{ user.last_name }}</p>
                             <p class="user-id">ID: {{ user.username }}</p>

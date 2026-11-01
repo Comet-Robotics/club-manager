@@ -3,6 +3,10 @@ from . import views
 
 urlpatterns = [
     path("<int:event_id>/sign-in/", views.sign_in, name="sign_in"),
+    path("<int:event_id>/sign-in/original/", views.original_sign_in, name="original_sign_in"),
+    path("<int:event_id>/sign-in/new/", views.unified_check_in_view, name="unified_check_in"),
+    path("<int:event_id>/sign-in/new/search/", views.unified_check_in_search, name="unified_check_in_search"),
+    path("<int:event_id>/sign-in/new/net-ids/", views.unified_check_in_net_ids, name="unified_check_in_net_ids"),
     path("<int:event_id>/self-sign-in/", views.self_sign_in, name="self_sign_in"),
     path("<int:event_id>/self-sign-in-qr/", views.self_sign_in_qr, name="self_sign_in_qr"),
     # TODO: what are these routes for? AFAICT they aren't used anywhere...

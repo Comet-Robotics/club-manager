@@ -91,6 +91,7 @@ class LookupUserViewTest(TestCase):
         self.assertEqual(response.status_code, 302)
 
 
+@override_settings(FEATURE_FLAGS={**settings.FEATURE_FLAGS, "UNIFIED_EVENT_CHECK_IN": False})
 class SignInMembershipRenewalTest(TestCase):
     """Check-in messaging during a term overlap, where two terms are active at once."""
 

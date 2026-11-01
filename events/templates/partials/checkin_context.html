@@ -1,0 +1,9 @@
+<div id="checkin-context" {% if oob %}hx-swap-oob="true"{% endif %}>
+    {% if pending %}
+    <label class="context-label" for="context-entry">Comet Card serial number</label>
+    <input id="context-entry" class="context-entry" type="text" value="{{ pending.card }}" disabled>
+    {% elif new_form and state.search_context %}
+    <label class="context-label" for="context-entry">Search</label>
+    <input id="context-entry" class="context-entry" type="text" value="{{ state.search_context }}" disabled>
+    {% endif %}
+</div>
